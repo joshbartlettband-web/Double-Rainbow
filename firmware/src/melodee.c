@@ -83,6 +83,7 @@
 #include "ui_menu.c"
 #include "ui_input.c"
 #include "ui_layer.c"              /* the quick layers (FX GLO SCL EDIT held) */
+#include "dr.c"                    /* Double Rainbow: its own code (the startup screen) */
 
 /* --------------------------------------------- storage, update, editor --- */
 #if MELODEE_FLASH

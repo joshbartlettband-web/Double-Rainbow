@@ -16,7 +16,7 @@
  * operator boxes overlapping or touching, no route, loop, bus or label inside a box or touching one it does not
  * connect, no two nets (one gap's routes that share an operator, the output, the loop, the label) sharing or
  * touching a pixel, everything inside the panel.
- * Output: OUTDIR/ppm/<PALETTE>_<screen>.ppm for MONO GREEN PAPER, OUTDIR/report.txt (findings, ellipsised free
+ * Output: OUTDIR/ppm/<PALETTE>_<screen>.ppm for MONO GREEN PAPER MOON, OUTDIR/report.txt (findings, ellipsised free
  * text, the draw cost), OUTDIR/text_audit.tsv (MONO, per screen: texts, icons and keycaps with their ink-box px, the
  * ellipsised ones, the texts closer than 2 px to their cell's edge, the words).
  * Exit 1 on a finding or a MONO pixel off gray. */
@@ -1090,7 +1090,7 @@ int main(int argc, char **argv)
     const char *out = argc > 1 ? argv[1] : "build/ui_new";
     char path[600];
     uint32_t p, s;
-    static const char *const SHOW[] = {"MONO", "GREEN", "PAPER"};
+    static const char *const SHOW[] = {"MONO", "GREEN", "PAPER", "MOON"};   /* MOON: Double Rainbow's default */
     snprintf(path, sizeof path, "%s/report.txt", out);
     rep = fopen(path, "w");
     if (!rep) { fprintf(stderr, "cannot write %s\n", path); return 1; }
@@ -1130,7 +1130,7 @@ int main(int argc, char **argv)
             draw((int)s);
             lint();
             if (p == UI_MONO_INDEX) { audit_scene(S_NAME[s]); aud = 0; mono_check(); }
-            for (k = 0; k < 3u; k++)
+            for (k = 0; k < sizeof SHOW / sizeof SHOW[0]; k++)
                 if (!strcmp(UI_PALETTES[p].name, SHOW[k])) write_ppm(out, SHOW[k], S_NAME[s]);
         }
     {   /* every FM6 chart (the lint above, fmp_check, runs on each), in MONO: gray */

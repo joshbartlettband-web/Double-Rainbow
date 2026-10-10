@@ -153,9 +153,7 @@ static void fm1_main(void)
 #endif
     settings_init();
     lcd_init();
-    lcd_fill(0, 0, 240, 240, T_BG);
-    draw_text_box(0, 94, 240, &AF_L, "MELODEE", T_THEME, 1);
-    draw_text_box(0, 134, 240, &AF_S, "MULTI-ENGINE SYNTH", T_MID, 1);
+    dr_splash();                                    /* Double Rainbow's startup screen (dr.c) */
     if (melodee_dbg.magic != DBG_MAGIC) {
         memset(&melodee_dbg, 0, sizeof melodee_dbg);
         melodee_dbg.magic = DBG_MAGIC;

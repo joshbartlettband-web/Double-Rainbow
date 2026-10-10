@@ -116,6 +116,7 @@ static void lcd_init(void) {}
 #include "../../firmware/src/ui_menu.c"
 #include "../../firmware/src/ui_input.c"
 #include "../../firmware/src/ui_layer.c"
+#include "../../firmware/src/dr.c"
 
 /* ------------------------------------------------------------ the flash --- */
 static uint32_t web_flash_writes;
@@ -201,9 +202,7 @@ static void web_power_on(void)
     persist_boot();
     settings_init();
     lcd_init();
-    lcd_fill(0, 0, 240, 240, T_BG);                        /* main.c: the splash */
-    draw_text_box(0, 94, 240, &AF_L, "MELODEE", T_THEME, 1);
-    draw_text_box(0, 134, 240, &AF_S, "MULTI-ENGINE SYNTH", T_MID, 1);
+    dr_splash();                                           /* main.c: the startup screen (dr.c) */
     memset(&melodee_dbg, 0, sizeof melodee_dbg);
     melodee_dbg.magic = DBG_MAGIC;
     fm1_input_init();

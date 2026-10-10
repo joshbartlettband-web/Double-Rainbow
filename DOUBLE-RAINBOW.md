@@ -27,6 +27,16 @@ deep-sea creatures, lantern light and a slightly spooky night carnival.
 - Pixel art in the Rainbow style: vector first, snapped to pixels, dark outlines. All characters are new drawings.
 - The tone is eerie and cool, never grim. Nothing gory, nothing that would scare a ten-year-old for real.
 
+**Built so far:**
+
+- **The startup screen** (`firmware/src/dr.c`, `dr_splash`): a double moonbow over dark hills with fireflies, and the
+  title. It is drawn from code, not a stored picture, and true to the real thing: the secondary bow's colors run the other
+  way, the sky is brighter inside the primary bow and darker between the two (Alexander's band), and there is no moon in
+  the sky (a moonbow faces away from the moon).
+- **MOON**, a palette for Melodee's own screens (`tools/gen_ui_palettes.py`): deep indigo, warm white text, gold values,
+  teal for the active thing. It is the default on a fresh install; a palette already chosen in the menu (COLOR) is kept.
+  It passes Melodee's contrast checks, and Melodee's UI tests (every screen in every palette) run on every push.
+
 ## Starting up and getting to Melodee
 
 - The FM-1 starts in Double Rainbow every time it powers on.

@@ -149,6 +149,16 @@ jobs:
       - name: Generated headers (fonts, icons, tables, factory banks), as build.py makes them
         run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
 
+      - name: Melodee's UI tests (every screen in every palette; Double Rainbow changes Melodee's screens too)
+        run: |
+          set -o pipefail                 # (a failing test fails the step, through tail)
+          CC="cc -O1 -Wall -Wno-unused-function"
+          mkdir -p build/host build/ui_new/ppm build/ui_slot
+          $CC -w -DMELODEE_USB_AUDIO=1 -Ibuild/gen -Ifirmware/src -o build/host/ui_test tests/ui_test.c -lm
+          build/host/ui_test | tail -3
+          $CC -w -DMELODEE_USB_AUDIO=1 -Ibuild/gen -Ifirmware/src -Itests -o build/host/ui_render tests/ui_render.c -lm
+          build/host/ui_render build/ui_new build/ui_slot | tail -1
+
       - name: Restore Emscripten
         id: emcache
         uses: actions/cache@v4
