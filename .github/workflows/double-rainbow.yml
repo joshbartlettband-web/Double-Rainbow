@@ -1,0 +1,160 @@
+# Double Rainbow, built by GitHub and published to this fork's GitHub Pages site.
+#   firmware:  the FM-1 package (JieLi toolchain + three files of the AC79 SDK, cached after the first run)
+#   publish:   the site: /webapp/installer/ flashes the FM-1, /webapp/editor/ is Melodee's web editor
+# Ported from Rainbow mode's rainbow.yml (joshbartlettband-web/felucca-rainbow). The browser build comes later.
+# The run's summary page shows how full the app slot is (540,604 B for the app).
+# Setup: Actions enabled on the fork, and Settings > Pages > Source set to "GitHub Actions".
+name: double-rainbow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  SDK_TAG: AC79NN_SDK_V1.2.1_2023-12-13   # the SDK version build.py was tested with
+  BUILD_TAG: dr                           # added to the version, so the menu shows this is our build (v0.13.1-dr)
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    outputs:
+      release: ${{ steps.ver.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python packages (Pillow with Raqm for the UI font, and fontTools)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libraqm0 >/dev/null
+          pip install Pillow fonttools
+          python3 -c 'from PIL import features; assert features.check("raqm"), "Pillow has no Raqm"'
+
+      - name: Version
+        id: ver
+        run: |
+          v=$(sed -n 's/^#define MELODEE_VERSION "v\([^"]*\)".*/\1/p' firmware/src/melodee.c)
+          echo "release=$v-$BUILD_TAG" >> "$GITHUB_OUTPUT"
+          echo "Building Double Rainbow on Melodee $v ($v-$BUILD_TAG)"
+
+      - name: Restore the JieLi toolchain and SDK
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/ac79-sdk
+          key: jieli-${{ env.SDK_TAG }}-v1
+
+      - name: Download the JieLi toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sh tools/get_toolchain.sh
+
+      - name: Download the JieLi AC79 SDK (only cpu/wl82/tools is used)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          for i in 1 2 3; do
+            git clone --depth 1 --branch "$SDK_TAG" https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$RUNNER_TEMP/sdk" && break
+            echo "clone failed (try $i), retrying"; rm -rf "$RUNNER_TEMP/sdk"; sleep 30
+          done
+          mkdir -p ~/ac79-sdk/cpu/wl82
+          cp -r "$RUNNER_TEMP/sdk/cpu/wl82/tools" ~/ac79-sdk/cpu/wl82/
+          rm -rf "$RUNNER_TEMP/sdk"
+          ls -la ~/ac79-sdk/cpu/wl82/tools/uboot.boot ~/ac79-sdk/cpu/wl82/tools/cfg_tool.bin ~/ac79-sdk/cpu/wl82/tools/cfg/eq_cfg_hw.bin
+
+      - name: Save the JieLi toolchain and SDK
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/ac79-sdk
+          key: jieli-${{ env.SDK_TAG }}-v1
+
+      - name: Check the toolchain runs here (otherwise use Docker, as on macOS)
+        run: |
+          clang="$HOME/.jieli/toolchain/pi32v2/bin/clang"
+          if "$clang" --version; then
+            echo "toolchain runs natively"
+          else
+            ldd "$clang" || true
+            echo "toolchain does not run natively; building in a debian:bookworm-slim container"
+            echo "JIELI_DOCKER=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build the firmware
+        run: |
+          export AC79_SDK="$HOME/ac79-sdk"
+          rel="${{ steps.ver.outputs.release }}"
+          ./build.sh --release "$rel" 2>&1 | tee build.log
+          mkdir -p out
+          cp "build/melodee-$rel.fwsc" out/
+
+      - name: How full the app slot is
+        run: |
+          slot=$(python3 -c 'import re; print(int(re.search(r"APP_SLOT\s*=\s*(0x[0-9A-Fa-f]+)", open("tools/fm1pkg_make.py").read())[1], 16))')
+          app=$(stat -c %s build/melodee.bin)
+          line=$(grep -m1 'RAM .data+.bss' build.log || true)
+          {
+            echo "### App slot"
+            echo ""
+            echo "| | Bytes |"
+            echo "| --- | ---: |"
+            echo "| App | $app |"
+            echo "| Slot | $slot |"
+            echo "| Free | $((slot - app)) |"
+            echo ""
+            echo "Used: $((app * 1000 / slot / 10)).$((app * 1000 / slot % 10)) %"
+            [ -n "$line" ] && echo "" && echo "\`$line\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "app $app B of $slot B, free $((slot - app)) B"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: out
+          if-no-files-found: error
+
+  publish:
+    needs: firmware
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: fw
+
+      - name: Make the site
+        run: |
+          rel="${{ needs.firmware.outputs.release }}"
+          python3 web/make_site.py "fw/melodee-$rel.fwsc" "$rel" site
+          touch site/.nojekyll
+          find site -type f | sort
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
