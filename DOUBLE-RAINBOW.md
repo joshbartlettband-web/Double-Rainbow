@@ -148,13 +148,16 @@ octave harmonizer with shimmer.
 ## Setup, in order
 
 1. **This plan.** (done)
-2. **Automatic build.** A GitHub Actions workflow that builds the firmware on every push (ported from Rainbow mode's
-   `rainbow.yml`).
-3. **Web installer.** A Double Rainbow page that finds the FM-1 and flashes it. First install: an unchanged Melodee build,
-   to prove the path works on Josh's FM-1.
-4. **Browser version.** The emulator from Rainbow mode's `web/emu/`, so the work can be tested from the cloud and anyone
-   can try it without an FM-1.
-5. **Measure space.** How much of the slot is free for our art and text.
+2. **Automatic build.** (done) `.github/workflows/double-rainbow.yml` builds the firmware on every push to `main` as
+   `vX.Y.Z-dr`, ported from Rainbow mode's `rainbow.yml`.
+3. **Web installer.** (done) https://joshbartlettband-web.github.io/Double-Rainbow/ is Melodee's installer and web
+   editor. An unchanged Melodee 0.13.1 build installed and ran on Josh's FM-1.
+4. **Browser version.** (done) `web/emu/`, Felucca's emulator ported to Melodee: the firmware's own code compiled to
+   WebAssembly, at `/webapp/try/` on the site. `web/emu/emu_test.mjs` runs on every push (boot, keys, MIDI, PLAY,
+   saves that survive a reload, and the same audio as a native build, bit for bit). A four-track song costs about 2 %
+   of real time on a desktop.
+5. **Measure space.** (done) Melodee 0.13.1 is 425,468 B of the 540,604 B slot: **115,136 B (about 112 KB) free.**
+   Every build's summary page shows the current numbers.
 6. **First features,** talked through before building.
 
 ## Credits and license

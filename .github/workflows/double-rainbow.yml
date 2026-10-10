@@ -1,7 +1,10 @@
 # Double Rainbow, built by GitHub and published to this fork's GitHub Pages site.
 #   firmware:  the FM-1 package (JieLi toolchain + three files of the AC79 SDK, cached after the first run)
-#   publish:   the site: /webapp/installer/ flashes the FM-1, /webapp/editor/ is Melodee's web editor
-# Ported from Rainbow mode's rainbow.yml (joshbartlettband-web/felucca-rainbow). The browser build comes later.
+#   browser:   the same firmware compiled to WebAssembly (Double Rainbow in the browser), tested first
+#   publish:   the site: /webapp/installer/ flashes the FM-1, /webapp/editor/ is Melodee's web editor,
+#              /webapp/try/ runs it in the browser
+# Ported from Rainbow mode's rainbow.yml (joshbartlettband-web/felucca-rainbow). The browser version needs nothing from
+# JieLi, so it is published even if the firmware job fails; a red browser test publishes nothing.
 # The run's summary page shows how full the app slot is (540,604 B for the app).
 # Setup: Actions enabled on the fork, and Settings > Pages > Source set to "GitHub Actions".
 name: double-rainbow
@@ -23,6 +26,7 @@ concurrency:
 env:
   SDK_TAG: AC79NN_SDK_V1.2.1_2023-12-13   # the SDK version build.py was tested with
   BUILD_TAG: dr                           # added to the version, so the menu shows this is our build (v0.13.1-dr)
+  EMSDK_VERSION: 3.1.74
 
 jobs:
   firmware:
@@ -128,8 +132,61 @@ jobs:
           path: out
           if-no-files-found: error
 
+  browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python packages (Pillow with Raqm for the UI font, and fontTools)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libraqm0 >/dev/null
+          pip install Pillow fonttools
+
+      - name: Generated headers (fonts, icons, tables, factory banks), as build.py makes them
+        run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+
+      - name: Restore Emscripten
+        id: emcache
+        uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}-v1
+
+      - name: Install Emscripten
+        if: steps.emcache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git ~/emsdk
+          ~/emsdk/emsdk install "$EMSDK_VERSION"
+
+      - name: Build for the browser
+        run: |
+          ~/emsdk/emsdk activate "$EMSDK_VERSION" >/dev/null
+          . ~/emsdk/emsdk_env.sh >/dev/null
+          EMU_PREVIEW=0 sh web/emu/build.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test the browser build (against the native build of the same code, bit for bit)
+        run: |
+          cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/native_check web/emu/native_check.c -lm
+          build/native_check build/native.f32
+          node web/emu/emu_test.mjs build/emu/melodee.wasm build/native.f32
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser
+          path: build/emu
+          if-no-files-found: error
+
   publish:
-    needs: firmware
+    needs: [firmware, browser]
+    if: always() && needs.browser.result == 'success'
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
@@ -137,7 +194,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get the browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser
+          path: site/webapp/try
+
       - name: Get the firmware
+        if: needs.firmware.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: firmware
@@ -146,7 +210,11 @@ jobs:
       - name: Make the site
         run: |
           rel="${{ needs.firmware.outputs.release }}"
-          python3 web/make_site.py "fw/melodee-$rel.fwsc" "$rel" site
+          if [ -n "$rel" ] && [ -f "fw/melodee-$rel.fwsc" ]; then
+            python3 web/make_site.py "fw/melodee-$rel.fwsc" "$rel" site
+          else
+            echo "::warning::No firmware this run; publishing the browser version only (no installer)"
+          fi
           touch site/.nojekyll
           find site -type f | sort
 
