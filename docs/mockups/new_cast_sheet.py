@@ -57,7 +57,10 @@ def main():
     for i, (n, eng, what, line, lore) in enumerate(CAST):
         x = 20 + i * 420
         d.rounded_rectangle((x, 80, x + 400, H - 20), 14, fill=PANEL)
-        sheet.paste(keyed(ROOT / "art" / "gemini" / f"{n.lower()}_a.jpg"), (x + 20, 96))
+        src = ROOT / "art" / "gemini" / f"{n.lower()}_a.jpg"
+        if src.with_name(f"{n.lower()}_a_fix.png").exists():      # (Mote: the stopper, tools/art/fix_mote.py)
+            src = src.with_name(f"{n.lower()}_a_fix.png")
+        sheet.paste(keyed(src), (x + 20, 96))
         d.text((x + 20, 470), n, font=name, fill=GOLD)
         tw = d.textlength(eng, font=tag)
         d.rounded_rectangle((x + 380 - tw - 20, 478, x + 380, 508), 6, fill=BG)

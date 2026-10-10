@@ -95,7 +95,8 @@ Squall first used filtered white noise, and on the FM-1 its pitch did not come t
 on the note's harmonics, however narrow the filter). META carries the tune (79 %) and still sounds like weather.
 
 Art fixes are made in code, not with more Gemini images (`tools/art/make_sprites.sh` rebuilds every sprite): Shard's
-chest is repainted as one crisp rainbow (`procchar.py --rainbow`), Squall's eyes and bolt are recoloured yellow
+chest is glass again with a small spectrum low on his belly that bows with his shape (`tools/art/fix_shard.py`;
+an arc was tried and dropped: it looked like a Care Bear's belly badge), Squall's eyes and bolt are recoloured yellow
 (`tools/art/fix_squall.py`).
 
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
@@ -119,7 +120,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 
 | Control | What it does |
 | --- | --- |
-| Keys | Play the character (in SCRY and TRACE too). The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. |
+| Keys | Play the character (in SCRY and TRACE too). The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. It is measured against MASTER, so the same note draws the same wave at any volume. |
 | PRESETS | The next or the previous character. In the codex: its pages. |
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
 | ALGORITHM | How the keys play: SOLO, WEAVE, CAST, SCRY, TRACE (below). |

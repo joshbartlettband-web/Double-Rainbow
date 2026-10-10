@@ -367,7 +367,7 @@ static int dr_wave_update(void)
 {
     static int16_t snap[SCOPE_N];
     uint32_t w = scope_w, i, trig = 0, changed = 0;
-    int32_t peak = 0, x;
+    int32_t peak = 0, x, m, gate, lo;
     for (i = 0; i < SCOPE_N; i++) {
         snap[i] = scope_buf[(w + i) & (SCOPE_N - 1u)];
         if (snap[i] > peak)
@@ -380,10 +380,15 @@ static int dr_wave_update(void)
             trig = i;
             break;
         }
+    /* the scope is taken after MASTER (squared: half way is a quarter), so its thresholds move with it: the same
+     * note draws the same wave at any volume */
+    m = (int32_t)song.master_q12 > 16 ? (int32_t)song.master_q12 : 16;
+    gate = 400 * m >> 12;
+    lo = 12000 * m >> 12;
     for (x = 0; x < 240; x++) {
         int32_t v = 0;
-        if (peak > 400) {
-            int32_t full = peak > 12000 ? peak : 12000;     /* (quiet: smaller; loud: auto-scaled to the full height) */
+        if (peak > (gate > 3 ? gate : 3)) {
+            int32_t full = peak > lo ? peak : lo;     /* (quiet: smaller; loud: auto-scaled to the full height) */
             v = -snap[trig + (uint32_t)x] * DR_WAVE_PX / full;
         }
         if (v != dr_wave[x]) {

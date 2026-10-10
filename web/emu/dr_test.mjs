@@ -107,6 +107,12 @@ turn(EN.PRESETS, 1);
   render(6000);
   check("the horizon traces the wave while a note sounds, and lies flat again after", a !== rest && b !== a &&
         rows(screen(), 154, 198) === rest);
+  ex.web_master(300); render(500);                 // a quiet, ear-friendly volume (MASTER under a third)
+  ex.web_keys(1 << 7); render(600);
+  const quiet = rows(screen(), 154, 198);
+  ex.web_keys(0); render(6000);
+  ex.web_master(1023); render(500);
+  check("at a low volume the horizon still traces the wave", quiet !== rest && rows(screen(), 154, 198) === rest);
 }
 
 { // EDIT held, the codex

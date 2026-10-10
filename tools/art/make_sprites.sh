@@ -5,6 +5,7 @@ set -e
 cd "$(dirname "$0")/../.."
 python3 tools/art/procchar.py art/gemini/vesper_b.jpg vesper 112 100 70 4
 python3 tools/art/procchar.py art/gemini/shard_c.jpg shard 108 110 90 0 --rainbow=360,470,580,780   # crisp bands, chest only
+python3 tools/art/fix_shard.py                                                       # facets back, a small spectrum on his belly
 python3 tools/art/fix_squall.py                                                      # glowing eyes, a yellow bolt
 python3 tools/art/procchar.py art/gemini/squall_c_fix.png squall 96 116 90 0 \
     --keep=255,236,150 --keep=250,204,56 --keep=206,140,26                         # the glow and the bolt's yellows
