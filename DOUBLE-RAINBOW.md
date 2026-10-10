@@ -40,9 +40,10 @@ deep-sea creatures, lantern light and a slightly spooky night carnival.
 ## Starting up and getting to Melodee
 
 - The FM-1 starts in Double Rainbow every time it powers on.
-- A button combo takes you to full Melodee, as HOME and SAVE held for 3 seconds did in Rainbow mode. Double Rainbow
-  never writes Melodee's autosave, so playing in Double Rainbow cannot overwrite your own work.
-- **(open)** Which combo, and whether Double Rainbow should remember a choice to start in Melodee instead.
+- HOME and SAVE held together for 3 seconds take you to the full Melodee (built; a countdown shows on the screen).
+  Double Rainbow saves nothing, so playing in it cannot overwrite your own work: Melodee starts as it would have
+  (track 1's own sound, then your BOOT project or template).
+- **(open)** Whether Double Rainbow should remember a choice to start in Melodee instead.
 
 ## The cast
 
@@ -60,16 +61,41 @@ character means getting to know an engine.
 | NOISE | weather, machines and ghosts | noise colors, crackle and metallic tones |
 | DRUM | the rhythm section | the TR-808's circuits |
 
-Each character has:
+Each character has a name and one line of personality, a codex entry (how its engine works, a bit of history and
+something to try), four named knobs that each move up to three real settings, and its own sound.
 
-- **A name and one line of personality.**
-- **A codex entry.** Short readable text on how its engine works, with one real piece of history or one thing to try.
-- **Four macro knobs with names** (BITE, BREATH, HAUNT, GRIT and so on). Each one moves several real parameters at once.
-  Holding a button shows what is underneath, for example "BITE = cutoff + resonance + filter envelope amount".
-- **Its own sound,** a sky and a favorite beat.
+**Built so far: the first three** (`firmware/src/dr.c`). Art: Gemini concepts (`art/gemini/`, $0.60 for nine),
+made into 4-bit sprites by `tools/art/procchar.py` (`art/sprites/`), packed into the firmware by
+`tools/art/gen_dr_art.py` (about 9.4 KB for the three).
+
+| Character | Engine | Line | Knobs (what they move) |
+| --- | --- | --- | --- |
+| VESPER, a moth in a velvet cape | PROPHET: our own program, saw + pulse through the SSI filter | Every note is her final scene. | GLOW (cutoff), BITE (resonance, filter envelope), BLOOM (attack, release), DRIFT (vintage, vibrato, detune) |
+| SHARD, a glass fox with a rainbow inside | FM6: Melodee's own BELL voice | Sharp, clear, honest to a fault. | SHINE (modulator level), METAL (modulator ratio), RING (modulator decay), TWIST (detune) |
+| SQUALL, a sulking storm cloud | NOISE: wind through a key-tracked band | Escaped from a jar. Still mad. | GUST (drift), POUR (resonance down, rain density), RUMBLE (frequency down, color), SPARK (crush) |
+
+Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
+three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).
 
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
+
+## The Double Rainbow screen (built)
+
+The FM-1 starts in Double Rainbow every time it powers on.
+
+| Control | What it does |
+| --- | --- |
+| Keys | Play the character. The chord or note just played shows at the top left (Melodee's own recognizer). |
+| PRESETS | The next or the previous character. In the codex: its pages. |
+| KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
+| EDIT held | The cards show what each knob really moves. |
+| SCL | The codex: the engine's story, then something to try. SCL again closes it. |
+| OCT- / OCT+ | The keys an octave down or up (two each way). |
+| HOME + SAVE held 3 s | The full Melodee, as it would have started (track 1 gets its own sound back; nothing is saved). Double Rainbow comes back at the next power-on. |
+
+Tests: `web/emu/dr_test.mjs` drives it like a player on the browser build, on every push (the cast and its engines,
+loudness, the knobs, EDIT, the codex, OCT, the HOME + SAVE countdown, and that every text fits its room).
 
 ## Ways to play (the spellbook modes)
 

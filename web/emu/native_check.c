@@ -29,6 +29,10 @@ int main(int argc, char **argv)
     web_nor_erase();
     web_boot();
     render(500);
+    web_buttons(1u << B_HOME | 1u << B_SAVE);    /* Double Rainbow: HOME + SAVE held 3 s, to Melodee */
+    render(3200);
+    web_buttons(0);
+    render(100);
     web_test_heavy();
     web_buttons(1u << B_PLAY);
     render(60);

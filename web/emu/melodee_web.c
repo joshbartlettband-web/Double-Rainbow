@@ -212,6 +212,7 @@ static void web_power_on(void)
     audio_init();
     glo_restore();                                         /* main.c: CLK TUNE MIDI ROUT as last used, */
     project_boot();                                        /* then the BOOT project or the template */
+    dr_boot();                                             /* main.c: Double Rainbow from power-on (dr.c) */
     web_boot_ms = fm1_ms + 430u;                           /* main.c: 30 + 400 ms before the first frame */
     web_booted = 1;
 }
@@ -232,6 +233,8 @@ static void web_frame(void)
     cz_service();
     fm6_service();
     melodee_dbg.ui_frames++;
+    if (dr_frame())                                       /* main.c: Double Rainbow's screen while it is on */
+        return;
     ui_input();
     glo_poll();
     settings_poll();
@@ -272,7 +275,7 @@ static void web_ms(void)
     if (fm1_ms - web_last_frame >= 15u) {                /* main.c: a frame, then ui_input until 15 ms are over */
         web_last_frame = fm1_ms;
         web_frame();
-    } else {
+    } else if (!drm.on) {
         ui_input();                                       /* main.c's wait loop */
     }
 }
@@ -421,4 +424,13 @@ EXPORT uint32_t web_voices(uint32_t t)                  /* a track's sounding vo
 }
 EXPORT uint32_t web_engine(uint32_t t) { return trk[t % NTRK].engine; }
 EXPORT uint32_t web_test_user_preset(uint32_t i) { return (uint32_t)up_used(i); }
+/* Double Rainbow (dr.c; web/emu/dr_test.mjs) */
+EXPORT uint32_t web_dr_on(void) { return drm.on; }
+EXPORT uint32_t web_dr_char(void) { return dr.ch; }
+EXPORT uint32_t web_dr_knob(uint32_t m) { return dr.mv[dr.ch % DR_NCHAR][m & 3u]; }
+EXPORT uint32_t web_dr_view(void) { return drm.codex | drm.page << 1 | drm.under << 2; }
+EXPORT uint32_t web_dr_text_check(void) { return dr_text_check(); }
+EXPORT int32_t web_octave(void) { return song.octave; }
+EXPORT uint32_t web_p5_field(uint32_t id) { return p5_patch_of(&trk[0])->raw[id % P5_RAW_MAX]; }
+EXPORT int32_t web_param(uint32_t t, uint32_t id) { return trk[t % NTRK].p[id % P_COUNT]; }
 EXPORT uint32_t web_sample_rate(void) { return FS; }

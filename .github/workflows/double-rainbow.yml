@@ -187,6 +187,7 @@ jobs:
           cc -O2 -ffp-contract=off -w -Ibuild/gen -Ifirmware/src -o build/native_check web/emu/native_check.c -lm
           build/native_check build/native.f32
           node web/emu/emu_test.mjs build/emu/melodee.wasm build/native.f32
+          node web/emu/dr_test.mjs build/emu/melodee.wasm
 
       - uses: actions/upload-artifact@v4
         with:

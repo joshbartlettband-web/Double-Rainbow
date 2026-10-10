@@ -186,6 +186,7 @@ static void fm1_main(void)
     }
     glo_restore();                            /* CLK TUNE MIDI ROUT as last used, */
     project_boot();                           /* then the BOOT project or the template (theirs win) */
+    dr_boot();                                /* Double Rainbow from power-on (dr.c) */
     fm1_delay_ms(400);
     lcd_fill(0, 0, 240, 240, T_BG);
 
@@ -276,15 +277,18 @@ static void fm1_main(void)
         melodee_dbg.page = ui.page;
         melodee_dbg.home = ui.home;
         melodee_dbg.stage = 1;
-        ui_input();
-        glo_poll();                                     /* a kept GLO value changed: the settings, later */
-        settings_poll();                              /* queued settings save: only while stopped */
-        melodee_dbg.stage = 2;
-        ui_leds();
-        ui_draw();
+        if (!dr_frame()) {                              /* Double Rainbow's screen while it is on (dr.c) */
+            ui_input();
+            glo_poll();                                 /* a kept GLO value changed: the settings, later */
+            settings_poll();                            /* queued settings save: only while stopped */
+            melodee_dbg.stage = 2;
+            ui_leds();
+            ui_draw();
+        }
         melodee_dbg.stage = 9;
         while (fm1_ms - m < 15u) {                               /* ~60 UI frames/s at most */
-            ui_input();
+            if (!drm.on)
+                ui_input();
 #if MELODEE_OTA
             ed_service();                       /* editor replies without waiting for the next frame */
 #endif

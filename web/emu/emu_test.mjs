@@ -3,6 +3,8 @@
 // The browser build (build/emu/melodee.wasm, web/emu/melodee_web.c) in Node, as the worklet runs it. Ported from
 // Felucca's to Melodee for Double Rainbow; after X0X's tests/host/emu_test.mjs (charlesvestal/fm1-x0x, GPL-3.0).
 //   node web/emu/emu_test.mjs build/emu/melodee.wasm [NATIVE.f32]
+// Melodee's own checks: Double Rainbow starts at power-on (web/emu/dr_test.mjs checks it), so after the splash these
+// hold HOME + SAVE 3 s to reach the full Melodee first.
 // Checks: it boots (splash, then HOME on the screen, the HOME LED, the idle glow), a held key sounds and lights its
 // LED, PLAY starts the sequencer (PLAY's LED), a user preset saved from the panel (SAVE, OCT+, OCT+) reaches the flash,
 // and the flash sectors kept as the page keeps them bring it back in a fresh instance; the same gestures twice
@@ -44,6 +46,7 @@ async function device(saved) {
     }
   };
   d.tap = (b) => { ex.web_buttons(1 << b); d.render(60); ex.web_buttons(0); d.render(60); };
+  d.toMelodee = () => { ex.web_buttons(1 << B.HOME | 1 << B.SAVE); d.render(3200); ex.web_buttons(0); d.render(100); };
   d.turn = (role, n) => { for (let i = 0; i < Math.abs(n); i++) { ex.web_enc(role, Math.sign(n)); d.render(40); } };
   Object.defineProperty(d, "samples", { get: () => new Float32Array(d.kept) });
   d.screen = () => new Uint16Array(mem.buffer, ex.web_screen(), 240 * 240).slice();
@@ -57,6 +60,10 @@ a.render(200);
 const splash = colours(a.screen());
 check("under the splash: no LED lit yet", a.ex.web_lit_keys() === 0 && a.ex.web_lit_buttons() === 0);
 a.render(800);
+check("then Double Rainbow (the full Melodee: HOME + SAVE held 3 s)", a.ex.web_dr_on() === 1);
+a.toMelodee();
+check("HOME + SAVE held 3 s: the full Melodee", a.ex.web_dr_on() === 0);
+a.render(500);
 const home = a.screen();
 check(`boots: the splash, then HOME (${colours(home)} colours), the HOME LED lit`,
       splash > 1 && colours(home) > 4 && (a.ex.web_lit_buttons() >> B.HOME & 1) === 1);
@@ -88,7 +95,7 @@ a.render(300);
 check("PLAY again stops it", a.ex.web_playing() === 0);
 
 // ---- a user preset saved from the panel, kept across a fresh instance
-const w0 = a.ex.web_flash_writes_count();
+const w0 = a.ex.web_flash_writes_count();   /* (a is in Melodee: toMelodee above) */
 a.tap(B.SAVE);
 a.tap(B.OCTUP);
 a.tap(B.OCTUP);
@@ -109,6 +116,7 @@ check("a fresh instance with the kept sectors has it; one without does not",
 async function song() {
   const d = await device(null);
   d.render(500);
+  d.toMelodee();                                              // (as web/emu/native_check.c)
   d.ex.web_test_heavy();
   d.tap(B.PLAY);
   d.rec = true;
