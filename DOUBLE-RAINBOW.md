@@ -113,6 +113,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | Keys | Play the character. The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. |
 | PRESETS | The next or the previous character. In the codex: its pages. |
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
+| ALGORITHM | How the keys play: SOLO, WEAVE, CAST (below). |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). |
@@ -128,13 +129,25 @@ call it.
 
 | Mode | What it does | Grew from |
 | --- | --- | --- |
-| **SOLO** **(open name)** | Each key plays its note. | Rainbow's 1 FRIEND |
-| **WEAVE** | Strum. The black keys pick a chord and the white keys strum its notes, like an Omnichord. Real chord names, sevenths and borrowed chords. | Rainbow's STRUM (u/veecheech) |
-| **CAST** | Chords under a tune. The black keys hold chords and the white keys play a melody. Its codex entry explains that jazz players call this comping. Roman numerals ("this one is borrowed from the minor key, that's why it sounds bittersweet"). | Rainbow's ACCORDION |
+| **SOLO** (built) | Each key plays its note. | Rainbow's 1 FRIEND |
+| **WEAVE** (built) | Strum. A black key picks a chord and plays its root low; the white keys strum its notes upward from C3, like an Omnichord. | Rainbow's STRUM (u/veecheech) |
+| **CAST** (built) | Chords under a tune. A black key holds its chord (softer) while the white keys play a melody. Jazz players call this comping. | Rainbow's ACCORDION |
 | **SCRY** | Ear training. Hear it, then name it: notes, intervals, major or minor, chord types. Levels get harder. | Rainbow's GUESS (u/nutty_cartoon) |
 | **TRACE** | Learn a song. The next key lights and you play at your own pace. | Rainbow's FOLLOW (u/nutty_cartoon) |
 
-Every mode shows the notes and chord names you play, as Melodee's HOME screen already does.
+ALGORITHM turns SOLO, WEAVE and CAST (a line says what the mode does as it changes; a chip at the top right names
+it). The black keys' chords, in C major, each the chord of the white key just below it (`firmware/src/seq.c`,
+Double Rainbow's spellbook keys):
+
+| Black keys | Chords | Numerals |
+| --- | --- | --- |
+| Lower row, F#3 .. D#4 | F, G, Am, C, Dm | IV, V, vi, I, ii |
+| Upper row, F#4 .. D#5 | Fmaj7, G7, Am7, Cmaj7, Dm7 | IVmaj7, V7, vi7, Imaj7, ii7 |
+| Top key, F#5 | Fm, borrowed from C minor (the bittersweet one) | iv |
+
+In WEAVE and CAST the chip names the chord picked and its numeral ("Am vi"); in SOLO it names what was played, as
+Melodee's HOME does. A seventh is four notes, so CAST plus one tune note fills the Prophet's five voices.
+**(open)** Other keys than C major (the SCL button is the codex's now; perhaps PRESETS held).
 
 ## Songs for TRACE
 

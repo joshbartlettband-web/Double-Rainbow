@@ -142,10 +142,66 @@ static uint32_t scale_map(const track_t *t, int32_t n, int32_t offset)
     return (uint32_t)clamp(n + offset + t->p[P_TRANS], 0, 127);
 }
 
+/* ---- Double Rainbow's spellbook keys (firmware/src/dr.c sets dr_kmode; Rainbow mode's STRUM and ACCORDION, grown up).
+ * The black keys pick chords in C major, each the chord of the white key just below it: the lower row the triads (F G
+ * Am C Dm: IV V vi I ii), the upper row their sevenths (Fmaj7 G7 Am7 Cmaj7 Dm7), the top key iv borrowed from C minor
+ * (Fm). WEAVE (after u/veecheech's strum idea): a black key picks the chord and plays its root low, the white keys,
+ * left to right, its notes upward from C3, so a hand drawn across them strums it. CAST: a black key holds its chord,
+ * softer, under the white keys' tune. Read in the audio ISR, set by the main loop. */
+enum { DRK_SOLO, DRK_WEAVE, DRK_CAST };
+static volatile uint8_t dr_kmode;                  /* DRK_*: 0 = the keys as always */
+static volatile uint8_t dr_chord = 3u;             /* the chord picked (dr_chord_tones; C to begin with) */
+static volatile uint8_t dr_chord_gen;              /* bumped on each pick (the screen names it) */
+static int32_t dr_chord_of_key(uint32_t k)         /* a black key's chord, -1 a white key */
+{
+    static const int8_t DEG[12] = {-1, 3, -1, 4, -1, -1, 0, -1, 1, -1, 2, -1};   /* C# D# F# G# A#: C Dm F G Am */
+    int32_t d = DEG[(53u + k) % 12u];
+    if (d < 0)
+        return -1;
+    return k >= 24u ? 10 : (k >= 12u ? 5 : 0) + d;
+}
+/* chord id (0..4 triads F G Am C Dm, 5..9 their sevenths, 10 Fm) -> its root pitch class, iv[] its intervals; n */
+static uint32_t dr_chord_tones(uint32_t id, uint32_t *root, int8_t *iv)
+{
+    static const uint8_t ROOT[5] = {5, 7, 9, 0, 2};
+    static const int8_t Q[6][4] = {{0, 4, 7, 0}, {0, 3, 7, 0}, {0, 4, 7, 11}, {0, 4, 7, 10}, {0, 3, 7, 10}, {0, 3, 7, 0}};
+    uint32_t d = id % 5u, minor = d == 2u || d == 4u, q, i;
+    q = id == 10u ? 5u : id < 5u ? minor : d == 1u ? 3u : minor ? 4u : 2u;
+    *root = id == 10u ? 5u : ROOT[d];
+    for (i = 0; i < 4u; i++)
+        iv[i] = Q[q][i];
+    return q >= 2u && q <= 4u ? 4u : 3u;
+}
+static uint32_t dr_weave_map(uint32_t k)
+{
+    int32_t id = dr_chord_of_key(k);
+    uint32_t root, n, w, i, tone, cnt = 0;
+    int8_t iv[4];
+    if (id >= 0) {                                  /* a black key: the chord, its root low (F2 .. E3) */
+        dr_chord = (uint8_t)id;
+        dr_chord_gen++;
+        dr_chord_tones((uint32_t)id, &root, iv);
+        return 41u + (root + 7u) % 12u;
+    }
+    n = dr_chord_tones(dr_chord, &root, iv);
+    for (w = 0, i = 0; i < k; i++)                  /* the white keys left of this one */
+        w += dr_chord_of_key(i) < 0;
+    for (tone = 48u; tone < 100u; tone++) {         /* the chord's notes from C3 up: the w-th */
+        uint32_t d = (tone + 12u - root) % 12u, j, in = 0;
+        for (j = 0; j < n; j++)
+            in |= d == (uint32_t)iv[j];
+        if (in && cnt++ == w)
+            break;
+    }
+    return tone;
+}
+
 static uint32_t kb_map(const track_t *t, uint32_t k)
 {
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];   /* (the engine it switches to) */
     int32_t n;
+    if (dr_kmode == DRK_WEAVE && !e->keys)             /* Double Rainbow's WEAVE: the strum (above) */
+        return dr_weave_map(k);
     if (e->keys && (n = e->keys(t, k)) >= 0)           /* the engine's own key map (GM kit, slices) */
         return (uint32_t)n;
     n = 53 + (int32_t)k;
@@ -550,14 +606,26 @@ static uint32_t perf_key(uint32_t k)
  * holds already sounds: it is not started again (nor sent to MIDI OUT); the key keeps its notes */
 static void key_on(uint32_t k, track_t *t)
 {
-    uint32_t n = chord_build(t, kb_note[k], kb_chord[k]), i, mc = trk_midi_ch(trk_index(t));
+    uint32_t n, i, mc = trk_midi_ch(trk_index(t)), vel = 100;
+    int32_t id = dr_kmode == DRK_CAST && !ENGINES[eng_idx(t->eng_req)]->keys ? dr_chord_of_key(k) : -1;
+    if (id >= 0) {                                  /* Double Rainbow's CAST: a black key's chord, F3 .. E4, softer */
+        uint32_t root;
+        int8_t iv[4];
+        n = dr_chord_tones((uint32_t)id, &root, iv);
+        for (i = 0; i < n; i++)
+            kb_chord[k][i] = (uint8_t)clamp(53 + (int32_t)((root + 7u) % 12u) + iv[i] + 12 * song.octave, 0, 127);
+        vel = n > 3u ? 56u : 64u;
+        dr_chord = (uint8_t)id;
+        dr_chord_gen++;
+    } else
+        n = chord_build(t, kb_note[k], kb_chord[k]);
     kb_chn[k] = 0;
     for (i = 0; i < n; i++) {
         uint32_t x = kb_chord[k][i];
         if (midi_local_held(t, x))
             continue;
-        input_on(t, x, 100);
-        midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | 100u << 24);
+        input_on(t, x, vel);
+        midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | vel << 24);
     }
     kb_chn[k] = (uint8_t)n;
     last_note = kb_note[k];                         /* (step entry, the SAMPLE zone: the key's note) */

@@ -431,6 +431,9 @@ EXPORT uint32_t web_dr_knob(uint32_t m) { return dr.mv[dr.ch % DR_NCHAR][m & 3u]
 EXPORT uint32_t web_dr_view(void) { return drm.codex | drm.page << 1 | drm.under << 3; }   /* codex, page (2 bits), EDIT */
 EXPORT uint32_t web_dr_text_check(void) { return dr_text_check(); }
 EXPORT int32_t web_octave(void) { return song.octave; }
+EXPORT uint32_t web_dr_kmode(void) { return dr_kmode; }              /* SOLO WEAVE CAST (seq.c) */
+EXPORT uint32_t web_dr_chord(void) { return dr_chord; }
+EXPORT uint32_t web_kb_note(uint32_t k) { return kb_note[k % 27u]; }    /* what key k is playing (seq.c) */
 EXPORT uint32_t web_p5_field(uint32_t id) { return p5_patch_of(&trk[0])->raw[id % P5_RAW_MAX]; }
 EXPORT int32_t web_param(uint32_t t, uint32_t id) { return trk[t % NTRK].p[id % P_COUNT]; }
 EXPORT uint32_t web_sample_rate(void) { return FS; }

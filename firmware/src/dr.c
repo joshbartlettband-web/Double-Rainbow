@@ -305,7 +305,7 @@ static struct {
     uint8_t sounding;                        /* the horizon is tracing the wave (and needs one more flat redraw) */
     uint32_t wave_ms;
     uint32_t note_sig, combo_t0, msg_t0;
-    char msg[24];
+    char msg[40];
 } drm;
 enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE = 16, DR_D_ALL = 31 };
 
@@ -428,8 +428,17 @@ static void dr_scene_rows(int32_t y0, int32_t h)
         }
 }
 
-/* what was just played, as Melodee's HOME names it (ui_graph.c chord_of): a chord, else the notes; 0 = none */
-static uint32_t dr_note_label(char *big, char *small)
+/* the spellbook modes on ALGORITHM (seq.c dr_kmode: the keys; SCRY and TRACE to come) */
+static const char *const DR_KMODE_NAME[3] = {"SOLO", "WEAVE", "CAST"};
+static const char *const DR_KMODE_HELP[3] = {"SOLO: every key plays its note", "WEAVE: black keys pick, white strum",
+                                             "CAST: black keys hold, white sing"};
+/* seq.c's chords (dr_chord_tones ids): their names and their place in C major */
+static const char *const DR_CHORD_Q[11] = {"", "", "m", "", "m", "maj7", "7", "m7", "maj7", "m7", "m"};
+static const char *const DR_CHORD_RN[11] = {"IV", "V", "vi", "I", "ii", "IVmaj7", "V7", "vi7", "Imaj7", "ii7", "iv"};
+
+/* what was just played, as Melodee's HOME names it (ui_graph.c chord_of): a chord, else the notes; 0 = none.
+ * WEAVE and CAST: the chord the black keys picked, and its numeral (rn) */
+static uint32_t dr_note_label(char *big, char *small, const char **rn)
 {
     uint32_t bits[4], i, n = 0, pcs = 0, root = 0, bass = 0;
     const char *q;
@@ -445,6 +454,16 @@ static uint32_t dr_note_label(char *big, char *small)
             n++;
         }
     big[0] = small[0] = 0;
+    *rn = 0;
+    if (dr_kmode != DRK_SOLO) {
+        uint32_t r;
+        int8_t iv[4];
+        dr_chord_tones(dr_chord, &r, iv);
+        str_cpy(big, N_NOTE[r], 4);
+        str_cpy(small, DR_CHORD_Q[dr_chord % 11u], 12);
+        *rn = DR_CHORD_RN[dr_chord % 11u];
+        return 1;
+    }
     if (!n)
         return 0;
     q = n > 1u ? chord_of(pcs, bass % 12u, &root) : 0;
@@ -456,17 +475,26 @@ static uint32_t dr_note_label(char *big, char *small)
     return n;
 }
 
-/* the note label: a chip at the scene's top left (redrawn alone when it changes) */
+/* the note label: a chip at the scene's top left (redrawn alone when it changes); the mode's at the top right */
 static void dr_draw_note(void)
 {
     char big[8], small[12];
+    const char *rn;
     dr_scene_rows(DR_Y_SCENE, 40);
-    if (dr_note_label(big, small)) {
-        int32_t w = text_w(&AF_L, big) + (small[0] ? text_w(&AF_M, small) + 2 : 0) + 14;
+    if (dr_note_label(big, small, &rn)) {
+        int32_t w = text_w(&AF_L, big) + (small[0] ? text_w(&AF_M, small) + 2 : 0) + (rn ? text_w(&AF_M, rn) + 8 : 0) + 14;
         cv_rrect(6, 4, w, 32, 6, DR_SURF, DR_BG);
         w = cv_text_on(13, 2, &AF_L, big, DR_TEXT, DR_SURF);
         if (small[0])
-            cv_text_on(w + 2, 13, &AF_M, small, DR_GOLD, DR_SURF);
+            w = cv_text_on(w + 2, 13, &AF_M, small, DR_GOLD, DR_SURF);
+        if (rn)
+            cv_text_on(w + 8, 13, &AF_M, rn, DR_TEAL, DR_SURF);
+    }
+    if (dr_kmode != DRK_SOLO) {
+        const char *m = DR_KMODE_NAME[dr_kmode % 3u];
+        int32_t w = text_w(&AF_S, m) + 12;
+        cv_rrect(234 - w, 4, w, 18, 5, DR_SURF, DR_BG);
+        cv_text_on(240 - w, 5, &AF_S, m, DR_TEAL, DR_SURF);
     }
     cv_blit(0, DR_Y_SCENE);
 }
@@ -516,6 +544,7 @@ static uint32_t dr_text_check(void)
         const dr_char_t *c = &DR_CAST[k];
         const dr_codex_t *x = &DR_CODEX[k];
         bad += text_w(&AF_M, c->name) > 150;
+        bad += k < 3u && text_w(&AF_S, DR_KMODE_HELP[k]) > 224;
         bad += text_w(&AF_S, c->line) > 224;
         bad += text_w(&AF_L, x->title) > 224;
         bad += text_w(&AF_M, x->entry) > 224;
@@ -648,6 +677,7 @@ static void dr_leave(void)
     track_t *t = &trk[0];
     drm.on = 0;
     song.octave = 0;
+    dr_kmode = DRK_SOLO;                                 /* (Melodee's keys as always) */
     undo_depth++;
     set_engine_of(t, TRK_DEF[0][0]);
     apply_preset_to(t, TRK_DEF[0][1]);
@@ -729,8 +759,12 @@ static int dr_frame(void)
             dr_macro_apply(&trk[0], dr.ch, i);
             drm.dirty |= DR_D_CARDS;
         }
+    if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0) {   /* ALGORITHM: how the keys play */
+        dr_kmode = (uint8_t)clamp((int32_t)dr_kmode + (s > 0 ? 1 : -1), DRK_SOLO, DRK_CAST);
+        dr_say(DR_KMODE_HELP[dr_kmode]);
+        drm.dirty |= DR_D_NOTE;
+    }
     (void)fm1_enc_take(panel.enc[EN_SELECT]);            /* (not used yet: nothing piles up) */
-    (void)fm1_enc_take(panel.enc[EN_ALGO]);
     if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
         drm.wave_ms = fm1_ms;
         if (dr_wave_update() || (drm.sounding && !(drm.dirty & DR_D_SCENE))) {
@@ -744,7 +778,7 @@ static int dr_frame(void)
             }
         }
     }
-    sig = 0;
+    sig = dr_chord_gen * 31u + dr_kmode;
     for (i = 0; i < 4u; i++)
         sig = sig * 2654435761u + live_last[i];
     if (sig != drm.note_sig) {

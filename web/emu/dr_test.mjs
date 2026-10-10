@@ -7,6 +7,8 @@
 // the screen; the horizon traces the wave while a note sounds and lies flat again after; EDIT held and the codex
 // (three pages) change the screen; every text fits its room; OCT shifts the keys; HOME +
 // SAVE let go early stays, held 3 s goes to the full Melodee with track 1's own sound back, and the keys still play.
+// The spellbook modes on ALGORITHM: WEAVE (a black key picks the chord, the white keys strum its notes from C3 up)
+// and CAST (a black key holds its chord, four notes for a seventh, under the tune).
 import fs from "fs";
 
 const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
@@ -127,6 +129,31 @@ turn(EN.PRESETS, 1);
     ex.web_buttons(0); render(100);
     return a.peak > 0.02 && b.peak > 0.02;
   })());
+}
+
+{ // the spellbook modes
+  turn(EN.ALGO, 1);
+  check("ALGORITHM: WEAVE", ex.web_dr_kmode() === 1);
+  ex.web_keys(1 << 5); render(200);                       // A#3: A minor
+  const strum = [];
+  for (const w of [0, 2, 4, 6, 7]) { ex.web_keys(1 << 5 | 1 << w); render(120); strum.push(ex.web_kb_note(w)); }
+  ex.web_keys(0); render(1500);
+  check(`WEAVE: A#3 picks Am, the white keys strum it from C3 (${strum.join(" ")})`,
+        ex.web_dr_chord() === 2 && strum.join() === [48, 52, 57, 60, 64].join());
+  turn(EN.ALGO, 1);
+  check("ALGORITHM again: CAST", ex.web_dr_kmode() === 2);
+  render(3000);
+  ex.web_keys(1 << 15); render(400);                      // G#4: G7
+  const chord = ex.web_voices(0);
+  ex.web_keys(1 << 15 | 1 << 19); render(300);            // and a tune note (C5)
+  const withTune = ex.web_voices(0);
+  ex.web_keys(0); render(3000);
+  check(`CAST: G#4 holds G7 (${chord} voices), a tune over it (${withTune})`, ex.web_dr_chord() === 6 && chord === 4 && withTune === 5);
+  turn(EN.ALGO, 3);
+  check("ALGORITHM stops at the last mode", ex.web_dr_kmode() === 2);
+  turn(EN.ALGO, -5);
+  check("and back to SOLO: the keys their own notes", ex.web_dr_kmode() === 0 && (() => {
+    ex.web_keys(1 << 7); render(100); const n = ex.web_kb_note(7); ex.web_keys(0); render(1500); return n === 60; })());
 }
 
 tap(B.OCTUP);
