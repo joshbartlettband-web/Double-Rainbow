@@ -149,8 +149,9 @@ static uint32_t scale_map(const track_t *t, int32_t n, int32_t offset)
  * (Fm). WEAVE (after u/veecheech's strum idea): a black key picks the chord and plays its root low, the white keys,
  * left to right, its notes upward from C3, so a hand drawn across them strums it. CAST: a black key holds its chord,
  * softer, under the white keys' tune. Read in the audio ISR, set by the main loop. */
-enum { DRK_SOLO, DRK_WEAVE, DRK_CAST };
+enum { DRK_SOLO, DRK_WEAVE, DRK_CAST, DRK_SCRY, DRK_TRACE };   /* (SCRY, TRACE: the keys their own notes) */
 static volatile uint8_t dr_kmode;                  /* DRK_*: 0 = the keys as always */
+static volatile uint8_t dr_castkeys;               /* the black keys play their chords as in CAST (SCRY's chord drill) */
 static volatile uint8_t dr_chord = 3u;             /* the chord picked (dr_chord_tones; C to begin with) */
 static volatile uint8_t dr_chord_gen;              /* bumped on each pick (the screen names it) */
 static volatile uint8_t dr_key;                    /* the key: semitones above C (dr.c: SELECT, round the fifths) */
@@ -609,7 +610,7 @@ static uint32_t perf_key(uint32_t k)
 static void key_on(uint32_t k, track_t *t)
 {
     uint32_t n, i, mc = trk_midi_ch(trk_index(t)), vel = 100;
-    int32_t id = dr_kmode == DRK_CAST && !ENGINES[eng_idx(t->eng_req)]->keys ? dr_chord_of_key(k) : -1;
+    int32_t id = (dr_kmode == DRK_CAST || dr_castkeys) && !ENGINES[eng_idx(t->eng_req)]->keys ? dr_chord_of_key(k) : -1;
     if (id >= 0) {                                  /* Double Rainbow's CAST: a black key's chord, F3 .. E4, softer */
         uint32_t root;
         int8_t iv[4];

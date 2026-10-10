@@ -110,18 +110,20 @@ The FM-1 starts in Double Rainbow every time it powers on.
 
 | Control | What it does |
 | --- | --- |
-| Keys | Play the character. The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. |
+| Keys | Play the character (in SCRY and TRACE too). The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. |
 | PRESETS | The next or the previous character. In the codex: its pages. |
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
-| ALGORITHM | How the keys play: SOLO, WEAVE, CAST (below). |
-| SELECT | The key for WEAVE and CAST, a fifth at a time. |
+| ALGORITHM | How the keys play: SOLO, WEAVE, CAST, SCRY, TRACE (below). |
+| SELECT | The key for WEAVE, CAST and SCRY, a fifth at a time. In TRACE: the song. |
+| PLAY | SCRY: hear the question again. TRACE: hear the song (PLAY or any key stops it). |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
-| OCT- / OCT+ | The keys an octave down or up (two each way). |
+| OCT- / OCT+ | The keys an octave down or up (two each way). In SCRY: the drill. In TRACE: the song. |
 | HOME + SAVE held 3 s | The full Melodee, as it would have started (track 1 gets its own sound back; nothing is saved). Double Rainbow comes back at the next power-on. |
 
 Tests: `web/emu/dr_test.mjs` drives it like a player on the browser build, on every push (the cast and its engines,
-loudness, the knobs, EDIT, the codex, OCT, the HOME + SAVE countdown, and that every text fits its room).
+loudness, the knobs, EDIT, the codex, OCT, the LEDs, all five modes, the HOME + SAVE countdown, and that every text
+fits its room).
 
 ## Ways to play (the spellbook modes)
 
@@ -133,10 +135,10 @@ call it.
 | **SOLO** (built) | Each key plays its note. | Rainbow's 1 FRIEND |
 | **WEAVE** (built) | Strum. A black key picks a chord and plays its root low; the white keys strum its notes upward from C3, like an Omnichord. | Rainbow's STRUM (u/veecheech) |
 | **CAST** (built) | Chords under a tune. A black key holds its chord (softer) while the white keys play a melody. Jazz players call this comping. | Rainbow's ACCORDION |
-| **SCRY** | Ear training. Hear it, then name it: notes, intervals, major or minor, chord types. Levels get harder. | Rainbow's GUESS (u/nutty_cartoon) |
-| **TRACE** | Learn a song. The next key lights and you play at your own pace. | Rainbow's FOLLOW (u/nutty_cartoon) |
+| **SCRY** (built) | Ear training. Hear it, then find it on the keys: notes, intervals, chords. The pool grows as you get them right. | Rainbow's GUESS (u/nutty_cartoon) |
+| **TRACE** (built) | Learn a song. The next key lights and you play at your own pace. | Rainbow's FOLLOW (u/nutty_cartoon) |
 
-ALGORITHM turns SOLO, WEAVE and CAST (a line says what the mode does as it changes; a chip at the top right names
+ALGORITHM turns SOLO, WEAVE, CAST, SCRY and TRACE (a line says what the mode does as it changes; a chip at the top right names
 it). The black keys' chords, in C major, each the chord of the white key just below it (`firmware/src/seq.c`,
 Double Rainbow's spellbook keys):
 
@@ -151,28 +153,46 @@ Melodee's HOME does. A seventh is four notes, so CAST plus one tune note fills t
 SELECT changes the key, round the circle of fifths (C G D A E B F# Db Ab Eb Bb F): every chord moves with it, flat
 keys are spelled with flats, and the mode chip shows the key ("CAST  Bb").
 
+**SCRY** (`firmware/src/dr.c`). The questions play on the character itself. OCT- / OCT+ picks the drill:
+
+| Drill | The question | The answer | Pool (starts, grows to) |
+| --- | --- | --- | --- |
+| NOTES | The key's home note (lit), then a mystery note from its scale | That note, in any octave | 2 to 8 (do, sol, mi, re, la, fa, ti, high do) |
+| INTERVALS | Two notes, the first lit | The second note, in any octave; the answer names the interval | 2 to 12 (fifth and octave first, tritone last) |
+| CHORDS | A chord of the key | The black key that holds it (the black keys play their chords, as in CAST) | 4 to 11 (I IV V vi first) |
+
+Three right in a row adds one more to tell apart ("+1 NEW"). A miss asks again; after two misses the right key
+blinks. The chip shows the streak and the best. SELECT moves NOTES and CHORDS to a new key.
+
+**TRACE.** The next key lights and the chip says its name and where you are ("NEXT  A", "NOTE 7 OF 37"). A wrong key
+changes nothing, so you go at your own pace. At the end it starts again from the top. PLAY plays the song with the keys
+lighting as it goes. The songs are written readably in `tools/gen_dr_songs.py` (the build checks they fit the keys);
+14 songs take about 1.3 KB.
+
 ## Songs for TRACE
 
 The melody of a current pop song is copyrighted on its own, separately from any recording. Shipping one in a public
 firmware could get the repository taken down. So there are two routes.
 
-**1. Public-domain tunes people will recognize,** each with a codex note on where you have heard it. Each one is to be
-checked before it ships: we use the old melody, never a modern arrangement.
+**1. Public-domain tunes people will recognize.** We use the old melody, never a modern arrangement. Built (the
+opening phrase or two of each, to fit the keys at OCT 0):
 
 - Korobeiniki (the Tetris theme, a Russian folk song)
-- Wellerman (an 1800s sea shanty, viral in 2021)
-- Dies Irae (a medieval chant that film composers use for doom)
-- In the Hall of the Mountain King (Grieg)
-- Danse Macabre (Saint-Saëns)
+- Für Elise (Beethoven)
+- In the Hall of the Mountain King and Morning Mood (Grieg)
 - Toccata in D minor (attributed to Bach)
-- Night on Bald Mountain (Mussorgsky)
-- Funeral March of a Marionette (Gounod; Alfred Hitchcock's TV theme)
-- Mars, from The Planets (Holst; the ancestor of movie villain music)
-- Carol of the Bells (Leontovych)
-- Moonlight Sonata and Für Elise (Beethoven)
+- Dies Irae (a medieval chant that film composers use for doom)
+- Greensleeves (English, 1500s)
+- Carol of the Bells (Leontovych, 1914; the melody, not the later English lyrics)
+- Ode to Joy (Beethoven)
+- Canon in D (Pachelbel)
+- Eine kleine Nachtmusik and the Turkish March (Mozart)
 - Gymnopédie No. 1 (Satie; it sounds like lofi)
-- Clair de lune (Debussy)
-- Greensleeves and House of the Rising Sun (traditional melodies)
+- Habanera (Bizet, from Carmen)
+
+Still to add: Wellerman, Danse Macabre, Night on Bald Mountain, Funeral March of a Marionette (Hitchcock's TV theme),
+Mars from The Planets (check its US status first), Moonlight Sonata, Clair de lune, House of the Rising Sun.
+Each song should get a codex note on where you have heard it.
 
 **2. Bring your own songs.** Load any melody for your own use from the web editor or a MIDI file. We never ship it, and
 it never leaves your FM-1. That is how people get today's songs into TRACE.

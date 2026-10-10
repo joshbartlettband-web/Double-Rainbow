@@ -428,10 +428,11 @@ static void dr_scene_rows(int32_t y0, int32_t h)
         }
 }
 
-/* the spellbook modes on ALGORITHM (seq.c dr_kmode: the keys; SCRY and TRACE to come) */
-static const char *const DR_KMODE_NAME[3] = {"SOLO", "WEAVE", "CAST"};
-static const char *const DR_KMODE_HELP[3] = {"SOLO: every key plays its note", "WEAVE: black keys pick, white strum",
-                                             "CAST: black keys hold, white sing"};
+/* the spellbook modes on ALGORITHM (seq.c dr_kmode: how the keys play; SCRY and TRACE, below) */
+static const char *const DR_KMODE_NAME[5] = {"SOLO", "WEAVE", "CAST", "SCRY", "TRACE"};
+static const char *const DR_KMODE_HELP[5] = {"SOLO: every key plays its note", "WEAVE: black keys pick, white strum",
+                                             "CAST: black keys hold, white sing", "SCRY: listen, then find it",
+                                             "TRACE: follow the lit keys"};
 /* SELECT: the key, round the circle of fifths; flat keys spelled with flats (the big font has no lower-case b: the
  * root's letter is drawn large, its accidental small, before the chord's quality) */
 static const uint8_t DR_FIFTHS[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};
@@ -445,6 +446,267 @@ static const char *dr_pc_name(uint32_t pc)
 /* seq.c's chords (dr_chord_tones ids): their names and their place in the key */
 static const char *const DR_CHORD_Q[11] = {"", "", "m", "", "m", "maj7", "7", "m7", "maj7", "m7", "m"};
 static const char *const DR_CHORD_RN[11] = {"IV", "V", "vi", "I", "ii", "IVmaj7", "V7", "vi7", "Imaj7", "ii7", "iv"};
+
+/* ------------------------------------------------- SCRY and TRACE --- */
+static void dr_say(const char *s);
+/* The player: SCRY's questions and TRACE's demonstrations, as notes into Melodee's MIDI input queue (usb.c
+ * midi_enqueue: channel 1 is track 1, the character), from the main loop at their times. A few notes at once. */
+#include "dr_songs.h"                        /* DR_SONGS (tools/gen_dr_songs.py) */
+#define DR_PN 8u
+static struct { uint8_t note, state; uint32_t on, off; } drp[DR_PN];   /* state 0 free, 1 waiting, 2 sounding */
+static void dr_midi(uint32_t note, uint32_t on)
+{
+    (void)midi_enqueue(on ? 0x09u | 0x90u << 8 | (note & 127u) << 16 | 100u << 24 : 0x08u | 0x80u << 8 | (note & 127u) << 16, 1);
+}
+static void dr_play(uint32_t note, uint32_t after_ms, uint32_t ms)
+{
+    uint32_t i;
+    for (i = 0; i < DR_PN; i++)
+        if (!drp[i].state) {
+            drp[i].note = (uint8_t)note;
+            drp[i].on = fm1_ms + after_ms;
+            drp[i].off = fm1_ms + after_ms + ms;
+            drp[i].state = 1;
+            return;
+        }
+}
+static void dr_play_stop(void)                /* everything waiting forgotten, everything sounding ended */
+{
+    uint32_t i;
+    for (i = 0; i < DR_PN; i++) {
+        if (drp[i].state == 2u)
+            dr_midi(drp[i].note, 0);
+        drp[i].state = 0;
+    }
+}
+static int dr_play_poll(void)                 /* due notes on and off; 1 while anything is left */
+{
+    uint32_t i, busy = 0;
+    for (i = 0; i < DR_PN; i++) {
+        if (drp[i].state == 1u && (int32_t)(fm1_ms - drp[i].on) >= 0) {
+            dr_midi(drp[i].note, 1);
+            drp[i].state = 2;
+        }
+        if (drp[i].state == 2u && (int32_t)(fm1_ms - drp[i].off) >= 0) {
+            dr_midi(drp[i].note, 0);
+            drp[i].state = 0;
+        }
+        busy |= drp[i].state;
+    }
+    return busy != 0u;
+}
+static uint32_t dr_rand(void)
+{
+    static uint32_t x = 0x2545F491u;
+    x ^= fm1_ms * 2654435761u;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
+}
+
+/* SCRY, the ear game: three drills on OCT- / OCT+, each growing its pool after three right in a row.
+ *   NOTES      the key's home note, then a mystery note: find it (any octave).
+ *   INTERVALS  two notes, the first lit: play the second (any octave); the answer names the interval.
+ *   CHORDS     a chord of the key: answer with the black key that holds it in CAST (the black keys play their chords).
+ * PLAY asks again; after two misses the right key glows. */
+enum { DRS_NOTES, DRS_INTERVALS, DRS_CHORDS };
+static const char *const DR_DRILL[3] = {"NOTES", "INTERVALS", "CHORDS"};
+static const char *const DR_SCRY_LINE[3] = {"NOTES: the home note, then find the other", "INTERVALS: play the second note",
+                                            "CHORDS: find the chord's black key"};
+static const uint8_t DR_DEG[8] = {0, 7, 4, 2, 9, 5, 11, 12};          /* NOTES: the scale's notes, easiest first */
+static const uint8_t DR_IVL[12] = {7, 12, 4, 5, 3, 2, 9, 10, 11, 8, 1, 6};   /* INTERVALS: in semitones */
+static const char *const DR_IVL_NAME[13] = {"UNISON", "MINOR SECOND", "MAJOR SECOND", "MINOR THIRD", "MAJOR THIRD",
+                                            "PERFECT FOURTH", "TRITONE", "PERFECT FIFTH", "MINOR SIXTH", "MAJOR SIXTH",
+                                            "MINOR SEVENTH", "MAJOR SEVENTH", "OCTAVE"};
+static const uint8_t DR_QCH[11] = {3, 0, 1, 2, 4, 6, 10, 8, 7, 5, 9};   /* CHORDS: I IV V vi ii V7 iv Imaj7 vi7 .. */
+static const uint8_t DR_POOL0[3] = {2, 2, 4}, DR_POOLN[3] = {8, 12, 11};
+static struct {
+    uint8_t drill, pool[3], streak, best, run, misses, hint, asked, reveal;
+    uint8_t a, b;                            /* NOTES: tonic, target notes; INTERVALS: the two notes; CHORDS: b = chord */
+    uint32_t next_ms;                        /* a new question (or the same again) at this time; 0 = none due */
+} drs;
+static void dr_scry_ask(int again)
+{
+    uint32_t d = drs.drill, i, root;
+    int8_t iv[4];
+    dr_play_stop();
+    if (!again) {
+        uint32_t pick = dr_rand() % drs.pool[d];
+        drs.misses = 0;
+        drs.hint = 0xFF;
+        if (d == DRS_NOTES) {
+            uint32_t t = 60u + dr_key;
+            if (t > 66u)
+                t -= 12u;
+            drs.a = (uint8_t)t;
+            drs.b = (uint8_t)(t + DR_DEG[pick]);
+        } else if (d == DRS_INTERVALS) {
+            uint32_t ivl = DR_IVL[pick];
+            drs.a = (uint8_t)(53u + dr_rand() % (27u - ivl));
+            drs.b = (uint8_t)(drs.a + ivl);
+        } else
+            drs.b = DR_QCH[pick];
+    }
+    if (d == DRS_CHORDS) {
+        uint32_t n = dr_chord_tones(drs.b, &root, iv);
+        for (i = 0; i < n; i++)
+            dr_play(53u + (root + 7u) % 12u + (uint32_t)iv[i], 0, 1100);
+    } else {
+        dr_play(drs.a, 0, 520);
+        dr_play(drs.b, 640, 760);
+    }
+    drs.asked = 1;
+    drs.reveal = 0;
+    drs.next_ms = 0;
+    drm.dirty |= DR_D_NOTE;
+}
+static void dr_scry_answer(uint32_t k)        /* key k pressed during a question */
+{
+    uint32_t right, d = drs.drill;
+    char m[40];
+    if (!drs.asked)
+        return;
+    if (d == DRS_CHORDS) {
+        int32_t id = dr_chord_of_key(k);
+        if (id < 0)
+            return;                                      /* (white keys: free to play along) */
+        right = (uint32_t)id == drs.b;
+    } else
+        right = (53u + k) % 12u == drs.b % 12u;
+    if (right) {
+        drs.asked = 0;
+        drs.reveal = 1;
+        drs.hint = 0xFF;
+        drs.streak++;
+        if (drs.streak > drs.best)
+            drs.best = drs.streak;
+        str_cpy(m, "YES: ", 6);
+        if (d == DRS_NOTES)
+            str_cpy(m + 5, dr_pc_name(drs.b % 12u), 3);
+        else if (d == DRS_INTERVALS)
+            str_cpy(m + 5, DR_IVL_NAME[drs.b - drs.a], 20);
+        else {
+            uint32_t root;
+            int8_t iv[4];
+            dr_chord_tones(drs.b, &root, iv);
+            str_cpy(m + 5, dr_pc_name(root), 3);
+            str_cpy(m + str_len(m), DR_CHORD_Q[drs.b % 11u], 6);
+            str_cpy(m + str_len(m), "  ", 3);
+            str_cpy(m + str_len(m), DR_CHORD_RN[drs.b % 11u], 8);
+        }
+        if (++drs.run >= 3u && drs.pool[d] < DR_POOLN[d]) {   /* three in a row: one more to tell apart */
+            drs.run = 0;
+            drs.pool[d]++;
+            str_cpy(m + str_len(m), "  +1 NEW", 9);
+        }
+        dr_say(m);
+        drs.next_ms = fm1_ms + 1400u;
+    } else {
+        drs.streak = 0;
+        drs.run = 0;
+        if (++drs.misses >= 2u)                          /* the right key glows */
+            drs.hint = (uint8_t)(d == DRS_CHORDS ? 0xFE : (drs.b - 53u));
+        dr_say(drs.misses >= 2u ? "THE GLOWING KEY. LISTEN AGAIN." : "NOT THAT ONE. LISTEN AGAIN.");
+        drs.next_ms = fm1_ms + 700u;
+        drs.asked = 0;
+        drs.reveal = 2;                                  /* (2: ask the same again) */
+    }
+    drm.dirty |= DR_D_NOTE;
+}
+
+/* TRACE: a song to learn at your own pace; the next key lights, a wrong key changes nothing. OCT- / OCT+ the song,
+ * PLAY hears it (any key stops it). At the end, a moment, then from the top. */
+static struct {
+    uint8_t song, pos, done, demo, dpos;
+    uint32_t done_ms, dnext;
+} drt;
+static uint32_t dr_trace_skip(uint32_t pos)   /* the next note from pos, past rests (n: the end) */
+{
+    const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
+    while (pos < sg->n && !sg->nd[2u * pos])
+        pos++;
+    return pos;
+}
+static int32_t dr_trace_key(void)             /* the key of the next note, -1 none */
+{
+    const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
+    if (drt.demo)
+        return drt.dpos && sg->nd[2u * (drt.dpos - 1u)] ? (int32_t)sg->nd[2u * (drt.dpos - 1u)] - 53 : -1;
+    return drt.pos < sg->n ? (int32_t)sg->nd[2u * drt.pos] - 53 : -1;
+}
+static void dr_trace_start(uint32_t song)
+{
+    dr_play_stop();
+    drt.song = (uint8_t)(song % DR_NSONGS);
+    drt.pos = (uint8_t)dr_trace_skip(0);
+    drt.done = drt.demo = 0;
+    drm.dirty |= DR_D_NOTE | DR_D_LINE;
+}
+static void dr_trace_press(uint32_t k)
+{
+    const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
+    if (drt.demo) {                                      /* a key stops the demonstration */
+        drt.demo = 0;
+        dr_play_stop();
+        drm.dirty |= DR_D_NOTE;
+        return;
+    }
+    if (drt.done || drt.pos >= sg->n || (int32_t)k != (int32_t)sg->nd[2u * drt.pos] - 53)
+        return;
+    drt.pos = (uint8_t)dr_trace_skip(drt.pos + 1u);
+    if (drt.pos >= sg->n) {
+        drt.done = 1;
+        drt.done_ms = fm1_ms;
+        dr_say("THE END. AGAIN FROM THE TOP");
+    }
+    drm.dirty |= DR_D_NOTE;
+}
+static void dr_trace_poll(void)
+{
+    const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
+    if (drt.done && fm1_ms - drt.done_ms > 2600u)
+        dr_trace_start(drt.song);
+    if (drt.demo && (int32_t)(fm1_ms - drt.dnext) >= 0) {   /* the demonstration: a note at a time */
+        uint32_t eighth = 30000u / sg->bpm, len;
+        if (drt.dpos >= sg->n) {
+            drt.demo = 0;
+            drm.dirty |= DR_D_NOTE;
+            return;
+        }
+        len = sg->nd[2u * drt.dpos + 1u] * eighth;
+        if (sg->nd[2u * drt.dpos])
+            dr_play(sg->nd[2u * drt.dpos], 0, len * 9u / 10u);
+        drt.dpos++;
+        drt.dnext = fm1_ms + len;
+        drm.dirty |= DR_D_NOTE;
+    }
+}
+
+/* how the keys play: entering and leaving SCRY and TRACE set them up and clean them away */
+static void dr_kmode_set(uint32_t m)
+{
+    dr_play_stop();
+    dr_castkeys = 0;
+    drt.demo = 0;
+    dr_kmode = (uint8_t)m;
+    if (m == DRK_SCRY || m == DRK_TRACE)
+        song.octave = 0;                                 /* (the keys at their own notes: OCT picks the drill or the song) */
+    if (m == DRK_SCRY) {
+        if (!drs.pool[0]) {
+            drs.pool[0] = DR_POOL0[0];
+            drs.pool[1] = DR_POOL0[1];
+            drs.pool[2] = DR_POOL0[2];
+        }
+        dr_castkeys = drs.drill == DRS_CHORDS;
+        drs.asked = 0;
+        drs.next_ms = fm1_ms + 900u;
+        drs.reveal = 0;
+    } else if (m == DRK_TRACE)
+        dr_trace_start(drt.song);
+    drm.dirty |= DR_D_NOTE | DR_D_LINE;
+}
+
 
 /* what was just played, as Melodee's HOME names it (ui_graph.c chord_of): a chord, else the notes; 0 = none.
  * WEAVE and CAST: the chord the black keys picked, and its numeral (rn) */
@@ -465,7 +727,7 @@ static uint32_t dr_note_label(char *big, char *small, const char **rn)
         }
     big[0] = small[0] = 0;
     *rn = 0;
-    if (dr_kmode != DRK_SOLO) {
+    if (dr_kmode == DRK_WEAVE || dr_kmode == DRK_CAST) {
         uint32_t r;
         int8_t iv[4];
         dr_chord_tones(dr_chord, &r, iv);
@@ -487,13 +749,70 @@ static uint32_t dr_note_label(char *big, char *small, const char **rn)
     return n;
 }
 
+/* SCRY and TRACE's chip: what to do or what it was (a), the score or the place in the song (b) */
+static void dr_quiz_lines(char *a, char *b)
+{
+    if (dr_kmode == DRK_SCRY) {
+        static const char *const Q[3] = {"WHICH NOTE?", "AND THE SECOND?", "WHICH CHORD?"};
+        if (drs.reveal == 1u) {                          /* right: the answer, named */
+            if (drs.drill == DRS_NOTES)
+                str_cpy(a, dr_pc_name(drs.b % 12u), 24);
+            else if (drs.drill == DRS_INTERVALS)
+                str_cpy(a, DR_IVL_NAME[(drs.b - drs.a) % 13u], 24);
+            else {
+                uint32_t root;
+                int8_t iv[4];
+                dr_chord_tones(drs.b, &root, iv);
+                str_cpy(a, dr_pc_name(root), 24);
+                str_cpy(a + str_len(a), DR_CHORD_Q[drs.b % 11u], 8);
+            }
+        } else
+            str_cpy(a, drs.asked ? Q[drs.drill % 3u] : "LISTEN", 24);
+        str_cpy(b, "STREAK ", 24);
+        fmt_int(b + str_len(b), drs.streak);
+        str_cpy(b + str_len(b), "   BEST ", 9);
+        fmt_int(b + str_len(b), drs.best);
+    } else {
+        const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
+        int32_t k = dr_trace_key();
+        uint32_t i, at = 0, all = 0;
+        if (drt.demo)
+            str_cpy(a, "LISTEN", 24);
+        else if (drt.done || k < 0)
+            str_cpy(a, "THE END", 24);
+        else {
+            str_cpy(a, "NEXT  ", 24);
+            str_cpy(a + str_len(a), (sg->flats ? DR_FLAT : DR_SHARP)[(53u + (uint32_t)k) % 12u], 3);
+        }
+        for (i = 0; i < sg->n; i++)                      /* (rests not counted) */
+            if (sg->nd[2u * i]) {
+                all++;
+                at += i < (drt.demo ? drt.dpos : drt.pos);
+            }
+        str_cpy(b, "NOTE ", 24);
+        fmt_int(b + str_len(b), (int32_t)(at + (at < all && !drt.demo)));
+        str_cpy(b + str_len(b), " OF ", 5);
+        fmt_int(b + str_len(b), (int32_t)all);
+    }
+}
+
 /* the note label: a chip at the scene's top left (redrawn alone when it changes); the mode's at the top right */
 static void dr_draw_note(void)
 {
     char big[8], small[12];
     const char *rn;
     dr_scene_rows(DR_Y_SCENE, 40);
-    if (dr_note_label(big, small, &rn)) {
+    if (dr_kmode == DRK_SCRY || dr_kmode == DRK_TRACE) {
+        char a[24], b[24];
+        int32_t w, wb;
+        dr_quiz_lines(a, b);
+        w = text_w(&AF_M, a);
+        wb = text_w(&AF_S, b);
+        w = (w > wb ? w : wb) + 14;
+        cv_rrect(6, 3, w, 34, 6, DR_SURF, DR_BG);
+        cv_text_on(13, 4, &AF_M, a, DR_GOLD, DR_SURF);
+        cv_text_on(13, 21, &AF_S, b, DR_TEAL, DR_SURF);
+    } else if (dr_note_label(big, small, &rn)) {
         int32_t w = text_w(&AF_L, big) + (small[0] ? text_w(&AF_M, small) + 2 : 0) + (rn ? text_w(&AF_M, rn) + 8 : 0) + 14;
         cv_rrect(6, 4, w, 32, 6, DR_SURF, DR_BG);
         w = cv_text_on(13, 2, &AF_L, big, DR_TEXT, DR_SURF);
@@ -503,11 +822,20 @@ static void dr_draw_note(void)
             cv_text_on(w + 8, 13, &AF_M, rn, DR_TEAL, DR_SURF);
     }
     if (dr_kmode != DRK_SOLO) {                           /* the mode and its key: "WEAVE  G" */
-        char m[16];
+        char m[20];
         int32_t w;
-        str_cpy(m, DR_KMODE_NAME[dr_kmode % 3u], 8);
-        str_cpy(m + str_len(m), "  ", 3);
-        str_cpy(m + str_len(m), dr_pc_name(dr_key), 3);
+        str_cpy(m, DR_KMODE_NAME[dr_kmode % 5u], 8);
+        if (dr_kmode == DRK_SCRY)                        /* "SCRY" (its drill on the line), "TRACE  3/14", "WEAVE  G" */
+            ;
+        else if (dr_kmode == DRK_TRACE) {
+            str_cpy(m + str_len(m), "  ", 3);
+            fmt_int(m + str_len(m), drt.song + 1);
+            str_cpy(m + str_len(m), "/", 2);
+            fmt_int(m + str_len(m), (int32_t)DR_NSONGS);
+        } else {
+            str_cpy(m + str_len(m), "  ", 3);
+            str_cpy(m + str_len(m), dr_pc_name(dr_key), 3);
+        }
         w = text_w(&AF_S, m) + 12;
         cv_rrect(234 - w, 4, w, 18, 5, DR_SURF, DR_BG);
         cv_text_on(240 - w, 5, &AF_S, m, DR_TEAL, DR_SURF);
@@ -535,8 +863,14 @@ static void dr_draw_line(void)
     cv_begin(240, 16, DR_BG);
     if (drm.msg[0])
         cv_text_on(8, 1, &AF_S, drm.msg, DR_TEAL, DR_BG);
+    else if (drm.codex)
+        cv_text_on(8, 1, &AF_S, "CODEX", DR_TEAL, DR_BG);
+    else if (dr_kmode == DRK_SCRY)
+        cv_text_on(8, 1, &AF_S, DR_SCRY_LINE[drs.drill % 3u], DR_MID, DR_BG);
+    else if (dr_kmode == DRK_TRACE)
+        cv_text_on(8, 1, &AF_S, DR_SONGS[drt.song % DR_NSONGS].title, DR_MID, DR_BG);
     else
-        cv_text_on(8, 1, &AF_S, drm.codex ? "CODEX" : DR_CAST[dr.ch].line, drm.codex ? DR_TEAL : DR_MID, DR_BG);
+        cv_text_on(8, 1, &AF_S, DR_CAST[dr.ch].line, DR_MID, DR_BG);
     cv_blit(0, DR_Y_LINE);
 }
 
@@ -560,8 +894,9 @@ static uint32_t dr_text_check(void)
         const dr_char_t *c = &DR_CAST[k];
         const dr_codex_t *x = &DR_CODEX[k];
         bad += text_w(&AF_M, c->name) > 150;
-        bad += k < 3u && text_w(&AF_S, DR_KMODE_HELP[k]) > 224;
+        bad += k < 5u && text_w(&AF_S, DR_KMODE_HELP[k]) > 224;
         bad += text_w(&AF_S, c->line) > 224;
+        bad += k < 3u && text_w(&AF_S, DR_SCRY_LINE[k]) > 224;
         bad += text_w(&AF_L, x->title) > 224;
         bad += text_w(&AF_M, x->entry) > 224;
         bad += text_w(&AF_S, x->when) > 224;
@@ -579,6 +914,10 @@ static uint32_t dr_text_check(void)
             bad += text_w(&AF_S, b) > 51;
         }
     }
+    for (k = 0; k < DR_NSONGS; k++)                      /* TRACE: the titles on the line, who wrote them */
+        bad += text_w(&AF_S, DR_SONGS[k].title) > 224 || text_w(&AF_S, DR_SONGS[k].who) > 224;
+    for (k = 0; k < 13u; k++)                            /* SCRY: its answers in the chip (left of "SCRY"), on the line */
+        bad += text_w(&AF_M, DR_IVL_NAME[k]) > 160 || text_w(&AF_S, DR_IVL_NAME[k]) > 150;
     return bad;
 }
 
@@ -658,13 +997,27 @@ static void dr_leds(void)
 {
     static const uint8_t USED[] = {B_SCL, B_EDIT, B_HOME, B_SAVE, B_OCTDN, B_OCTUP};
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
-    uint32_t k, c;
+    uint32_t k, c, quiz = dr_kmode == DRK_SCRY || dr_kmode == DRK_TRACE, guide = 0, blink = (fm1_ms / 160u) & 1u;
+    if (dr_kmode == DRK_SCRY) {                           /* SCRY: the home note or the first note lit, the hint blinking */
+        if (drs.asked && drs.drill != DRS_CHORDS)
+            guide |= 1u << (drs.a - 53u);
+        if (drs.hint != 0xFF && blink) {
+            if (drs.hint != 0xFE)
+                guide |= 1u << drs.hint;
+            else
+                for (k = 0; k < 27u; k++)
+                    guide |= (uint32_t)(dr_chord_of_key(k) == (int32_t)drs.b) << k;
+        }
+    } else if (dr_kmode == DRK_TRACE && dr_trace_key() >= 0)   /* TRACE: the next key (the demo: the note it plays) */
+        guide = 1u << dr_trace_key();
     for (k = 0; k < 27u; k++) {
-        led_put(nl, 14u + k, (int)((fm1_in.notes >> k) & 1u));
+        led_put(nl, 14u + k, (int)(((fm1_in.notes | guide) >> k) & 1u));
         led_put(nd, 14u + k, 1);
     }
     for (k = 0; k < NELEM(USED); k++)
         led_put(nb, panel.btn[USED[k]], 1);
+    led_put(nb, panel.btn[B_PLAY], (int)quiz);
+    led_put(nl, panel.btn[B_PLAY], dr_kmode == DRK_TRACE && drt.demo);
     led_put(nl, panel.btn[B_SCL], drm.codex);
     led_put(nl, panel.btn[B_EDIT], drm.under);
     led_put(nl, panel.btn[B_OCTDN], song.octave < 0);
@@ -681,6 +1034,7 @@ static void dr_leds(void)
 /* power-on (main.c, after project_boot): the first character, the screen to draw */
 static void dr_boot(void)
 {
+    led_pos_init();                                      /* (ui_leds sets it up on its first call; Double Rainbow's come first) */
     dr_load(0);
     drm.on = 1;
     drm.dirty = DR_D_ALL;
@@ -692,8 +1046,8 @@ static void dr_leave(void)
 {
     track_t *t = &trk[0];
     drm.on = 0;
+    dr_kmode_set(DRK_SOLO);                              /* (Melodee's keys as always; SCRY's and TRACE's notes ended) */
     song.octave = 0;
-    dr_kmode = DRK_SOLO;                                 /* (Melodee's keys as always) */
     dr_key = 0;
     undo_depth++;
     set_engine_of(t, TRK_DEF[0][0]);
@@ -708,7 +1062,7 @@ static void dr_leave(void)
 /* one main-loop pass while Double Rainbow is on: input, the LEDs, what changed on the screen. 0: Melodee's UI */
 static int dr_frame(void)
 {
-    uint32_t released, pressed, both, sig, i;
+    uint32_t released, pressed, notes, both, sig, i;
     int32_t s;
     char b[8];
     if (!drm.on)
@@ -716,7 +1070,7 @@ static int dr_frame(void)
     kb_mask = perf_mask = 0;                             /* every key plays, whatever is held */
     song.grid = 0;
     pressed = fm1_input_edges(&released);
-    (void)fm1_input_note_edges();
+    notes = fm1_input_note_edges();
     both = (1u << panel.btn[B_HOME]) | (1u << panel.btn[B_SAVE]);
     if ((fm1_in.buttons & both) == both) {               /* HOME + SAVE held: the countdown, then Melodee */
         uint32_t held = fm1_ms - drm.combo_t0;
@@ -752,7 +1106,14 @@ static int dr_frame(void)
     }
     for (i = 0; i < 2u; i++) {                           /* OCT- / OCT+: the keys an octave down or up */
         uint32_t bt = i ? B_OCTUP : B_OCTDN;
-        if (pressed & (1u << panel.btn[bt])) {
+        if ((pressed & (1u << panel.btn[bt])) && dr_kmode == DRK_SCRY) {   /* SCRY: the drill */
+            drs.drill = (uint8_t)((drs.drill + (i ? 1u : 2u)) % 3u);
+            dr_kmode_set(DRK_SCRY);
+            dr_say(DR_DRILL[drs.drill]);
+        } else if ((pressed & (1u << panel.btn[bt])) && dr_kmode == DRK_TRACE) {   /* TRACE: the song */
+            dr_trace_start(drt.song + (i ? 1u : DR_NSONGS - 1u));
+            dr_say(DR_SONGS[drt.song].who);
+        } else if (pressed & (1u << panel.btn[bt])) {
             song.octave += i ? (song.octave < 2 ? 1 : 0) : (song.octave > -2 ? -1 : 0);
             str_cpy(b, "OCT ", 5);
             b[4] = song.octave < 0 ? '-' : '+';
@@ -777,11 +1138,26 @@ static int dr_frame(void)
             drm.dirty |= DR_D_CARDS;
         }
     if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0) {   /* ALGORITHM: how the keys play */
-        dr_kmode = (uint8_t)clamp((int32_t)dr_kmode + (s > 0 ? 1 : -1), DRK_SOLO, DRK_CAST);
+        uint32_t m = (uint32_t)clamp((int32_t)dr_kmode + (s > 0 ? 1 : -1), DRK_SOLO, DRK_TRACE);
+        if (m != dr_kmode)
+            dr_kmode_set(m);
         dr_say(DR_KMODE_HELP[dr_kmode]);
-        drm.dirty |= DR_D_NOTE;
     }
-    if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0) {   /* SELECT: the key, by fifths */
+    if (pressed & (1u << panel.btn[B_PLAY])) {           /* PLAY: SCRY asks again, TRACE plays the song (or stops) */
+        if (dr_kmode == DRK_SCRY && !drm.codex)
+            dr_scry_ask(drs.asked || drs.reveal == 2u);
+        else if (dr_kmode == DRK_TRACE) {
+            dr_play_stop();
+            drt.demo ^= 1u;
+            drt.dpos = 0;
+            drt.dnext = fm1_ms;
+            drm.dirty |= DR_D_NOTE;
+        }
+    }
+    if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0 && dr_kmode == DRK_TRACE) {
+        dr_trace_start(drt.song + (s > 0 ? 1u : DR_NSONGS - 1u));   /* SELECT in TRACE: the song */
+        dr_say(DR_SONGS[drt.song].who);
+    } else if (s) {                                      /* SELECT: the key, by fifths */
         char m[24] = "KEY: ";
         dr_fifth = (uint8_t)((dr_fifth + (s > 0 ? 1u : 11u)) % 12u);
         dr_key = DR_FIFTHS[dr_fifth];
@@ -789,7 +1165,24 @@ static int dr_frame(void)
         str_cpy(m + str_len(m), " MAJOR", 7);
         dr_say(m);
         drm.dirty |= DR_D_NOTE;
+        if (dr_kmode == DRK_SCRY) {                      /* (a new question in the new key) */
+            dr_play_stop();
+            drs.asked = drs.reveal = 0;
+            drs.next_ms = fm1_ms + 700u;
+        }
     }
+    for (i = 0; notes && i < 27u; i++)                   /* the keys' presses: SCRY's answers, TRACE's next notes */
+        if ((notes >> i) & 1u) {
+            if (dr_kmode == DRK_SCRY && !drm.codex)
+                dr_scry_answer(i);
+            else if (dr_kmode == DRK_TRACE)
+                dr_trace_press(i);
+        }
+    (void)dr_play_poll();
+    if (dr_kmode == DRK_SCRY && drs.next_ms && !drm.codex && (int32_t)(fm1_ms - drs.next_ms) >= 0)
+        dr_scry_ask(drs.reveal == 2u);
+    if (dr_kmode == DRK_TRACE)
+        dr_trace_poll();
     if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
         drm.wave_ms = fm1_ms;
         if (dr_wave_update() || (drm.sounding && !(drm.dirty & DR_D_SCENE))) {

@@ -431,9 +431,24 @@ EXPORT uint32_t web_dr_knob(uint32_t m) { return dr.mv[dr.ch % DR_NCHAR][m & 3u]
 EXPORT uint32_t web_dr_view(void) { return drm.codex | drm.page << 1 | drm.under << 3; }   /* codex, page (2 bits), EDIT */
 EXPORT uint32_t web_dr_text_check(void) { return dr_text_check(); }
 EXPORT int32_t web_octave(void) { return song.octave; }
-EXPORT uint32_t web_dr_kmode(void) { return dr_kmode; }              /* SOLO WEAVE CAST (seq.c) */
+EXPORT uint32_t web_dr_kmode(void) { return dr_kmode; }              /* SOLO WEAVE CAST SCRY TRACE (seq.c) */
 EXPORT uint32_t web_dr_chord(void) { return dr_chord; }
 EXPORT uint32_t web_dr_key(void) { return dr_key; }
+/* SCRY: 0 the drill, 1 its pool, 2 the streak, 3 the best, 4 the misses, 5 the hint key (255 none, 254 the chord's),
+ * 6 asking, 7 8 the question's notes (CHORDS: 8 the chord), 9 shown (1 right, 2 again), 10 the black keys' chords on */
+EXPORT uint32_t web_dr_scry(uint32_t f)
+{
+    const uint32_t v[11] = {drs.drill, drs.pool[drs.drill % 3u], drs.streak, drs.best, drs.misses, drs.hint, drs.asked,
+                            drs.a, drs.b, drs.reveal, dr_castkeys};
+    return f < 11u ? v[f] : 0;
+}
+/* TRACE: 0 the song, 1 the place in it, 2 the end, 3 the demonstration, 4 the key lit (-1 none), 5 the demo's place,
+ * 6 the song's length (notes and rests) */
+EXPORT int32_t web_dr_trace(uint32_t f)
+{
+    const int32_t v[7] = {drt.song, drt.pos, drt.done, drt.demo, dr_trace_key(), drt.dpos, DR_SONGS[drt.song % DR_NSONGS].n};
+    return f < 7u ? v[f] : 0;
+}
 EXPORT uint32_t web_kb_note(uint32_t k) { return kb_note[k % 27u]; }    /* what key k is playing (seq.c) */
 EXPORT uint32_t web_p5_field(uint32_t id) { return p5_patch_of(&trk[0])->raw[id % P5_RAW_MAX]; }
 EXPORT int32_t web_param(uint32_t t, uint32_t id) { return trk[t % NTRK].p[id % P_COUNT]; }

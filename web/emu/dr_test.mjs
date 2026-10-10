@@ -7,8 +7,10 @@
 // the screen; the horizon traces the wave while a note sounds and lies flat again after; EDIT held and the codex
 // (three pages) change the screen; every text fits its room; OCT shifts the keys; HOME +
 // SAVE let go early stays, held 3 s goes to the full Melodee with track 1's own sound back, and the keys still play.
-// The spellbook modes on ALGORITHM: WEAVE (a black key picks the chord, the white keys strum its notes from C3 up)
-// and CAST (a black key holds its chord, four notes for a seventh, under the tune).
+// The spellbook modes on ALGORITHM: WEAVE (a black key picks the chord, the white keys strum its notes from C3 up),
+// CAST (a black key holds its chord, four notes for a seventh, under the tune), SCRY (the ear game: a question heard,
+// answered on the keys, the pool growing, the hint after two misses, OCT the drill, PLAY again) and TRACE (a song
+// followed key by key to its end and round again, OCT and SELECT the song, PLAY the demonstration).
 import fs from "fs";
 
 const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
@@ -55,6 +57,11 @@ const phrase = () => {                             // a chord, then a tune, as t
 render(1500);
 check("power-on: Double Rainbow, Vesper on the Prophet", ex.web_dr_on() === 1 && ex.web_dr_char() === 0 && ex.web_engine(0) === ENGINE[0]);
 check(`every text fits its room (${ex.web_dr_text_check()} do not)`, ex.web_dr_text_check() === 0);
+ex.web_keys(1 << 7); render(100);
+check("the LEDs: every key glows, a held key lit, SCL EDIT OCT HOME SAVE glow", ex.web_lit_keys() === 1 << 7 &&
+      ex.web_dim_keys(0) === (1 << 27) - 1 && (ex.web_dim_buttons(1) & (1 << B.SCL | 1 << B.EDIT | 1 << B.OCTUP)) ===
+      (1 << B.SCL | 1 << B.EDIT | 1 << B.OCTUP));
+ex.web_keys(0); render(1500);
 
 const loud = [];
 for (let c = 0; c < 3; c++) {
@@ -131,6 +138,81 @@ turn(EN.PRESETS, 1);
   })());
 }
 
+// SCRY: S(field) as web_dr_scry names them
+function scry() {
+  const S = (f) => ex.web_dr_scry(f);
+  const DEG = [-1, 3, -1, 4, -1, -1, 0, -1, 1, -1, 2, -1];
+  const chordKey = (id) => { for (let k = 0; k < 27; k++) { const d = DEG[(53 + k) % 12]; if (d >= 0 && (k >= 24 ? 10 : (k >= 12 ? 5 : 0) + d) === id) return k; } return -1; };
+  const press = (k) => { ex.web_keys(1 << k); render(150); ex.web_keys(0); render(60); };
+  const answer = () => S(0) === 2 ? chordKey(S(8)) : S(8) - 53;
+  turn(EN.ALGO, 2);                                // (from WEAVE)
+  const asked = level(() => render(2000));
+  check(`ALGORITHM to SCRY: NOTES, a question heard (peak ${asked.peak.toFixed(3)}), its home note lit`,
+        ex.web_dr_kmode() === 3 && S(0) === 0 && S(1) === 2 && S(6) === 1 && asked.peak > 0.02 &&
+        ((ex.web_lit_keys() >> (S(7) - 53)) & 1) === 1 && S(7) % 12 === ex.web_dr_key());
+  const chip = rows(screen(), 38, 78);
+  press(answer());
+  check(`the right key: YES, a streak of 1, the chip shows it`, S(9) === 1 && S(2) === 1 && S(6) === 0 && rows(screen(), 38, 78) !== chip);
+  for (let i = 0; i < 2; i++) { render(1600); press(answer()); }
+  check(`three right in a row: the pool grows (${S(1)} notes) streak ${S(2)}`, S(1) === 3 && S(2) === 3 && S(3) === 3);
+  render(1600);
+  const wrong = (S(8) - 53 + 1) % 27;
+  press(wrong);
+  render(900);
+  press(wrong);
+  let blink = 0;
+  for (let i = 0; i < 12; i++) { render(40); blink |= ex.web_lit_keys(); }
+  check(`two misses: the streak gone, asked again, the right key blinks (hint ${S(5)})`,
+        S(2) === 0 && S(3) === 3 && S(4) === 2 && S(5) === S(8) - 53 && ((blink >> S(5)) & 1) === 1);
+  render(900);
+  const again = S(8);
+  const replay = level(() => { tap(B.PLAY); render(1500); });
+  check(`PLAY: the same question again (peak ${replay.peak.toFixed(3)})`, S(8) === again && S(6) === 1 && replay.peak > 0.02);
+  press(answer());
+  check("answered after the hint: the streak starts again", S(2) === 1 && S(5) === 255);
+  tap(B.OCTUP);
+  render(1600);
+  const o = S(8) - 53 >= 12 ? -12 : 12;            // (another octave counts)
+  check(`OCT+: INTERVALS (${S(7)} -> ${S(8)}), the keys not shifted`, S(0) === 1 && S(6) === 1 && ex.web_octave() === 0 && S(8) - S(7) <= 12);
+  press(S(8) - 53 + (S(8) - 53 + o >= 0 && S(8) - 53 + o < 27 ? o : 0));
+  check("INTERVALS: the second note, in any octave", S(9) === 1 && S(2) === 2);
+  tap(B.OCTUP);
+  render(1600);
+  check(`OCT+ again: CHORDS (chord ${S(8)}), the black keys play chords`, S(0) === 2 && S(10) === 1 && S(6) === 1);
+  press(0);
+  check("CHORDS: a white key plays along, no answer", S(6) === 1 && S(4) === 0);
+  press(answer());
+  check("CHORDS: the black key that holds it", S(9) === 1 && S(2) === 3);
+  tap(B.OCTUP);
+  check("OCT+ round to NOTES; the chords off the black keys", S(0) === 0 && S(10) === 0);
+  turn(EN.ALGO, 1);
+  check("ALGORITHM on: SCRY's notes stopped", (() => { render(1500); return ex.web_voices(0) === 0; })());
+}
+
+// TRACE: T(field) as web_dr_trace names them
+function trace() {
+  const T = (f) => ex.web_dr_trace(f);
+  const press = (k) => { ex.web_keys(1 << k); render(70); ex.web_keys(0); render(30); };
+  check(`TRACE: the first song, its first key lit (${T(4)})`, ex.web_dr_kmode() === 4 && T(0) === 0 && T(1) === 0 &&
+        ((ex.web_lit_keys() >> T(4)) & 1) === 1);
+  press((T(4) + 2) % 27);
+  check("a wrong key changes nothing", T(1) === 0);
+  let n = 0;
+  while (!T(2) && n < 300) { press(T(4)); n++; }
+  check(`followed to its end (${n} keys), then round again from the top`, T(2) === 1 && (() => { render(3000); return T(2) === 0 && T(1) === 0; })());
+  tap(B.OCTUP);
+  check("OCT+: the next song", T(0) === 1);
+  turn(EN.SELECT, -2);
+  check("SELECT back past the first: the last song", T(0) === 13);
+  turn(EN.SELECT, 1);
+  const demo = level(() => { tap(B.PLAY); render(2500); });
+  check(`PLAY: the song played (peak ${demo.peak.toFixed(3)}), its key lit as it goes`,
+        T(3) === 1 && T(5) > 2 && demo.peak > 0.02 && ((ex.web_lit_keys() >> T(4)) & 1) === 1 && T(0) === 0);
+  tap(B.PLAY);
+  render(2500);
+  check("PLAY again: stopped, silent", T(3) === 0 && ex.web_voices(0) === 0 && T(1) === 0);
+}
+
 { // the spellbook modes
   turn(EN.ALGO, 1);
   check("ALGORITHM: WEAVE", ex.web_dr_kmode() === 1);
@@ -160,10 +242,11 @@ turn(EN.PRESETS, 1);
   turn(EN.SELECT, -2);
   check("SELECT the other way: round to F", ex.web_dr_key() === 5);
   turn(EN.SELECT, 1);
-  turn(EN.ALGO, 1);
+  scry();
+  trace();
   turn(EN.ALGO, 3);
-  check("ALGORITHM stops at the last mode", ex.web_dr_kmode() === 2);
-  turn(EN.ALGO, -5);
+  check("ALGORITHM stops at the last mode", ex.web_dr_kmode() === 4);
+  turn(EN.ALGO, -7);
   check("and back to SOLO: the keys their own notes", ex.web_dr_kmode() === 0 && (() => {
     ex.web_keys(1 << 7); render(100); const n = ex.web_kb_note(7); ex.web_keys(0); render(1500); return n === 60; })());
 }
