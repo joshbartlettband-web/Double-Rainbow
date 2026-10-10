@@ -8,3 +8,7 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-10 12:47,art/gemini/squall_a.jpg,gemini-3.1-flash-image,1K,182,1504,0.067,1
 2026-10-10 12:47,art/gemini/squall_b.jpg,gemini-3.1-flash-image,1K,166,1439,0.067,1
 2026-10-10 12:47,art/gemini/squall_c.jpg,gemini-3.1-flash-image,1K,154,1355,0.067,1
+2026-10-10 15:03,art/gemini/mote_a.jpg,gemini-3.1-flash-image,1K,137,1371,0.067,1
+2026-10-10 15:03,art/gemini/murk_a.jpg,gemini-3.1-flash-image,1K,137,1320,0.067,1
+2026-10-10 15:03,art/gemini/wick_a.jpg,gemini-3.1-flash-image,1K,155,1377,0.067,1
+2026-10-10 15:03,art/gemini/tock_a.jpg,gemini-3.1-flash-image,1K,145,1441,0.067,1
