@@ -31,13 +31,18 @@
 #endif
 
 static uint8_t nor[0x100000];            /* the SPI NOR (erased: 0xFF) */
-#define main hostsim_main
-#include "../../tests/hostsim.c"
-#undef main
-
 /* ------------------------------------------------------------ the clock --- */
 #define FM1_TICKS_PER_US 24u             /* TIMER4: 24 MHz */
 static uint32_t web_ticks;
+/* MIDI in is stamped in TIMER4 ticks, as melodee.c has it: usb.c (through hostsim.c, below) would otherwise stamp
+ * milliseconds, which the audio side compares with its ticks; past 2^31 ticks (89 s) every message then looked
+ * 89 s early and MIDI in stopped */
+#define MIDI_TIME_NOW() web_ticks
+#define MIDI_TICKS_PER_MS (1000u * FM1_TICKS_PER_US)
+
+#define main hostsim_main
+#include "../../tests/hostsim.c"
+#undef main
 static uint32_t fm1_ticks(void) { return web_ticks; }
 
 /* ------------------------------------------------------ audio (ALNK0) --- */
@@ -452,4 +457,5 @@ EXPORT int32_t web_dr_trace(uint32_t f)
 EXPORT uint32_t web_kb_note(uint32_t k) { return kb_note[k % 27u]; }    /* what key k is playing (seq.c) */
 EXPORT uint32_t web_p5_field(uint32_t id) { return p5_patch_of(&trk[0])->raw[id % P5_RAW_MAX]; }
 EXPORT int32_t web_param(uint32_t t, uint32_t id) { return trk[t % NTRK].p[id % P_COUNT]; }
+EXPORT uint32_t web_p_e0(void) { return P_E0; }                      /* (core.h: the engine's eight) */
 EXPORT uint32_t web_sample_rate(void) { return FS; }

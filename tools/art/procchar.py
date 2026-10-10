@@ -27,6 +27,12 @@ def key(a, tol):
     lab, _ = ndi.label(near)
     edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     fg = ~np.isin(lab, list(edge))
+    # the background showing through a closed shape (a gear's holes, a handle, between tentacles): enclosed patches
+    # of the key colour, not only the ones touching the border. Only a vivid magenta counts (no figure uses one)
+    mag = near & (a[..., 0] > 170) & (a[..., 2] > 170) & (a[..., 1] < 120)
+    hl, hn = ndi.label(mag)
+    hs = ndi.sum(mag, hl, range(1, hn + 1))
+    fg &= ~np.isin(hl, [i + 1 for i in range(hn) if hs[i] >= 40])
     fg = ndi.binary_opening(fg, iterations=1)
     lab, n = ndi.label(fg)
     sizes = ndi.sum(fg, lab, range(1, n + 1))

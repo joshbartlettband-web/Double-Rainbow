@@ -2,8 +2,8 @@
 // Double Rainbow's checks (firmware/src/dr.c) on the browser build, driven like a player: the panel, the keys, the
 // knobs; what the screen, the LEDs and the audio do.
 //   node web/emu/dr_test.mjs build/emu/melodee.wasm
-// Checks: it starts in Double Rainbow on Vesper; every character sounds, on its own engine, and the three are
-// about as loud as each other; PRESETS goes round the cast; a knob moves its value, the real setting under it and
+// Checks: it starts in Double Rainbow on Vesper; every character sounds, on its own engine, and they are about as
+// loud as each other (the drums by their own measure); a knob of each new character moves its setting and its sound; PRESETS goes round the cast; a knob moves its value, the real setting under it and
 // the screen; the horizon traces the wave while a note sounds and lies flat again after; EDIT held and the codex
 // (three pages) change the screen; every text fits its room; OCT shifts the keys; HOME +
 // SAVE let go early stays, held 3 s goes to the full Melodee with track 1's own sound back, and the keys still play.
@@ -16,8 +16,10 @@ import fs from "fs";
 const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, OCTDN: 12, OCTUP: 13 };
 const EN = { SELECT: 0, ALGO: 1, PRESETS: 2, K1: 3, K2: 4, K3: 5, K4: 6 };
-const ENGINE = [19, 12, 11];                       // PROPHET, FM6, NOISE
-const P5_CUTOFF = 17, P_E0 = 104;                  // (prophet_patch.c; core.h: P_E0, checked below)
+const NAMES = ["VESPER", "SHARD", "SQUALL", "WICK", "TOCK", "MOTE", "MURK"];
+const ENGINE = [19, 12, 11, 5, 10, 3, 2];          // PROPHET, FM6, NOISE, VOICE, DRUM, LOFI, PHASE
+const N = NAMES.length, TOCK = 4;
+const P5_CUTOFF = 17;                              // (prophet_patch.c)
 let fails = 0;
 const check = (what, ok) => { console.log(`dr: ${what.padEnd(78)} ${ok ? "ok" : "FAIL"}`); if (!ok) fails++; };
 
@@ -64,18 +66,40 @@ check("the LEDs: every key glows, a held key lit, SCL EDIT OCT HOME SAVE glow", 
 ex.web_keys(0); render(1500);
 
 const loud = [];
-for (let c = 0; c < 3; c++) {
+const P_E0 = ex.web_p_e0();                        // the new four: a knob each, its setting and its sound
+const KNOB = {
+  3: [0, 0, "VOWEL (AH to OO): darker", (lo, hi) => hi.bright - lo.bright < -3],
+  4: [1, 3, "BOOM (decay): longer, louder", (lo, hi) => hi.db - lo.db > 3],
+  5: [2, 4, "ZAP (pitch sweep): darker", (lo, hi) => hi.bright - lo.bright < -3],
+  6: [2, 0, "TIDE (the eight waves): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+};
+for (let c = 0; c < N; c++) {
   if (c) turn(EN.PRESETS, 1);
   render(300);
   const l = level(phrase);
   loud.push(l.db);
-  check(`${["VESPER", "SHARD", "SQUALL"][c]} (PRESETS ${c ? "turned" : "at power-on"}): engine ${ex.web_engine(0)}, sounds (peak ${l.peak.toFixed(3)})`,
+  check(`${NAMES[c]} (PRESETS ${c ? "turned" : "at power-on"}): engine ${ex.web_engine(0)}, sounds (peak ${l.peak.toFixed(3)})`,
         ex.web_dr_char() === c && ex.web_engine(0) === ENGINE[c] && l.peak > 0.02);
+  if (c === TOCK) {                                // the chip names the drum struck: the kick, then the snare
+    const chip = () => rows(screen(), 38, 78);
+    ex.web_keys(1 << 7); render(150); ex.web_keys(0); render(200); const kick = chip();
+    ex.web_keys(1 << 9); render(150); ex.web_keys(0); render(200); const snare = chip();
+    check("TOCK: the chip names the drum struck (C the kick, D the snare)", kick !== snare);
+  }
+  if (KNOB[c]) {
+    const [m, e, what, ok] = KNOB[c], v0 = ex.web_dr_knob(m);
+    turn(EN.K1 + m, -60); const p0 = ex.web_param(0, P_E0 + e); const lo = level(phrase);
+    turn(EN.K1 + m, 60); const p1 = ex.web_param(0, P_E0 + e); const hi = level(phrase);
+    turn(EN.K1 + m, -60); turn(EN.K1 + m, v0 / 2);
+    check(`${NAMES[c]}: ${what} (E${e} ${p0} -> ${p1}; ${lo.db.toFixed(1)} -> ${hi.db.toFixed(1)} dB, bright ${lo.bright.toFixed(1)} -> ${hi.bright.toFixed(1)})`,
+          p1 !== p0 && ok(lo, hi) && ex.web_dr_knob(m) === v0);
+  }
 }
-const spread = Math.max(...loud) - Math.min(...loud);
-check(`the three are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart)`, spread < 3);
+const tonal = loud.filter((_, i) => i !== TOCK), spread = Math.max(...tonal) - Math.min(...tonal);
+check(`the cast are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart; the drums within 6)`,
+      spread < 3 && Math.abs(loud[TOCK] - tonal.reduce((p, x) => p + x, 0) / tonal.length) < 6);
 { // Shard's light: each note sends a band of spectrum across his chest, then he is plain glass again
-  turn(EN.PRESETS, -1); render(800);
+  turn(EN.PRESETS, 1 - (N - 1)); render(800);
   const ok = [];
   for (const wait of [300, 301]) {                // (an even and an odd millisecond: the start time is fm1_ms | 1)
     render(wait);
@@ -86,12 +110,12 @@ check(`the three are about as loud as each other (RMS ${loud.map((x) => x.toFixe
     ok.push(mid !== rest && rows(screen(), 108, 150) === rest);
   }
   check("SHARD: a note sends his light across his chest, and it passes", ex.web_dr_char() === 1 && ok.every(Boolean));
-  turn(EN.PRESETS, 1);
+  turn(EN.PRESETS, N - 2);
 }
 turn(EN.PRESETS, 1);
-check("PRESETS goes round: after SQUALL, VESPER again", ex.web_dr_char() === 0 && ex.web_engine(0) === ENGINE[0]);
+check(`PRESETS goes round: after ${NAMES[N - 1]}, VESPER again`, ex.web_dr_char() === 0 && ex.web_engine(0) === ENGINE[0]);
 turn(EN.PRESETS, -1);
-check("and back: SQUALL", ex.web_dr_char() === 2);
+check(`and back: ${NAMES[N - 1]}`, ex.web_dr_char() === N - 1);
 turn(EN.PRESETS, 1);
 
 { // a knob: its value, the setting under it, the screen

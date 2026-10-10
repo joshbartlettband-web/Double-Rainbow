@@ -115,6 +115,9 @@ static void dr_splash(void)
  * from lo to hi onto a Prophet program field (DR_P5) or a track parameter (DR_TP, t->p[]). "under" is what EDIT
  * held shows ("what the knobs move"): one or two lines, split at '|', each at most 51 px of AF_S (dr_text_check). */
 #define ENGI_NOISE 11u                       /* engines.c ENGINES[] */
+#define ENGI_PHASE 2u
+#define ENGI_LOFI 3u
+#define ENGI_VOICE 5u
 enum { DR_NONE, DR_P5, DR_TP };
 typedef struct { uint8_t kind, id; int16_t lo, hi; } dr_route_t;
 typedef struct { const char *name, *under; uint8_t def; dr_route_t r[3]; } dr_macro_t;
@@ -128,7 +131,7 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 3u
+#define DR_NCHAR 7u
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
  * filter (the older one, saturating sooner: the warmth), half key tracking, velocity on the filter and the
@@ -185,6 +188,45 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"RUMBLE", "FREQ|COLOR", 35, {{DR_TP, P_E0 + 2, 84, 30}, {DR_TP, P_E0 + 1, 40, 112}}},
         {"SPARK", "DIST", 10, {{DR_TP, P_DIST, 0, 90}}},
     }, {255, 226, 110}},                                        /* his bolt */
+    /* WICK: VOICE (formants: a buzz shaped into vowels), from its CHOIR AAH, quicker to speak and a little
+     * breathy. VOWEL walks AH .. OO, TALK has her move between two vowels by herself, TREMBLE is her nerves
+     * (vibrato, a step of the LFO's pitch depth is about 19 cents, and tremolo). {VOWL VOWL2 TALK SHIFT | BUZZ BRTH Q RAND} */
+    {"WICK", "VOICE", "Sings when nervous. So, always.", ENGI_VOICE, 0, {-128, -128, -128, 0, 52, -128, 70, 6},
+     {14, 90, 112, 70}, 96, 24, 50, {
+        {"VOWEL", "AH|TO OO", 20, {{DR_TP, P_E0, 0, 127}}},
+        {"TALK", "MORPH|VOWEL 2", 0, {{DR_TP, P_E0 + 2, 0, 96}, {DR_TP, P_E0 + 1, 40, 120}}},
+        {"BREATH", "BREATH", 20, {{DR_TP, P_E0 + 5, 4, 110}}},
+        {"TREMBLE", "VIBRATO|SHAKE", 30, {{DR_TP, P_LD_PIT, 0, 2}, {DR_TP, P_LD_AMP, 0, 46}, {DR_TP, P_LRATE, 58, 84}}},
+    }, {255, 214, 140}},                                        /* her flame */
+    /* TOCK: the DRUM engine's 808 kit (the keys are the kit, General MIDI: the first C the kick, D the snare,
+     * F# the closed hat, A# the open one). {KIT TUNE TONE DECY | SNAP ACC KICK DRV} */
+    {"TOCK", "DRUM", "Keeps time. Keeps grudges.", ENGI_DRUM, 0, DR_E_KEEP, {0, 0, 0, 0}, 108, 0, 16, {
+        {"TUNE", "TUNE", 50, {{DR_TP, P_E0 + 1, 30, 100}}},
+        {"BOOM", "DECAY", 44, {{DR_TP, P_E0 + 3, 20, 120}}},
+        {"SNAP", "SNAP|TONE", 50, {{DR_TP, P_E0 + 4, 20, 120}, {DR_TP, P_E0 + 2, 40, 100}}},
+        {"GRIT", "DRIVE", 0, {{DR_TP, P_E0 + 7, 0, 100}}},
+    }, {63, 224, 197}},                                         /* his clock face */
+    /* MOTE: LOFI's PULSE LD, an old game console's square wave. DUTY thins the pulse, SHAPE changes the wave
+     * (pulse, triangle, saw),
+     * ZAP sweeps each note's pitch, CHIRP turns a held key into an arpeggio (off, octaves, major, minor).
+     * {CHIP WAVE DUTY CRSH | SWP VIB ARP TONE} */
+    {"MOTE", "LOFI", "Small. Loud. Probably your fault.", ENGI_LOFI, 0, DR_E_KEEP, {0, 0, 0, 0}, 100, 0, 24, {
+        {"DUTY", "PULSE|WIDTH", 50, {{DR_TP, P_E0 + 2, 64, 8}}},
+        {"SHAPE", "WAVE|SHAPE", 0, {{DR_TP, P_E0 + 1, 0, 2}}},
+        {"ZAP", "PITCH|SWEEP", 0, {{DR_TP, P_E0 + 4, 0, 80}}},
+        {"CHIRP", "ARP", 0, {{DR_TP, P_E0 + 6, 0, 3}}},
+    }, {255, 120, 120}},                                        /* his grin */
+    /* MURK: PHASE, Casio's phase distortion (the CZ-1 engine plays Casio's own tone data and has no settings to
+     * turn), from its STRING: a sine read unevenly bends into brighter waves. BEND is how far (DCW), SWELL how
+     * much each note's bend rises and falls, TIDE steps through the eight waves (SAW SQR PLS DSIN SPLS, then the
+     * CZ's watery resonant three: RSAW RTRI RTRP), DEPTH the sub below.
+     * {WAVE WAVE2 DCW ENV | DTN LINE SUB EG} */
+    {"MURK", "PHASE", "Bends the light. Bends the rules.", ENGI_PHASE, 2, DR_E_KEEP, {60, 96, 104, 90}, 96, 40, 70, {
+        {"BEND", "DCW", 40, {{DR_TP, P_E0 + 2, 16, 116}}},
+        {"SWELL", "DCW|ENV", 40, {{DR_TP, P_E0 + 3, 0, 127}}},
+        {"TIDE", "WAVE|SHAPE", 70, {{DR_TP, P_E0, 0, 7}}},
+        {"DEPTH", "SUB", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
+    }, {110, 230, 214}},                                        /* her glow */
 };
 
 static struct {
@@ -201,7 +243,7 @@ static void dr_macro_apply(track_t *t, uint32_t k, uint32_t m)
     uint32_t r;
     for (r = 0; r < 3u && mc->r[r].kind; r++) {
         const dr_route_t *rt = &mc->r[r];
-        int32_t x = rt->lo + (rt->hi - rt->lo) * v / 100;
+        int32_t x = rt->lo + ((rt->hi - rt->lo) * v + (rt->hi > rt->lo ? 50 : -50)) / 100;   /* (rounded) */
         if (rt->kind == DR_P5)
             p5_edit_value(t, rt->id, x);
         else {
@@ -298,11 +340,42 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
       "a scrap of noise fast enough", "and it turns into a note:", "that is Squall's voice."},
      {"Turn HOWL up slowly: the hiss", "gets shorter and buzzier until", "it howls. Then turn GUST up",
       "and hold a long note."}},
+    {"The night-light", "Never once let go out.",
+     {"The only light I allow in the", "room. She was meant to watch", "the jars, not sing to them.",
+      "The night twelve broke, she", "saw who did it. She will not", "say. She sings instead."},
+     "VOICE", "How vowels are made",
+     {"Your throat buzzes and your", "mouth shapes the buzz. Each", "vowel is a shape: a few loud",
+      "bands of pitch, the formants.", "Move them and AH turns into", "OO. That is all a vowel is."},
+     {"Hold a note and turn VOWEL", "slowly from AH to OO. Then", "turn TALK up: she moves", "between two vowels by herself."}},
+    {"The clock", "Wound every night at nine.",
+     {"He sits on my shelf and", "counts. He has counted every", "night since jar one, and he",
+      "has never once lost the beat.", "He knows how long the jars", "have been here. So do I."},
+     "DRUM MACHINE", "Roland TR-808, 1980",
+     {"No recordings inside: every", "drum is a little circuit. The", "kick is a ringing filter left",
+      "to fade, the hats are metal", "made of six square waves", "beating against each other."},
+     {"From the first C up: C is the", "kick, D the snare, F# the", "closed hat, A# the open one.",
+      "BOOM up: a long, deep kick."}},
+    {"The dust", "On no shelf. Yet.",
+     {"Not a sound I caught. He came", "with the dust between the", "shelves, and he takes the",
+      "stoppers off my jars. That is", "why some of them hum at", "night. I count the stoppers."},
+     "CHIPTUNE", "Game consoles, 1980s",
+     {"Old game machines had a few", "plain voices: square waves,", "a triangle, a hiss. Composers",
+      "made them sing with fast", "arpeggios and pitch sweeps.", "Fewer bits, more crunch."},
+     {"Turn CHIRP up and hold a key:", "the note becomes a fast", "arpeggio, like an old game.", "SHAPE: pulse, triangle, saw."}},
+    {"Jar one", "Let go. On purpose.",
+     {"The oldest jar, and the only", "one I ever opened myself.", "I had my reasons. Some nights",
+      "she drifts back and looks at", "the shelf. She knows what is", "in jar thirteen."},
+     "PHASE", "Phase distortion: Casio CZ, 1984",
+     {"Casio's trick: read a sine", "wave at an uneven speed and", "it bends into a saw, a square",
+      "or a ringing tone. The more", "it bends, the brighter it", "sounds. No filter needed."},
+     {"Turn TIDE slowly: eight waves,", "the last three ring like", "water in a glass. Then turn",
+      "BEND from soft to sharp."}},
 };
 
 static struct {
     uint8_t on, codex, page, under, dirty;   /* dirty: DR_D_* */
     uint8_t sounding;                        /* the horizon is tracing the wave (and needs one more flat redraw) */
+    uint8_t drum;                            /* a drum character: the lane last struck + 1 (Melodee's live notes skip drums) */
     uint32_t wave_ms, sweep_t0;              /* sweep_t0: Shard's light began (0 = none) */
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
@@ -399,12 +472,12 @@ static int dr_wave_update(void)
     return (int)changed;
 }
 
-/* where the character stands: Squall floats */
+/* where the character stands: Squall and Murk float */
 static void dr_sprite_at(uint32_t k, int32_t *x, int32_t *y)
 {
     const dr_sprite_t *s = &DR_SPRITES[k];
     *x = 120 - s->w / 2;
-    *y = k == 2u ? 70 : 174 - s->h;
+    *y = k == 2u || k == 6u ? 70 : 174 - s->h;          /* (Squall and Murk float) */
 }
 
 /* Shard's light: each note sends a band of spectrum across the glass of his chest, the moonlight caught inside him.
@@ -761,6 +834,11 @@ static uint32_t dr_note_label(char *big, char *small, const char **rn)
         }
     big[0] = small[0] = 0;
     *rn = 0;
+    if (drum_track(&trk[0])) {                           /* a drum: the one last struck, by name */
+        if (drm.drum)
+            str_cpy(big, drum_lane_name(&trk[0], drm.drum - 1u), 8);
+        return drm.drum;
+    }
     if (dr_kmode == DRK_WEAVE || dr_kmode == DRK_CAST) {
         uint32_t r;
         int8_t iv[4];
@@ -880,8 +958,11 @@ static void dr_draw_note(void)
 static void dr_draw_head(void)
 {
     const dr_char_t *c = &DR_CAST[dr.ch];
-    char n[4] = {(char)('1' + dr.ch), '/', (char)('0' + DR_NCHAR), 0};
+    char n[8];
     int32_t w = text_w(&AF_S, c->tag);
+    fmt_int(n, dr.ch + 1);
+    str_cpy(n + str_len(n), "/", 2);
+    fmt_int(n + str_len(n), (int32_t)DR_NCHAR);
     cv_begin(240, DR_H_HEAD, DR_BG);
     cv_text_on(8, 2, &AF_M, c->name, DR_GOLD, DR_BG);
     cv_rrect(196 - w - 10, 3, w + 10, 16, 4, DR_SURF, DR_BG);
@@ -1162,6 +1243,7 @@ static int dr_frame(void)
             drm.dirty = DR_D_ALL;
         } else {                                         /* the next or the previous character */
             dr_load((dr.ch + (s > 0 ? 1u : DR_NCHAR - 1u)) % DR_NCHAR);
+            drm.drum = 0;
             drm.dirty = DR_D_ALL;
         }
     }
@@ -1207,6 +1289,12 @@ static int dr_frame(void)
     }
     if (notes)                                           /* (Shard: each note sends his light across) */
         drm.sweep_t0 = fm1_ms | 1u;
+    if (notes && drum_track(&trk[0])) {                  /* (Tock: the drum the lowest new key strikes) */
+        for (i = 0; !((notes >> i) & 1u); i++)
+            ;
+        drm.drum = (uint8_t)(drum_lane((uint32_t)drum_keys(&trk[0], i)) + 1u);
+        drm.dirty |= DR_D_NOTE;
+    }
     for (i = 0; notes && i < 27u; i++)                   /* the keys' presses: SCRY's answers, TRACE's next notes */
         if ((notes >> i) & 1u) {
             if (dr_kmode == DRK_SCRY && !drm.codex)

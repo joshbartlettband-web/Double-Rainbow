@@ -104,14 +104,19 @@ the code animations on top of the painted sprites.
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
 three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).
 
-**Next four (lore agreed; designs in `docs/mockups/new_cast.png`, concepts `art/gemini/*_a.jpg`):**
+**Built: the next four** (lore agreed; concepts `art/gemini/*_a.jpg`, Mote's marble redrawn as a jar stopper by
+`tools/art/fix_mote.py`). CZ-1 plays Casio's own tone data and has no settings to turn, so Murk is on PHASE, the same
+phase distortion with real controls; her codex page tells the CZ's story.
 
-| Character | Engine | Line | Ledger hook |
-| --- | --- | --- | --- |
-| WICK, a candle who sings vowels | VOICE | Sings when she's nervous. She is always nervous. | The Jarkeeper's night-light, the one light allowed in the room. She saw who broke jar twelve. |
-| TOCK, a clockwork beetle | DRUM | Keeps time. Keeps grudges. | The clock on the shelf. He has counted every night since jar one. |
-| MOTE, an 8-bit gremlin of jar dust | LOFI | Small. Loud. Probably your fault. | Lives between the shelves and steals the round glass stoppers off the jars. They look like marbles to him. It is why some jars hum. |
-| MURK, a deep-sea jellyfish | CZ-1 | Bends the light. Bends the rules. | Jar one, the oldest: the only sound the Jarkeeper ever let go on purpose. |
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| WICK, a candle who sings vowels | VOICE: CHOIR AAH, quicker and breathier | Sings when nervous. So, always. | VOWEL (AH to OO), TALK (moves between two vowels), BREATH, TREMBLE (vibrato and a shake) | The night-light. She saw who broke jar twelve. |
+| TOCK, a clockwork beetle | DRUM: the 808 kit (the chip names the drum struck) | Keeps time. Keeps grudges. | TUNE, BOOM (decay), SNAP (snap, tone), GRIT (drive) | The clock. He has counted every night since jar one. |
+| MOTE, an 8-bit gremlin of jar dust | LOFI: PULSE LD | Small. Loud. Probably your fault. | DUTY, SHAPE (pulse, triangle, saw), ZAP (pitch sweep), CHIRP (arpeggio) | Steals the jars' glass stoppers; that is why some jars hum. |
+| MURK, a deep-sea jellyfish | PHASE: STRING, slower | Bends the light. Bends the rules. | BEND (DCW), SWELL (DCW envelope), TIDE (the eight waves), DEPTH (sub) | Jar one, let go on purpose. She knows what is in jar thirteen. |
+
+All seven are leveled within 1.7 dB by measured loudness (the drums by their own measure), and each new character
+has a knob checked in `web/emu/dr_test.mjs` to move its setting and its sound. The art takes about 20 KB for seven.
 
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.

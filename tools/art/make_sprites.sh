@@ -8,3 +8,8 @@ python3 tools/art/procchar.py art/gemini/shard_d.jpg shard 108 110 90 4    # the
 python3 tools/art/fix_squall.py                                                      # glowing eyes, a yellow bolt
 python3 tools/art/procchar.py art/gemini/squall_c_fix.png squall 96 116 90 0 \
     --keep=255,236,150 --keep=250,204,56 --keep=206,140,26                         # the glow and the bolt's yellows
+python3 tools/art/procchar.py art/gemini/wick_a.jpg wick 104 90 90 4
+python3 tools/art/procchar.py art/gemini/tock_a.jpg tock 100 110 90 4
+python3 tools/art/fix_mote.py                                                        # the marble a jar stopper
+python3 tools/art/procchar.py art/gemini/mote_a_fix.png mote 100 110 90 4
+python3 tools/art/procchar.py art/gemini/murk_a.jpg murk 104 96 90 4
