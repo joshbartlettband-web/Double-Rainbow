@@ -280,6 +280,14 @@ knob cards for how much of each crystal.
 - **USB name.** The installer has to recognize Double Rainbow's USB MIDI port name, or it will report "FM-1 not found".
 - **No Bluetooth.** Only M-VAVE's own firmware has it.
 
+## The website (built)
+
+The site's front page is `landing/` (after Rainbow mode's): the story, what is inside, screenshots, the cast, a table
+for teachers, and links to the browser demo and the installer. The workflow copies it to the site's root and fills in
+the site's address; a tip card appears if a `DONATE_URL` repository variable or secret is set. Its pictures come from
+the firmware itself: `node tools/landing/shots.mjs build/emu/melodee.wasm DIR`, then
+`python3 tools/landing/make_landing.py DIR` (rerun both when the characters or screens change).
+
 ## Setup, in order
 
 1. **This plan.** (done)

@@ -1,0 +1,210 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Double Rainbow's landing page (after Rainbow mode's). The workflow (.github/workflows/double-rainbow.yml) copies this
+     folder to the site's root and fills in @SITE@ (the site's address) and @REPO@ (owner/name). The pictures come from
+     the firmware itself: tools/landing/shots.mjs and tools/landing/make_landing.py. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Double Rainbow for the FM-1</title>
+<meta name="description" content="Free firmware for the M-VAVE FM-1: seven escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Jarkeeper. Try it in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Double Rainbow for the FM-1">
+<meta property="og:description" content="Seven escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Jarkeeper. Free firmware for the M-VAVE FM-1.">
+<meta property="og:image" content="@SITE@/card.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23100b22'/%3E%3Cpath d='M2 13a6 6 0 0 1 12 0' fill='none' stroke='%23e86068' stroke-width='1.6'/%3E%3Cpath d='M4 13a4 4 0 0 1 8 0' fill='none' stroke='%23f0d678' stroke-width='1.6'/%3E%3Cpath d='M6 13a2 2 0 0 1 4 0' fill='none' stroke='%237896ec' stroke-width='1.6'/%3E%3C/svg%3E">
+<style>
+  /* the palette: the FM-1's MOON colors, a night sky with a moonbow in it */
+  :root {
+    --bg: #100b22; --panel: #261a3e; --panel-2: #3a2856; --ink: #f6ead2; --soft: #d2c4e2; --dim: #9c8cb8;
+    --gold: #ffcd60; --teal: #3fe0c5;
+    --violet: #a070e6; --blue: #6496ec; --green: #78ce8c; --yellow: #f0d678; --orange: #f0a060; --red: #e86068;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.6 var(--font); }
+  a { color: var(--teal); }
+  .bow { height: 8px; background: linear-gradient(90deg, var(--violet) 0 16.66%, var(--blue) 0 33.33%, var(--green) 0 50%,
+         var(--yellow) 0 66.66%, var(--orange) 0 83.33%, var(--red) 0); }
+  .bow.faint { opacity: .45; height: 4px; transform: scaleX(-1); }
+  main, footer { width: 100%; max-width: 940px; margin: 0 auto; padding-inline: 16px; }
+  h1 { font-size: clamp(2.6rem, 9vw, 4.4rem); line-height: 1.02; margin: 40px 0 14px; letter-spacing: -.02em; color: var(--gold); }
+  h1 small { display: block; font-size: .36em; letter-spacing: .02em; color: var(--dim); font-weight: 600; margin-top: 8px; }
+  h2 { font-size: 1.7rem; line-height: 1.15; margin: 60px 0 14px; color: var(--gold); }
+  .lede { font-size: 1.2rem; color: var(--soft); max-width: 36em; margin: 0 0 24px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 28px; }
+  .btn { display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border-radius: 14px; font-weight: 700;
+         text-decoration: none; color: var(--bg); background: var(--gold); }
+  .btn.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--teal); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+  .hero > div { margin-bottom: 28px; }
+  .hero img { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; border-radius: 18px; image-rendering: pixelated; }
+  .story { background: var(--panel); border-radius: 18px; padding: 22px 22px 8px; }
+  .story p { margin: 0 0 14px; color: var(--soft); }
+  .story p:first-child { color: var(--ink); font-size: 1.1rem; }
+  .screens { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .screens li { background: var(--panel); border-radius: 16px; overflow: hidden; }
+  .screens img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  .screens p { margin: 0; padding: 10px 14px 14px; font-size: .95rem; color: var(--soft); line-height: 1.35; }
+  .screens b { display: block; color: var(--ink); font-size: 1.05rem; }
+  .facts { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+  .facts li { padding-left: 28px; position: relative; }
+  .facts li::before { content: ""; position: absolute; left: 0; top: .5em; width: 14px; height: 14px; border-radius: 50%; background: var(--c, var(--gold)); }
+  .facts li:nth-child(6n+1) { --c: var(--violet); } .facts li:nth-child(6n+2) { --c: var(--blue); } .facts li:nth-child(6n+3) { --c: var(--green); }
+  .facts li:nth-child(6n+4) { --c: var(--yellow); } .facts li:nth-child(6n+5) { --c: var(--orange); } .facts li:nth-child(6n+6) { --c: var(--red); }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--panel-2); vertical-align: top; }
+  th { color: var(--teal); font-weight: 700; }
+  td:first-child { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .poster { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 auto; border-radius: 18px; }
+  .cards { display: grid; gap: 16px; }
+  .card { background: var(--panel); border-radius: 18px; padding: 22px 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 1.25rem; }
+  .card p { margin: 0 0 14px; color: var(--soft); }
+  .card .btn { min-height: 48px; padding: 0 22px; }
+  .card.tip { margin-top: 16px; box-shadow: inset 0 0 0 2px var(--gold); }
+  .card small { display: block; margin-top: 12px; color: var(--dim); font-size: .9rem; line-height: 1.4; }
+  details { background: var(--panel); border-radius: 14px; padding: 4px 18px; margin: 12px 0 0; }
+  summary { cursor: pointer; padding: 14px 0; font-weight: 700; }
+  details p { margin: 0 0 14px; color: var(--soft); }
+  footer { margin-top: 64px; padding-block: 28px 44px; color: var(--dim); font-size: .95rem; border-top: 1px solid var(--panel-2); }
+  footer p { margin: 0 0 10px; }
+  @media (min-width: 640px) {
+    body { font-size: 19px; }
+    .screens { grid-template-columns: repeat(3, 1fr); }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: center; }
+    .hero > div { margin-bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="bow"></div>
+<div class="bow faint"></div>
+<main>
+  <section class="hero">
+    <div>
+      <h1>Double Rainbow<small>FOR THE M-VAVE FM-1</small></h1>
+      <p class="lede">Seven sounds escaped from the Jarkeeper's shelf. Each one is a character with attitude, and each one is a real synthesizer engine you can learn by playing. Free firmware, for players from about ten up.</p>
+      <div class="buttons">
+        <a class="btn" href="webapp/try/">Try it in your browser</a>
+        <a class="btn alt" href="webapp/installer/">Put it on an FM-1</a>
+      </div>
+      <p class="lede" style="font-size:1rem;margin:0">No FM-1 needed to try it. Play the keys on the screen, or use your computer keyboard.</p>
+    </div>
+    <img src="screen-splash.png" width="480" height="480" alt="The startup screen: a double moonbow over dark hills, and the words DOUBLE RAINBOW, built on Melodee">
+  </section>
+
+  <h2>The story</h2>
+  <div class="story">
+    <p>Somewhere in the hills lives the Jarkeeper, who catches sounds in glass jars and keeps them on shelves in a room with no light.</p>
+    <p>One night a small storm broke out of jar twelve. The jar shattered, and its glass walked off with the moonlight still inside it. A moth came to the light, as moths do. More of them have been getting out ever since, and nobody knows why the sounds are kept.</p>
+    <p>Every character has a page in the Jarkeeper's ledger, in the Jarkeeper's own voice. Read them and the pieces start to fit.</p>
+  </div>
+
+  <h2>What's inside</h2>
+  <ul class="facts">
+    <li><b>Seven characters, seven engines.</b> Vesper is a Prophet-5, Shard is FM, Squall is noise, Wick sings with formants, Tock is an 808 drum machine, Mote is an old game console and Murk is Casio-style phase distortion. Each sound was made for its character.</li>
+    <li><b>Four knobs each, with honest labels.</b> Turn GLOW, BITE or HOWL to hear what they do. Hold EDIT and the cards show the real settings underneath, like CUTOFF or RESO, so the synth words come with the sounds.</li>
+    <li><b>The codex.</b> Press SCL for three pages per character: the Jarkeeper's ledger, the real history of the engine (who invented it, and how it works) and something to try.</li>
+    <li><b>The horizon is the waveform.</b> The edge of the hill traces the sound as it plays, so a square wave looks square and a bell rings out.</li>
+    <li><b>A spellbook of ways to play,</b> on the ALGORITHM knob: SOLO; WEAVE, a strum like an Omnichord; CAST, chords under a melody; SCRY, an ear trainer; and TRACE, songs to learn.</li>
+    <li><b>Music theory you can see.</b> Chords show their names and Roman numerals (Am, vi), SELECT moves the key round the circle of fifths, and every chord moves with it.</li>
+    <li><b>SCRY, the ear trainer.</b> Hear a note, an interval or a chord, then find it on the keys. It starts easy, adds a new one after three right in a row, and after two misses the right key glows.</li>
+    <li><b>TRACE, songs to learn.</b> The next key lights up and you play at your own pace. Fourteen recognizable public-domain tunes, from the Tetris theme and Hall of the Mountain King to Dies Irae, Für Elise and Carol of the Bells.</li>
+    <li><b>The whole synthesizer underneath.</b> Hold HOME and SAVE for 3 seconds to get the full Melodee firmware, with every engine and Sequential's factory Prophet-5 sounds.</li>
+  </ul>
+
+  <h2>On the FM-1's screen</h2>
+  <ul class="screens">
+    <li><img src="screen-char-0.png" width="480" height="480" alt="Vesper, a moth in a velvet cape, playing a C major chord, with four knobs: GLOW, BITE, BLOOM, DRIFT"><p><b>Vesper</b>A C chord, named as she plays it</p></li>
+    <li><img src="screen-edit.png" width="480" height="480" alt="Vesper's knob cards showing what they move: CUTOFF, RESO and ENV AMT, ATTACK and RELEASE, VINTAGE and VIBRATO"><p><b>Hold EDIT</b>The real settings under each knob</p></li>
+    <li><img src="screen-codex.png" width="480" height="480" alt="The codex: the Jarkeeper's ledger page for Murk, Jar one, let go on purpose"><p><b>The codex</b>The Jarkeeper's ledger, page one</p></li>
+    <li><img src="screen-char-4.png" width="480" height="480" alt="Tock, a clockwork beetle, with the word KICK at the top"><p><b>Tock</b>Every key a drum, named as it hits</p></li>
+    <li><img src="screen-char-5.png" width="480" height="480" alt="Mote, a gremlin holding a glass stopper, with a square wave along the horizon"><p><b>Mote</b>A square wave, drawn on the horizon</p></li>
+    <li><img src="screen-cast.png" width="480" height="480" alt="Shard, a glass fox, in CAST mode, holding a G7 chord marked V7"><p><b>CAST</b>A black key holds G7, the V7 of C</p></li>
+    <li><img src="screen-scry.png" width="480" height="480" alt="SCRY: the answer PERFECT FIFTH, a streak of 3, and a new interval added"><p><b>SCRY</b>The ear trainer: a perfect fifth, found</p></li>
+    <li><img src="screen-trace.png" width="480" height="480" alt="TRACE: Korobeiniki, NEXT B, note 6 of 37"><p><b>TRACE</b>Korobeiniki, one key at a time</p></li>
+    <li><img src="screen-char-6.png" width="480" height="480" alt="Murk, a deep-sea jellyfish, floating over the hills"><p><b>Murk</b>Jar one. She came back.</p></li>
+  </ul>
+
+  <h2>Meet the cast</h2>
+  <img class="poster" src="cast.png" width="1080" height="1640" alt="The seven characters with their engines and lines: Vesper, Shard, Squall, Wick, Tock, Mote and Murk">
+
+  <h2>For teachers and students</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Character</th><th>Engine</th><th>What it teaches</th></tr>
+    <tr><td>Vesper</td><td>Prophet-5</td><td>Subtractive synthesis: oscillators, a filter that trims brightness away, envelopes</td></tr>
+    <tr><td>Shard</td><td>FM</td><td>Frequency modulation: one wave bending another, ratios and why bells sound like bells</td></tr>
+    <tr><td>Squall</td><td>Noise</td><td>Noise colors, and how a repeated scrap of noise turns into a pitch</td></tr>
+    <tr><td>Wick</td><td>Voice</td><td>Formants: how a mouth shapes a buzz into AH or OO</td></tr>
+    <tr><td>Tock</td><td>Drum machine</td><td>The TR-808: every drum a small circuit, no recordings</td></tr>
+    <tr><td>Mote</td><td>Chiptune</td><td>Pulse width, waveforms (pulse, triangle, saw) and arpeggios, as in old game consoles</td></tr>
+    <tr><td>Murk</td><td>Phase distortion</td><td>Casio's CZ trick: reading a sine wave unevenly to bend it brighter</td></tr>
+  </table>
+  </div>
+  <p class="lede" style="font-size:1rem;margin-top:16px">Plus chords and Roman numerals, keys round the circle of fifths, interval and chord ear training, and melodies to learn by ear and by sight. It is free, needs no account, and the browser version runs on most computers, tablets and phones.</p>
+
+  <h2>Try it</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>In your browser</h3>
+      <p>The same firmware, running on your screen. Works on computers, phones and tablets.</p>
+      <a class="btn" href="webapp/try/">Open the demo</a>
+      <small>It needs sound on, and you may have to tap once to start.</small>
+    </div>
+    <div class="card">
+      <h3>On an M-VAVE FM-1</h3>
+      <p>Connect it by USB and press Install. It takes about a minute.</p>
+      <a class="btn alt" href="webapp/installer/">Open the installer</a>
+      <small>Needs Chrome or Edge on a computer or an Android phone, and a USB cable. Safari and iPhones cannot do it.</small>
+    </div>
+  </div>
+  <!--DONATE-->
+  <div class="card tip">
+    <h3>Say thanks</h3>
+    <p>Double Rainbow is free and always will be. If you enjoy it, you can leave a tip. And please give Melodee and Felucca, which it is built on, a star too.</p>
+    <div class="buttons" style="margin:0">
+      <a class="btn" href="@DONATE@" rel="noopener">Leave a tip</a>
+      <a class="btn alt" href="https://github.com/keremimo/melodee" rel="noopener">Melodee on GitHub</a>
+    </div>
+  </div>
+  <!--/DONATE-->
+  <details>
+    <summary>Is it safe? Can I go back?</summary>
+    <p>You can return to the official firmware at any time: the installer page has a "Return to official V15" section. You download the official file from M-VAVE's website, and the installer backs up the FM-1 first. Installing firmware is at your own risk. This is an independent fan project and is not made or endorsed by M-VAVE.</p>
+  </details>
+  <details>
+    <summary>How do I get to the full synthesizer?</summary>
+    <p>Double Rainbow starts every time the FM-1 is switched on. Hold HOME and SAVE together for 3 seconds to get the full Melodee firmware, just as it would have started. Double Rainbow saves nothing, so it never touches your own sounds or projects. Switch the FM-1 off and on to come back.</p>
+  </details>
+  <details>
+    <summary>Is there one for younger kids?</summary>
+    <p>Yes: <a href="https://github.com/joshbartlettband-web/felucca-rainbow">Rainbow mode</a>, Double Rainbow's bright daytime sibling, made for little hands.</p>
+  </details>
+
+  <section aria-labelledby="thanks">
+    <h2 id="thanks">Thank you</h2>
+    <p class="lede" style="font-size:1rem">Ideas from the r/MVaveFM1 community, carried over from Rainbow mode:</p>
+    <ul class="facts">
+      <li><b>u/veecheech:</b> the Omnichord-style strum, now WEAVE.</li>
+      <li><b>u/nutty_cartoon:</b> chord names, the ear game and songs to learn, now SCRY and TRACE.</li>
+    </ul>
+    <p style="color:var(--soft);font-size:.95rem">Got an idea for a character, a sound or a game? Tell us on r/MVaveFM1.</p>
+  </section>
+</main>
+
+<footer>
+  <p><b>Built on Melodee</b>, multi-engine synthesizer firmware for the FM-1 (<a href="https://github.com/keremimo/melodee">github.com/keremimo/melodee</a>), itself a modified version of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita and Hügelton Instruments. Double Rainbow is a fork of Melodee and adds its own mode on top.</p>
+  <p>Free and open source under the GPL-3.0. Source code and the full plan: <a href="https://github.com/@REPO@">github.com/@REPO@</a>. The characters are original designs.</p>
+</footer>
+</body>
+</html>

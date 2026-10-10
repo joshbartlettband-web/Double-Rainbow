@@ -1,7 +1,7 @@
 # Double Rainbow, built by GitHub and published to this fork's GitHub Pages site.
 #   firmware:  the FM-1 package (JieLi toolchain + three files of the AC79 SDK, cached after the first run)
 #   browser:   the same firmware compiled to WebAssembly (Double Rainbow in the browser), tested first
-#   publish:   the site: /webapp/installer/ flashes the FM-1, /webapp/editor/ is Melodee's web editor,
+#   publish:   the site: / is the landing page (landing/), /webapp/installer/ flashes the FM-1, /webapp/editor/ is Melodee's web editor,
 #              /webapp/try/ runs it in the browser
 # Ported from Rainbow mode's rainbow.yml (joshbartlettband-web/felucca-rainbow). The browser version needs nothing from
 # JieLi, so it is published even if the firmware job fails; a red browser test publishes nothing.
@@ -235,6 +235,32 @@ jobs:
 
       - id: pages
         uses: actions/configure-pages@v5
+
+      - name: The landing page (the one link to share; after Rainbow mode's)
+        env:
+          DONATE: ${{ vars.DONATE_URL || secrets.DONATE_URL }}   # the tip link (a repository variable or secret: Ko-fi,
+                                                                 # Buy Me a Coffee ...); none, no tip card
+        run: |
+          cp -r landing/. site/
+          repo="${{ github.repository }}"
+          sed -i -e "s|@SITE@|${{ steps.pages.outputs.base_url }}|g" -e "s|@REPO@|$repo|g" site/index.html
+          d=$(printf '%s' "$DONATE" | tr -d '[:space:]')   # (pasted on a phone: spaces, a line break, no https://)
+          case "$d" in
+            "") ;;
+            https://*) ;;
+            http://*) d="https://${d#http://}" ;;
+            *) d="https://$d" ;;
+          esac
+          if printf '%s' "$d" | grep -Eq '^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/[A-Za-z0-9./?=_%:+~#@&-]*)?$'; then
+            esc=$(printf '%s' "$d" | sed -e 's/[&|\\]/\\&/g')
+            sed -i "s|@DONATE@|$esc|g" site/index.html
+            echo "tip card: on"
+          else
+            perl -0pi -e 's/\s*<!--DONATE-->.*?<!--\/DONATE-->//s' site/index.html
+            if [ -n "$d" ]; then echo "::warning::DONATE_URL is set but does not look like a web link (https://...): no tip card"
+            else echo "tip card: off (no DONATE_URL)"; fi
+          fi
+          grep -q '@[A-Z]*@' site/index.html && { echo "::error::a placeholder is left in the landing page"; exit 1; } || true
 
       - uses: actions/upload-pages-artifact@v3
         with:
