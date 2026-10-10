@@ -1,0 +1,10 @@
+time,file,model,size,prompt_tokens,output_tokens,usd,ok
+2026-10-10 12:45,art/gemini/vesper_a.jpg,gemini-3.1-flash-image,1K,126,1406,0.067,1
+2026-10-10 12:46,art/gemini/vesper_b.jpg,gemini-3.1-flash-image,1K,175,1329,0.067,1
+2026-10-10 12:46,art/gemini/vesper_c.jpg,gemini-3.1-flash-image,1K,172,1464,0.067,1
+2026-10-10 12:46,art/gemini/shard_a.jpg,gemini-3.1-flash-image,1K,166,1379,0.067,1
+2026-10-10 12:47,art/gemini/shard_b.jpg,gemini-3.1-flash-image,1K,175,1455,0.067,1
+2026-10-10 12:47,art/gemini/shard_c.jpg,gemini-3.1-flash-image,1K,161,1345,0.067,1
+2026-10-10 12:47,art/gemini/squall_a.jpg,gemini-3.1-flash-image,1K,182,1504,0.067,1
+2026-10-10 12:47,art/gemini/squall_b.jpg,gemini-3.1-flash-image,1K,166,1439,0.067,1
+2026-10-10 12:47,art/gemini/squall_c.jpg,gemini-3.1-flash-image,1K,154,1355,0.067,1
