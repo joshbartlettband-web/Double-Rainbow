@@ -105,15 +105,37 @@ it never leaves your FM-1. That is how people get today's songs into TRACE.
 **3. Our own riffs.** Short riffs we write in a genre's style (a synthwave arpeggio, a metal riff, lofi chords). They
 teach the genre and belong to us.
 
-## Effects: the pedalboard
+## Effects: Prisms
 
-Melodee's effects shown as a row of pedals, each with one or two knobs and plain labels: distortion, the SLICER (a gate
-and stutter), chorus, reverb (room or spring), and the FX layer's repeat, reverse, filter sweep, tape stop, freeze and an
-octave harmonizer with shimmer.
+**Decided:** effects are crystals, not pedals (most players this age have never seen a pedalboard). Your sound is a beam
+of light that crosses each crystal in order and leaves the last one as a rainbow. Each crystal changes the beam the way
+its effect changes the sound, so the screen shows the whole chain at a glance, including what is off, and quietly
+teaches that effects run in order. Potions (bottles on a candlelit shelf) was the runner-up.
 
-- Melodee 0.12 removed the shared delay to free memory for recording. An echo has to come from repeat, or we spend memory
+![Prisms and Potions mockups](docs/mockups/effects_mockups.png)
+
+Mockups at the FM-1's 240 x 240 are in `docs/mockups/` (`effects_mockup.py` redraws them). The layout: the beam and its
+crystals on top, an info panel with the crystal's spell name, its **real name** and a short plain description, and four
+knob cards for how much of each crystal.
+
+| Crystal | Real effect | What the beam does |
+| --- | --- | --- |
+| EMBER | Distortion | turns jagged and red-hot |
+| SHATTER | SLICER (gate and stutter) | breaks into dashes |
+| TWIN | Chorus | splits into two drifting beams |
+| CAVERN / SPRING | Reverb (room / spring) | spreads into a soft glow |
+| ECHO | Repeat | leaves fading copies |
+| REWIND | Reverse | flows backward |
+| SWEEP | Filter sweep | its color slides across the spectrum |
+| SLUMBER | Tape stop | slows and droops |
+| FROST | Freeze | stops and ices over |
+| SHIMMER | Harmonizer with shimmer | splits an octave up, sparkling |
+
+- SELECT picks a crystal; KNOB 1 to 4 set how much of each. Holding a button could open a crystal's other settings
+  (Melodee's chorus and reverb have a few more than an amount). **(open)**
+- On the device the beam shimmers and the crystals glow with their amounts.
+- Melodee 0.12 removed the shared delay to free memory for recording. ECHO has to come from repeat, or we spend memory
   putting a small delay back. **(open)**
-- **(open)** A mockup at the FM-1's real 240 x 240 size comes first, for Josh to see before anything is built.
 
 ## More to build
 
