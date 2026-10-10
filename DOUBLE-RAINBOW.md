@@ -37,6 +37,23 @@ deep-sea creatures, lantern light and a slightly spooky night carnival.
   teal for the active thing. It is the default on a fresh install; a palette already chosen in the menu (COLOR) is kept.
   It passes Melodee's contrast checks, and Melodee's UI tests (every screen in every palette) run on every push.
 
+## The world: the Jarkeeper (agreed)
+
+Somewhere in the hills lives **the Jarkeeper**, who catches sounds in glass jars and keeps them on shelves in a
+room with no light. One night **Squall**, a small storm, broke out of jar twelve. The jar shattered, and **Shard** is
+its glass, which caught the moonlight on the way out (the rainbow in his chest). **Vesper** came to the light, as
+moths do, and has followed the two of them ever since. The double moonbow's second, reversed arc is where escaped
+sounds go: Squall took it with him.
+
+- **Every new character is another jar.** Unlocking one frees it, and each remembers something about the Jarkeeper.
+- **The codex is the Jarkeeper's ledger**, a page per character in the Jarkeeper's own voice (cryptic, possessive,
+  never cruel), then the engine's real story, then something to try.
+- **The mystery that pulls you along:** who the Jarkeeper is, and why the sounds are kept. Eerie, never grim.
+- Keep it consistent: every new character's ledger page should connect to at least one other character, a jar
+  number, or the moonbow.
+
+Built: the ledger is page 1 of each character's codex (`firmware/src/dr.c` DR_CODEX).
+
 ## Starting up and getting to Melodee
 
 - The FM-1 starts in Double Rainbow every time it powers on.
@@ -93,11 +110,11 @@ The FM-1 starts in Double Rainbow every time it powers on.
 
 | Control | What it does |
 | --- | --- |
-| Keys | Play the character. The chord or note just played shows at the top left (Melodee's own recognizer). |
+| Keys | Play the character. The chord or note just played shows at the top left (Melodee's own recognizer), and the horizon traces the live waveform in the character's glow (amber, Shard's drifting bands, lightning yellow); silent, it lies flat on the hill. |
 | PRESETS | The next or the previous character. In the codex: its pages. |
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
 | EDIT held | The cards show what each knob really moves. |
-| SCL | The codex: the engine's story, then something to try. SCL again closes it. |
+| SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). |
 | HOME + SAVE held 3 s | The full Melodee, as it would have started (track 1 gets its own sound back; nothing is saved). Double Rainbow comes back at the next power-on. |
 

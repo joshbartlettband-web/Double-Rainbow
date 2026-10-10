@@ -125,6 +125,7 @@ typedef struct {
     uint8_t env[4];                          /* ATK DEC SUS REL (0, 0, 0, 0: the preset's) */
     uint8_t level, chor, rev;                /* P_LEVEL (half dB steps), the chorus and reverb sends */
     dr_macro_t m[4];
+    uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
 #define DR_NCHAR 3u
@@ -162,7 +163,7 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
                                            {DR_P5, P5_RELEASE_AMP, 55, 118}}},
         {"DRIFT", "VINTAGE|VIBRATO", 30, {{DR_P5, P5_VINTAGE, 0, 120}, {DR_P5, P5_LFO_INITIAL, 0, 30},
                                             {DR_P5, P5_FINE_B, 6, 48}}},
-    }},
+    }, {255, 170, 80}},                                         /* her lantern eyes */
     /* SHARD: Melodee's own FM6 BELL (tools/gen_fm6_patches.py; of its eight voices the one the ratio and level move
      * furthest), through the engine's four macros: low SHINE is a soft glassy piano, high a cutting bell */
     {"SHARD", "FM6", "Sharp, clear, honest to a fault.", ENGI_FM6, 1, DR_E_KEEP, {0, 0, 0, 0}, 112, 26, 46, {
@@ -170,7 +171,7 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"METAL", "MOD|RATIO", 25, {{DR_TP, P_E0 + 3, -4, 12}}},
         {"RING", "MOD|DECAY", 60, {{DR_TP, P_E0 + 4, -40, 60}}},
         {"TWIST", "DETUNE", 15, {{DR_TP, P_E0 + 6, 0, 110}}},
-    }},
+    }, {0, 0, 0}},                                              /* his prism: the bands */
     /* SQUALL: NOISE's META source: a 127-step register sequence once per period of the key, an airy storm-hiss
      * that still carries the tune (measured: 76 % of its energy on the note's harmonics, against 20 % for filtered
      * white noise, which never sings), through a low-pass that follows the key. GUST swells it with the LFO (the
@@ -183,7 +184,7 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"HOWL", "SEQ|LENGTH", 20, {{DR_TP, P_E0 + 5, 0, 112}}},
         {"RUMBLE", "FREQ|COLOR", 35, {{DR_TP, P_E0 + 2, 84, 30}, {DR_TP, P_E0 + 1, 40, 112}}},
         {"SPARK", "DIST", 10, {{DR_TP, P_DIST, 0, 90}}},
-    }},
+    }, {255, 226, 110}},                                        /* his bolt */
 };
 
 static struct {
@@ -271,17 +272,28 @@ static void dr_load(uint32_t k)
 
 static void project_boot(void);              /* project.c (included after this file) */
 
-typedef struct { const char *title, *sub, *body[6], *tip[4]; } dr_codex_t;
+/* the codex, three pages: the Jarkeeper's ledger (the lore, in the Jarkeeper's own voice: DOUBLE-RAINBOW.md, The
+ * world), the engine's story, something to try */
+typedef struct { const char *entry, *when, *lore[6], *title, *sub, *body[6], *tip[4]; } dr_codex_t;
 static const dr_codex_t DR_CODEX[DR_NCHAR] = {
-    {"PROPHET-5", "Sequential, 1978",
+    {"The moth", "Never caught. Not yet.",
+     {"She came the night jar twelve", "broke, drawn to the glass and", "the moonlight in it. She has",
+      "followed it ever since. Every", "lamp in the hills goes out as", "she passes. I keep mine lit."},
+     "PROPHET-5", "Sequential, 1978",
      {"The first synth that could", "remember its sounds. Two", "oscillators feed one filter",
       "that trims the brightness", "away, and that is where", "the warmth comes from."},
      {"Hold a chord and turn GLOW", "up slowly. Then turn BLOOM", "all the way up and play", "slow notes."}},
-    {"FM SYNTHESIS", "Chowning 1967, Yamaha DX7 1983",
+    {"Jar twelve, the glass", "It did not stay broken.",
+     {"The storm got out. The jar", "did not stay in pieces: the", "glass pulled itself together",
+      "around the moonlight it had", "swallowed, and walked off.", "It will not lie to me. Pity."},
+     "FM SYNTHESIS", "Chowning 1967, Yamaha DX7 1983",
      {"John Chowning found it by", "speeding up a vibrato until", "it stopped wobbling and",
       "became a new tone. One wave", "bends another, and that is", "the glassy shine."},
      {"Turn METAL slowly: each step", "is a new ratio between the", "waves. Low SHINE is a soft", "piano, high is a bell."}},
-    {"NOISE", "Every pitch at once",
+    {"Jar twelve, a storm", "Caught at the cliffs, 3 a.m.",
+     {"Small, but it held a whole", "night of weather. It broke", "the jar from the inside and",
+      "took the moonbow's second", "arc with it. I want it back.", "All of it."},
+     "NOISE", "Every pitch at once",
      {"White noise hisses, pink is", "softer, like rain, and brown", "rumbles like thunder. Repeat",
       "a scrap of noise fast enough", "and it turns into a note:", "that is Squall's voice."},
      {"Turn HOWL up slowly: the hiss", "gets shorter and buzzier until", "it howls. Then turn GUST up",
@@ -290,24 +302,46 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
 
 static struct {
     uint8_t on, codex, page, under, dirty;   /* dirty: DR_D_* */
+    uint8_t sounding;                        /* the horizon is tracing the wave (and needs one more flat redraw) */
+    uint32_t wave_ms;
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[24];
 } drm;
 enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE = 16, DR_D_ALL = 31 };
 
-/* the scene's background at (x, y): the sky, a faint moonbow, the hill */
+/* the scene's background at (x, y): the sky, a faint moonbow, the hill. The hill's edge is the horizon, and it
+ * traces the live waveform (dr_wave, from Melodee's scope: audio.c scope_buf) while the character sounds: a line
+ * in the character's glow over the dark ground; silent, it lies flat on the hill. */
+#define DR_Y_WAVE 154                        /* the rows the horizon can reach: DR_Y_WAVE .. DR_Y_CARDS - 1 */
+#define DR_WAVE_PX 10                        /* the wave's height either way */
+static int8_t dr_wave[240];
 static int32_t dr_scene_hill(int32_t x)
 {
     int32_t d = x - 120;
     int32_t t = 168 + d * d / 900;
     return t > 186 ? 186 : t;
 }
+static uint16_t dr_glow(int32_t x)
+{
+    const uint8_t *g = DR_CAST[dr.ch].glow;
+    if (!(g[0] | g[1] | g[2]))                           /* Shard: the bands, drifting along */
+        g = DR_BOW[5 - (uint32_t)((x + (int32_t)(fm1_ms / 40u)) / 40) % 6u];
+    return DR_RGB(g[0], g[1], g[2]);
+}
 static uint16_t dr_scene_px(int32_t x, int32_t y)
 {
-    int32_t top = dr_scene_hill(x), dx = x - 120, dy = y - 214, d2 = dx * dx + dy * dy, k;
+    int32_t top = dr_scene_hill(x) + dr_wave[x], dx = x - 120, dy = y - 214, d2 = dx * dx + dy * dy, k;
     uint32_t r, g, b, t, step;
-    if (y > top)
-        return y == top + 1 ? DR_PLUM : DR_GROUND;
+    if (y > top) {
+        if (y == top + 1)
+            return dr_wave[x] || drm.sounding ? dr_glow(x) : DR_PLUM;
+        if (y == top + 2 && (dr_wave[x] || drm.sounding)) {   /* a softer row under it: it reads across a room */
+            uint16_t c = dr_glow(x);
+            uint8_t rgb[3] = {(uint8_t)((c >> 11) << 3), (uint8_t)(((c >> 5) & 63u) << 2), (uint8_t)((c & 31u) << 3)};
+            return dr_mix(rgb, 18, 11, 28, 45u);
+        }
+        return DR_GROUND;
+    }
     t = (uint32_t)((y - DR_Y_SCENE) * 8 * 16 / (186 - DR_Y_SCENE));
     step = t / 16u + ((t & 15u) > DR_BAYER[y & 3][x & 3] ? 1u : 0u);
     r = 14u + step * 3u;
@@ -324,6 +358,40 @@ static uint16_t dr_scene_px(int32_t x, int32_t y)
             return (h >> 9) & 1u ? DR_RGB(243, 233, 198) : DR_RGB(130, 116, 160);
     }
     return DR_RGB(r, g, b);
+}
+
+/* the horizon's wave from Melodee's scope (audio.c scope_buf, every other sample of the output, as HOME's
+ * graph_scope reads it): from a rising zero crossing, so it stands still; 1 when it changed. Below a whisper it lies
+ * flat; louder, it scales with the sound (a quiet note a small ripple, a loud chord the full DR_WAVE_PX) */
+static int dr_wave_update(void)
+{
+    static int16_t snap[SCOPE_N];
+    uint32_t w = scope_w, i, trig = 0, changed = 0;
+    int32_t peak = 0, x;
+    for (i = 0; i < SCOPE_N; i++) {
+        snap[i] = scope_buf[(w + i) & (SCOPE_N - 1u)];
+        if (snap[i] > peak)
+            peak = snap[i];
+        else if (-snap[i] > peak)
+            peak = -snap[i];
+    }
+    for (i = 1; i < SCOPE_N - 240u; i++)
+        if (snap[i - 1] < 0 && snap[i] >= 0) {
+            trig = i;
+            break;
+        }
+    for (x = 0; x < 240; x++) {
+        int32_t v = 0;
+        if (peak > 400) {
+            int32_t full = peak > 12000 ? peak : 12000;     /* (quiet: smaller; loud: auto-scaled to the full height) */
+            v = -snap[trig + (uint32_t)x] * DR_WAVE_PX / full;
+        }
+        if (v != dr_wave[x]) {
+            dr_wave[x] = (int8_t)v;
+            changed = 1;
+        }
+    }
+    return (int)changed;
 }
 
 /* where the character stands: Squall floats */
@@ -450,6 +518,10 @@ static uint32_t dr_text_check(void)
         bad += text_w(&AF_M, c->name) > 150;
         bad += text_w(&AF_S, c->line) > 224;
         bad += text_w(&AF_L, x->title) > 224;
+        bad += text_w(&AF_M, x->entry) > 224;
+        bad += text_w(&AF_S, x->when) > 224;
+        for (i = 0; i < 6u; i++)
+            bad += text_w(&AF_S, x->lore[i]) > 224;
         bad += text_w(&AF_S, x->sub) > 224;
         for (i = 0; i < 6u; i++)
             bad += text_w(&AF_S, x->body[i]) > 224;
@@ -493,13 +565,20 @@ static void dr_draw_cards(void)
     cv_blit(0, DR_Y_CARDS);
 }
 
-/* the codex: page 0 the engine's story, page 1 something to try; the whole area under the line */
+/* the codex: page 0 the ledger, 1 the engine's story, 2 something to try; the whole area under the line */
 static void dr_draw_codex(void)
 {
     const dr_codex_t *x = &DR_CODEX[dr.ch];
     uint32_t i;
+    char pg[24] = "PRESETS: page 1/3";
     cv_begin(240, 100, DR_BG);
-    if (!drm.page) {
+    if (drm.page == 0) {
+        cv_text_on(8, 0, &AF_S, "THE JARKEEPER'S LEDGER", DR_TEAL, DR_BG);
+        cv_text_on(8, 17, &AF_M, x->entry, DR_GOLD, DR_BG);
+        cv_text_on(8, 37, &AF_S, x->when, DR_MID, DR_BG);
+        for (i = 0; i < 3u; i++)
+            cv_text_on(8, 55 + (int32_t)i * 15, &AF_S, x->lore[i], DR_TEXT, DR_BG);   /* (the third ends at row 100) */
+    } else if (drm.page == 1) {
         cv_text_on(8, 0, &AF_L, x->title, DR_GOLD, DR_BG);
         cv_text_on(8, 33, &AF_S, x->sub, DR_MID, DR_BG);
         for (i = 0; i < 3u; i++)
@@ -512,10 +591,11 @@ static void dr_draw_codex(void)
     }
     cv_blit(0, DR_Y_SCENE);
     cv_begin(240, 102, DR_BG);
-    if (!drm.page)
-        for (i = 3; i < 6u; i++)
-            cv_text_on(8, (int32_t)(i - 3u) * 15, &AF_S, x->body[i], DR_TEXT, DR_BG);
-    cv_text_on(8, 84, &AF_S, drm.page ? "PRESETS: back a page" : "PRESETS: next page", DR_DIM, DR_BG);
+    for (i = 3; drm.page < 2u && i < 6u; i++)
+        cv_text_on(8, (int32_t)(i - 3u) * 15, &AF_S, drm.page ? x->body[i] : x->lore[i], DR_TEXT,
+                   DR_BG);
+    pg[14] = (char)('1' + drm.page);
+    cv_text_on(8, 84, &AF_S, pg, DR_DIM, DR_BG);
     cv_text_r(232, 84, &AF_S, "SCL: close", DR_DIM, DR_BG);
     cv_blit(0, DR_Y_SCENE + 100);
 }
@@ -636,7 +716,7 @@ static int dr_frame(void)
     }
     if ((s = fm1_enc_take(panel.enc[EN_PRESET]) * panel.dir[EN_PRESET]) != 0) {
         if (drm.codex) {                                 /* the codex: its pages */
-            drm.page = (uint8_t)(s > 0 ? 1 : 0);
+            drm.page = (uint8_t)clamp((int32_t)drm.page + (s > 0 ? 1 : -1), 0, 2);
             drm.dirty = DR_D_ALL;
         } else {                                         /* the next or the previous character */
             dr_load((dr.ch + (s > 0 ? 1u : DR_NCHAR - 1u)) % DR_NCHAR);
@@ -651,6 +731,19 @@ static int dr_frame(void)
         }
     (void)fm1_enc_take(panel.enc[EN_SELECT]);            /* (not used yet: nothing piles up) */
     (void)fm1_enc_take(panel.enc[EN_ALGO]);
+    if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
+        drm.wave_ms = fm1_ms;
+        if (dr_wave_update() || (drm.sounding && !(drm.dirty & DR_D_SCENE))) {
+            uint32_t any = 0;
+            for (i = 0; i < 240u; i++)
+                any |= dr_wave[i] != 0;
+            drm.sounding = (uint8_t)(any != 0);          /* (silent again: this redraw lays it flat, then rests) */
+            if (!(drm.dirty & DR_D_SCENE)) {
+                dr_scene_rows(DR_Y_WAVE, DR_Y_CARDS - DR_Y_WAVE);
+                cv_blit(0, DR_Y_WAVE);
+            }
+        }
+    }
     sig = 0;
     for (i = 0; i < 4u; i++)
         sig = sig * 2654435761u + live_last[i];

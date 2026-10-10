@@ -4,7 +4,8 @@
 //   node web/emu/dr_test.mjs build/emu/melodee.wasm
 // Checks: it starts in Double Rainbow on Vesper; every character sounds, on its own engine, and the three are
 // about as loud as each other; PRESETS goes round the cast; a knob moves its value, the real setting under it and
-// the screen; EDIT held and the codex change the screen; every text fits its room; OCT shifts the keys; HOME +
+// the screen; the horizon traces the wave while a note sounds and lies flat again after; EDIT held and the codex
+// (three pages) change the screen; every text fits its room; OCT shifts the keys; HOME +
 // SAVE let go early stays, held 3 s goes to the full Melodee with track 1's own sound back, and the keys still play.
 import fs from "fs";
 
@@ -85,21 +86,41 @@ turn(EN.PRESETS, 1);
         brighter.bright - bright.bright > 3);
 }
 
+{ // the horizon: the live wave while a note sounds, flat (as it was) when it is over
+  render(4000);
+  const rest = rows(screen(), 154, 198);
+  ex.web_keys(1 << 7);
+  render(600);
+  const a = rows(screen(), 154, 198);
+  render(97);
+  const b = rows(screen(), 154, 198);
+  ex.web_keys(0);
+  render(6000);
+  check("the horizon traces the wave while a note sounds, and lies flat again after", a !== rest && b !== a &&
+        rows(screen(), 154, 198) === rest);
+}
+
 { // EDIT held, the codex
   const cards = rows(screen(), 198, 240);
   ex.web_buttons(1 << B.EDIT); render(200);
   const held = rows(screen(), 198, 240), heldView = ex.web_dr_view();
   ex.web_buttons(0); render(200);
-  check("EDIT held: the cards show what the knobs move; let go: back", held !== cards && (heldView & 4) && rows(screen(), 198, 240) === cards);
+  check("EDIT held: the cards show what the knobs move; let go: back", held !== cards && (heldView & 8) && rows(screen(), 198, 240) === cards);
   const scene = rows(screen(), 38, 240);
   tap(B.SCL);
   const page0 = rows(screen(), 38, 240);
   turn(EN.PRESETS, 1);
   const page1 = rows(screen(), 38, 240), v1 = ex.web_dr_view();
-  turn(EN.PRESETS, -1);
+  turn(EN.PRESETS, 1);
+  const page2 = rows(screen(), 38, 240);
+  turn(EN.PRESETS, 3);
+  const v2 = ex.web_dr_view();
+  turn(EN.PRESETS, -5);
+  const v0 = ex.web_dr_view();
   tap(B.SCL);
-  check("SCL: the codex, PRESETS its second page, SCL again: the character", page0 !== scene && page1 !== page0 &&
-        (v1 & 3) === 3 && ex.web_dr_view() === 0 && rows(screen(), 38, 240) === scene && ex.web_dr_char() === 0);
+  check("SCL: the codex (the ledger, the engine, something to try: PRESETS, stopping at both ends), SCL: back",
+        page0 !== scene && page1 !== page0 && page2 !== page1 && (v1 & 7) === 3 && (v2 & 7) === 5 && (v0 & 7) === 1 &&
+        ex.web_dr_view() === 0 && rows(screen(), 38, 240) === scene && ex.web_dr_char() === 0);
   check("the keys still play in the codex and with EDIT held", (() => {
     tap(B.SCL); const a = level(() => { ex.web_keys(1 << 9); render(400); ex.web_keys(0); render(100); }); tap(B.SCL);
     ex.web_buttons(1 << B.EDIT); const b = level(() => { ex.web_keys(1 << 9); render(400); ex.web_keys(0); render(100); });
