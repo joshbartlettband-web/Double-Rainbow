@@ -143,7 +143,8 @@ static uint32_t scale_map(const track_t *t, int32_t n, int32_t offset)
 }
 
 /* ---- Double Rainbow's spellbook keys (firmware/src/dr.c sets dr_kmode; Rainbow mode's STRUM and ACCORDION, grown up).
- * The black keys pick chords in C major, each the chord of the white key just below it: the lower row the triads (F G
+ * The black keys pick chords in the key (C major unless SELECT moved it; each chord moves with it), each the chord of
+ * the white key just below it in C: the lower row the triads (F G
  * Am C Dm: IV V vi I ii), the upper row their sevenths (Fmaj7 G7 Am7 Cmaj7 Dm7), the top key iv borrowed from C minor
  * (Fm). WEAVE (after u/veecheech's strum idea): a black key picks the chord and plays its root low, the white keys,
  * left to right, its notes upward from C3, so a hand drawn across them strums it. CAST: a black key holds its chord,
@@ -152,6 +153,7 @@ enum { DRK_SOLO, DRK_WEAVE, DRK_CAST };
 static volatile uint8_t dr_kmode;                  /* DRK_*: 0 = the keys as always */
 static volatile uint8_t dr_chord = 3u;             /* the chord picked (dr_chord_tones; C to begin with) */
 static volatile uint8_t dr_chord_gen;              /* bumped on each pick (the screen names it) */
+static volatile uint8_t dr_key;                    /* the key: semitones above C (dr.c: SELECT, round the fifths) */
 static int32_t dr_chord_of_key(uint32_t k)         /* a black key's chord, -1 a white key */
 {
     static const int8_t DEG[12] = {-1, 3, -1, 4, -1, -1, 0, -1, 1, -1, 2, -1};   /* C# D# F# G# A#: C Dm F G Am */
@@ -167,7 +169,7 @@ static uint32_t dr_chord_tones(uint32_t id, uint32_t *root, int8_t *iv)
     static const int8_t Q[6][4] = {{0, 4, 7, 0}, {0, 3, 7, 0}, {0, 4, 7, 11}, {0, 4, 7, 10}, {0, 3, 7, 10}, {0, 3, 7, 0}};
     uint32_t d = id % 5u, minor = d == 2u || d == 4u, q, i;
     q = id == 10u ? 5u : id < 5u ? minor : d == 1u ? 3u : minor ? 4u : 2u;
-    *root = id == 10u ? 5u : ROOT[d];
+    *root = ((id == 10u ? 5u : ROOT[d]) + dr_key) % 12u;
     for (i = 0; i < 4u; i++)
         iv[i] = Q[q][i];
     return q >= 2u && q <= 4u ? 4u : 3u;

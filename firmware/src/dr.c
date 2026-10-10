@@ -432,7 +432,17 @@ static void dr_scene_rows(int32_t y0, int32_t h)
 static const char *const DR_KMODE_NAME[3] = {"SOLO", "WEAVE", "CAST"};
 static const char *const DR_KMODE_HELP[3] = {"SOLO: every key plays its note", "WEAVE: black keys pick, white strum",
                                              "CAST: black keys hold, white sing"};
-/* seq.c's chords (dr_chord_tones ids): their names and their place in C major */
+/* SELECT: the key, round the circle of fifths; flat keys spelled with flats (the big font has no lower-case b: the
+ * root's letter is drawn large, its accidental small, before the chord's quality) */
+static const uint8_t DR_FIFTHS[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};
+static const char *const DR_SHARP[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+static const char *const DR_FLAT[12] = {"C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"};
+static uint8_t dr_fifth;                     /* DR_FIFTHS index: 0 C .. 11 F */
+static const char *dr_pc_name(uint32_t pc)
+{
+    return dr_fifth >= 7u ? DR_FLAT[pc % 12u] : DR_SHARP[pc % 12u];   /* Db Ab Eb Bb F: flats; C .. F#: sharps */
+}
+/* seq.c's chords (dr_chord_tones ids): their names and their place in the key */
 static const char *const DR_CHORD_Q[11] = {"", "", "m", "", "m", "maj7", "7", "m7", "maj7", "m7", "m"};
 static const char *const DR_CHORD_RN[11] = {"IV", "V", "vi", "I", "ii", "IVmaj7", "V7", "vi7", "Imaj7", "ii7", "iv"};
 
@@ -459,8 +469,10 @@ static uint32_t dr_note_label(char *big, char *small, const char **rn)
         uint32_t r;
         int8_t iv[4];
         dr_chord_tones(dr_chord, &r, iv);
-        str_cpy(big, N_NOTE[r], 4);
-        str_cpy(small, DR_CHORD_Q[dr_chord % 11u], 12);
+        big[0] = dr_pc_name(r)[0];
+        big[1] = 0;
+        str_cpy(small, dr_pc_name(r) + 1, 3);           /* (its accidental, if any) */
+        str_cpy(small + str_len(small), DR_CHORD_Q[dr_chord % 11u], 8);
         *rn = DR_CHORD_RN[dr_chord % 11u];
         return 1;
     }
@@ -490,9 +502,13 @@ static void dr_draw_note(void)
         if (rn)
             cv_text_on(w + 8, 13, &AF_M, rn, DR_TEAL, DR_SURF);
     }
-    if (dr_kmode != DRK_SOLO) {
-        const char *m = DR_KMODE_NAME[dr_kmode % 3u];
-        int32_t w = text_w(&AF_S, m) + 12;
+    if (dr_kmode != DRK_SOLO) {                           /* the mode and its key: "WEAVE  G" */
+        char m[16];
+        int32_t w;
+        str_cpy(m, DR_KMODE_NAME[dr_kmode % 3u], 8);
+        str_cpy(m + str_len(m), "  ", 3);
+        str_cpy(m + str_len(m), dr_pc_name(dr_key), 3);
+        w = text_w(&AF_S, m) + 12;
         cv_rrect(234 - w, 4, w, 18, 5, DR_SURF, DR_BG);
         cv_text_on(240 - w, 5, &AF_S, m, DR_TEAL, DR_SURF);
     }
@@ -678,6 +694,7 @@ static void dr_leave(void)
     drm.on = 0;
     song.octave = 0;
     dr_kmode = DRK_SOLO;                                 /* (Melodee's keys as always) */
+    dr_key = 0;
     undo_depth++;
     set_engine_of(t, TRK_DEF[0][0]);
     apply_preset_to(t, TRK_DEF[0][1]);
@@ -764,7 +781,15 @@ static int dr_frame(void)
         dr_say(DR_KMODE_HELP[dr_kmode]);
         drm.dirty |= DR_D_NOTE;
     }
-    (void)fm1_enc_take(panel.enc[EN_SELECT]);            /* (not used yet: nothing piles up) */
+    if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0) {   /* SELECT: the key, by fifths */
+        char m[24] = "KEY: ";
+        dr_fifth = (uint8_t)((dr_fifth + (s > 0 ? 1u : 11u)) % 12u);
+        dr_key = DR_FIFTHS[dr_fifth];
+        str_cpy(m + 5, dr_pc_name(dr_key), 3);
+        str_cpy(m + str_len(m), " MAJOR", 7);
+        dr_say(m);
+        drm.dirty |= DR_D_NOTE;
+    }
     if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
         drm.wave_ms = fm1_ms;
         if (dr_wave_update() || (drm.sounding && !(drm.dirty & DR_D_SCENE))) {
@@ -778,7 +803,7 @@ static int dr_frame(void)
             }
         }
     }
-    sig = dr_chord_gen * 31u + dr_kmode;
+    sig = (dr_chord_gen * 31u + dr_kmode) * 13u + dr_key;
     for (i = 0; i < 4u; i++)
         sig = sig * 2654435761u + live_last[i];
     if (sig != drm.note_sig) {

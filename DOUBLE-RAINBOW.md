@@ -114,6 +114,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | PRESETS | The next or the previous character. In the codex: its pages. |
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
 | ALGORITHM | How the keys play: SOLO, WEAVE, CAST (below). |
+| SELECT | The key for WEAVE and CAST, a fifth at a time. |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). |
@@ -147,7 +148,8 @@ Double Rainbow's spellbook keys):
 
 In WEAVE and CAST the chip names the chord picked and its numeral ("Am vi"); in SOLO it names what was played, as
 Melodee's HOME does. A seventh is four notes, so CAST plus one tune note fills the Prophet's five voices.
-**(open)** Other keys than C major (the SCL button is the codex's now; perhaps PRESETS held).
+SELECT changes the key, round the circle of fifths (C G D A E B F# Db Ab Eb Bb F): every chord moves with it, flat
+keys are spelled with flats, and the mode chip shows the key ("CAST  Bb").
 
 ## Songs for TRACE
 

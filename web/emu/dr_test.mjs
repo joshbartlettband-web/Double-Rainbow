@@ -149,6 +149,18 @@ turn(EN.PRESETS, 1);
   const withTune = ex.web_voices(0);
   ex.web_keys(0); render(3000);
   check(`CAST: G#4 holds G7 (${chord} voices), a tune over it (${withTune})`, ex.web_dr_chord() === 6 && chord === 4 && withTune === 5);
+  turn(EN.SELECT, 1);
+  check("SELECT: the key a fifth up, G", ex.web_dr_key() === 7);
+  turn(EN.ALGO, -1);                                      // WEAVE in G: A#3 is vi, E minor
+  ex.web_keys(1 << 5); render(200);
+  const inG = [];
+  for (const w of [0, 2, 4, 6, 7]) { ex.web_keys(1 << 5 | 1 << w); render(120); inG.push(ex.web_kb_note(w)); }
+  ex.web_keys(0); render(1500);
+  check(`WEAVE in G: A#3 is vi, Em, strummed from C3 (${inG.join(" ")})`, inG.join() === [52, 55, 59, 64, 67].join());
+  turn(EN.SELECT, -2);
+  check("SELECT the other way: round to F", ex.web_dr_key() === 5);
+  turn(EN.SELECT, 1);
+  turn(EN.ALGO, 1);
   turn(EN.ALGO, 3);
   check("ALGORITHM stops at the last mode", ex.web_dr_kmode() === 2);
   turn(EN.ALGO, -5);
