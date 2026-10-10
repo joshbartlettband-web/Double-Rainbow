@@ -107,7 +107,7 @@ three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).
 | --- | --- | --- | --- |
 | WICK, a candle who sings vowels | VOICE | Sings when she's nervous. She is always nervous. | The Jarkeeper's night-light, the one light allowed in the room. She saw who broke jar twelve. |
 | TOCK, a clockwork beetle | DRUM | Keeps time. Keeps grudges. | The clock on the shelf. He has counted every night since jar one. |
-| MOTE, an 8-bit gremlin of jar dust | LOFI | Small. Loud. Probably your fault. | Lives between the shelves and steals the marbles the Jarkeeper uses as labels. |
+| MOTE, an 8-bit gremlin of jar dust | LOFI | Small. Loud. Probably your fault. | Lives between the shelves and steals the round glass stoppers off the jars. They look like marbles to him. It is why some jars hum. |
 | MURK, a deep-sea jellyfish | CZ-1 | Bends the light. Bends the rules. | Jar one, the oldest: the only sound the Jarkeeper ever let go on purpose. |
 
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each

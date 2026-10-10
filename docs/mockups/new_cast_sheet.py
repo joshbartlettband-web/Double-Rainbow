@@ -15,7 +15,7 @@ CAST = [
      "The clock on the Jarkeeper's shelf. He has counted every night since jar one."),
     ("MOTE", "LOFI", "An 8-bit gremlin made of jar dust",
      "Small. Loud. Probably your fault.",
-     "Lives in the cracks between the shelves and steals the marbles the Jarkeeper uses as labels."),
+     "Lives between the shelves and steals the round glass stoppers off the jars. They look like marbles to him. It is why some jars hum."),
     ("MURK", "CZ-1", "A deep-sea jellyfish that bends waves",
      "Bends the light. Bends the rules.",
      "Jar one, the oldest. The only sound the Jarkeeper ever let go on purpose. Nobody knows why."),
