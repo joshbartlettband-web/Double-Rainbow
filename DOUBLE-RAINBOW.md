@@ -72,7 +72,14 @@ made into 4-bit sprites by `tools/art/procchar.py` (`art/sprites/`), packed into
 | --- | --- | --- | --- |
 | VESPER, a moth in a velvet cape | PROPHET: our own program, saw + pulse through the SSI filter | Every note is her final scene. | GLOW (cutoff), BITE (resonance, filter envelope), BLOOM (attack, release), DRIFT (vintage, vibrato, detune) |
 | SHARD, a glass fox with a rainbow inside | FM6: Melodee's own BELL voice | Sharp, clear, honest to a fault. | SHINE (modulator level), METAL (modulator ratio), RING (modulator decay), TWIST (detune) |
-| SQUALL, a sulking storm cloud | NOISE: wind through a key-tracked band | Escaped from a jar. Still mad. | GUST (drift), POUR (resonance down, rain density), RUMBLE (frequency down, color), SPARK (crush) |
+| SQUALL, a sulking storm cloud with glowing eyes | NOISE: the META source, an airy hiss repeated at the note's pitch | Escaped from a jar. Still mad. | GUST (LFO swells), HOWL (sequence length: hiss to howl), RUMBLE (darker, browner), SPARK (distortion) |
+
+Squall first used filtered white noise, and on the FM-1 its pitch did not come through (measured: 20 % of its energy
+on the note's harmonics, however narrow the filter). META carries the tune (79 %) and still sounds like weather.
+
+Art fixes are made in code, not with more Gemini images (`tools/art/make_sprites.sh` rebuilds every sprite): Shard's
+chest is repainted as one crisp rainbow (`procchar.py --rainbow`), Squall's eyes and bolt are recoloured yellow
+(`tools/art/fix_squall.py`).
 
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
 three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).
@@ -192,7 +199,8 @@ knob cards for how much of each crystal.
 
 ## Limits to plan around
 
-- **Space.** Melodee's app slot is 540,604 bytes, and Melodee already uses most of it. Measure before planning features.
+- **Space.** Melodee's app slot is 540,604 bytes, and Melodee already uses most of it. The build fails if less than
+  10 KB would be left (that much stays free for Melodee's own updates). Measure before planning features.
   Art and text will run out first: compress pictures (run-length) and keep strings short. Sequential's factory bank takes
   about 31 KB and is the first thing to cut if we run short.
 - **Voices.** 16 shared units. A PROPHET voice costs 3 units and an FM6 voice 1. Chords on PROPHET plus a bass and drums

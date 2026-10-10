@@ -125,6 +125,10 @@ jobs:
             [ -n "$line" ] && echo "" && echo "\`$line\`"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "app $app B of $slot B, free $((slot - app)) B"
+          if [ $((slot - app)) -lt 10240 ]; then      # the guard: keep 10 KB for Melodee's own updates
+            echo "::error::only $((slot - app)) B left in the app slot (keep at least 10240 B: DOUBLE-RAINBOW.md, Limits)"
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

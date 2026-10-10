@@ -171,15 +171,18 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"RING", "MOD|DECAY", 60, {{DR_TP, P_E0 + 4, -40, 60}}},
         {"TWIST", "DETUNE", 15, {{DR_TP, P_E0 + 6, 0, 110}}},
     }},
-    /* SQUALL: NOISE as wind through a key-tracked band (so it plays tunes): POUR opens it from a narrow whistle to
-     * a wide downpour with rain impulses, RUMBLE takes it low and brown, GUST makes it wander, SPARK crushes it.
-     * {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH} */
-    {"SQUALL", "NOISE", "Escaped from a jar. Still mad.", ENGI_NOISE, 0, {0 /* ANLG */, 64, 70, 100, 127, 0, 50, 0},
+    /* SQUALL: NOISE's META source: a 127-step register sequence once per period of the key, an airy storm-hiss
+     * that still carries the tune (measured: 76 % of its energy on the note's harmonics, against 20 % for filtered
+     * white noise, which never sings), through a low-pass that follows the key. GUST swells it with the LFO (the
+     * drift would wander the pitch), HOWL shortens the sequence from hiss to a buzzing howl, RUMBLE darkens it,
+     * SPARK drives the track's distortion (META's last value would shift the pitch). {MODE, COLR, FREQ, RES, TRK,
+     * LEN, DRFT, CLK} */
+    {"SQUALL", "NOISE", "Escaped from a jar. Still mad.", ENGI_NOISE, 0, {3 /* META */, 64, 60, 40, 127, 0, 0, 0},
      {40, 90, 110, 80}, 108, 0, 60, {
-        {"GUST", "DRIFT", 40, {{DR_TP, P_E0 + 6, 10, 120}}},
-        {"POUR", "RESO|DENSITY", 30, {{DR_TP, P_E0 + 3, 116, 20}, {DR_TP, P_E0 + 5, 0, 100}}},
-        {"RUMBLE", "FREQ|COLOR", 35, {{DR_TP, P_E0 + 2, 90, 30}, {DR_TP, P_E0 + 1, 40, 112}}},
-        {"SPARK", "CRUSH", 10, {{DR_TP, P_E0 + 7, 0, 90}}},
+        {"GUST", "LFO|TO LEVEL", 35, {{DR_TP, P_LD_AMP, 0, 100}, {DR_TP, P_LRATE, 30, 72}}},
+        {"HOWL", "SEQ|LENGTH", 20, {{DR_TP, P_E0 + 5, 0, 112}}},
+        {"RUMBLE", "FREQ|COLOR", 35, {{DR_TP, P_E0 + 2, 84, 30}, {DR_TP, P_E0 + 1, 40, 112}}},
+        {"SPARK", "DIST", 10, {{DR_TP, P_DIST, 0, 90}}},
     }},
 };
 
@@ -279,10 +282,10 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
       "became a new tone. One wave", "bends another, and that is", "the glassy shine."},
      {"Turn METAL slowly: each step", "is a new ratio between the", "waves. Low SHINE is a soft", "piano, high is a bell."}},
     {"NOISE", "Every pitch at once",
-     {"White noise hisses, pink is", "softer, like rain, and brown", "rumbles like thunder. A",
-      "filter picks a band out of", "it, so even noise can play", "a tune."},
-     {"Turn POUR down and play a", "tune: the wind whistles the", "notes. Turn RUMBLE up for a",
-      "storm far away."}},
+     {"White noise hisses, pink is", "softer, like rain, and brown", "rumbles like thunder. Repeat",
+      "a scrap of noise fast enough", "and it turns into a note:", "that is Squall's voice."},
+     {"Turn HOWL up slowly: the hiss", "gets shorter and buzzier until", "it howls. Then turn GUST up",
+      "and hold a long note."}},
 };
 
 static struct {
