@@ -96,6 +96,7 @@ jobs:
 
       - name: Build the firmware
         run: |
+          set -o pipefail                 # (a failed build fails the step, through tee)
           export AC79_SDK="$HOME/ac79-sdk"
           rel="${{ steps.ver.outputs.release }}"
           ./build.sh --release "$rel" 2>&1 | tee build.log
