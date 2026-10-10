@@ -2,7 +2,7 @@
 """Mote's marble becomes a glass jar stopper, without another Gemini image. The work is done on the source's own
 pixel grid (11 source pixels a cell). The ball stays as the stopper's round knob, its swirl cleared to plain glass;
 the stopper's tapered plug (frosted, as ground glass is) rises from it, so he holds the stopper up upside down, like
-a prize. Reads art/gemini/mote_a.jpg, writes art/gemini/mote_a_fix.png."""
+a prize. The plug leans with the ball: he holds it tilted, so its top is left of its middle. Reads art/gemini/mote_a.jpg, writes art/gemini/mote_a_fix.png."""
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
@@ -23,17 +23,31 @@ cell[warm & (L >= 150)] = GLASS_L
 cell[warm & (L < 150)] = GLASS
 cell[inside & (L > 215)] = SHINE
 
-over = Image.new("RGBA", (GW, GH), (0, 0, 0, 0))
-d = ImageDraw.Draw(over)
-d.polygon([(9, 10), (15, 10), (14, 0), (10, 0)], fill=OUT)                    # the plug, outlined: wide at the knob,
-d.polygon([(10, 9), (14, 9), (13, 1), (11, 1)], fill=FROST)                    # narrowing to its end; frosted
-d.line([(10, 8), (11, 2)], fill=SHINE)                                         # (centred on cell 12: the ball's middle)
-d.line([(14, 8), (13, 2)], fill=FROST_D)
-d.line([(10, 6), (14, 6)], fill=FROST_D)                                       # a ground-glass ring
-d.line([(10, 9), (14, 9)], fill=GLASS_D)                                       # the neck, clear glass
-ov = np.asarray(over)
-put = ov[..., 3] > 0
-cell[put] = ov[..., :3][put]
+# the plug: it comes out of the ball's top, which is not above its middle (he holds it tilted: the top is at cell
+# 10.5, row 8.5, the middle at 13.5, 17), so it leans along that axis; its collar lies across the axis, seated on the
+# curve. Built in the axis's own frame: u along it (0 at the collar), v across it
+ax, ay = -3.0, -8.5
+n = np.hypot(ax, ay)
+ax, ay = ax / n, ay / n
+bx, by = 10.5, 8.6
+dx, dy = cx - bx, cy - by
+u = dx * ax + dy * ay
+v = dx * -ay + dy * ax                                   # (+ to his left as we see it .. - to the right)
+Lp, w0, w1 = 7.6, 2.9, 1.9
+wid = w0 - (w0 - w1) * np.clip(u, 0, Lp) / Lp
+plug = (u >= 0.4) & (u <= Lp) & (np.abs(v) <= wid)
+collar = (u > -0.6) & (u < 0.9) & (np.abs(v) <= w0 + 0.7)
+body = plug | collar
+pad = np.pad(body, 1)
+edge = body & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+put = body.copy()
+cell[body] = FROST
+cell[collar] = GLASS_D
+cell[collar & (u > 0.2)] = GLASS                          # (the collar's upper face, catching light)
+cell[plug & (v < -0.45 * wid)] = SHINE                    # lit down one side
+cell[plug & (v > 0.5 * wid)] = FROST_D                    # in shade down the other
+cell[plug & (np.abs(u - Lp * 0.62) < 0.5)] = FROST_D      # a ground-glass ring
+cell[edge] = OUT
 out = a.copy()
 big = np.asarray(Image.fromarray(np.uint8(cell)).resize((GW * G, GH * G), Image.NEAREST))
 h, w = min(GH * G, a.shape[0] - Y0), min(GW * G, a.shape[1] - X0)

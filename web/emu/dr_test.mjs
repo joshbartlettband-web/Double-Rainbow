@@ -74,6 +74,20 @@ for (let c = 0; c < 3; c++) {
 }
 const spread = Math.max(...loud) - Math.min(...loud);
 check(`the three are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart)`, spread < 3);
+{ // Shard's light: each note sends a band of spectrum across his chest, then he is plain glass again
+  turn(EN.PRESETS, -1); render(800);
+  const ok = [];
+  for (const wait of [300, 301]) {                // (an even and an odd millisecond: the start time is fm1_ms | 1)
+    render(wait);
+    const rest = rows(screen(), 108, 150);
+    ex.web_keys(1 << 9); render(240);
+    const mid = rows(screen(), 108, 150);
+    ex.web_keys(0); render(900);
+    ok.push(mid !== rest && rows(screen(), 108, 150) === rest);
+  }
+  check("SHARD: a note sends his light across his chest, and it passes", ex.web_dr_char() === 1 && ok.every(Boolean));
+  turn(EN.PRESETS, 1);
+}
 turn(EN.PRESETS, 1);
 check("PRESETS goes round: after SQUALL, VESPER again", ex.web_dr_char() === 0 && ex.web_engine(0) === ENGINE[0]);
 turn(EN.PRESETS, -1);

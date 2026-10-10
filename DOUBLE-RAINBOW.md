@@ -94,10 +94,12 @@ made into 4-bit sprites by `tools/art/procchar.py` (`art/sprites/`), packed into
 Squall first used filtered white noise, and on the FM-1 its pitch did not come through (measured: 20 % of its energy
 on the note's harmonics, however narrow the filter). META carries the tune (79 %) and still sounds like weather.
 
-Art fixes are made in code, not with more Gemini images (`tools/art/make_sprites.sh` rebuilds every sprite): Shard's
-chest is glass again with a small spectrum low on his belly that bows with his shape (`tools/art/fix_shard.py`;
-an arc was tried and dropped: it looked like a Care Bear's belly badge), Squall's eyes and bolt are recoloured yellow
-(`tools/art/fix_squall.py`).
+Art fixes are made in code where they can be (`tools/art/make_sprites.sh` rebuilds every sprite): Squall's eyes and
+bolt are recoloured yellow (`tools/art/fix_squall.py`). Shard's chest could not be fixed that way (the first picture's
+chest was a solid block of rainbow, with no glass under it to work from), so he was redrawn by Gemini with the light
+faint inside his glass (`art/gemini/shard_d.jpg`). **Shard's light** (`firmware/src/dr.c`, built): each note sends a
+band of spectrum across his chest, half the glass's own colour, then he is clear glass again. It is the first of
+the code animations on top of the painted sprites.
 
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
 three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).

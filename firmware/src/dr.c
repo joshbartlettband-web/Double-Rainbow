@@ -303,7 +303,7 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
 static struct {
     uint8_t on, codex, page, under, dirty;   /* dirty: DR_D_* */
     uint8_t sounding;                        /* the horizon is tracing the wave (and needs one more flat redraw) */
-    uint32_t wave_ms;
+    uint32_t wave_ms, sweep_t0;              /* sweep_t0: Shard's light began (0 = none) */
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
 } drm;
@@ -407,11 +407,37 @@ static void dr_sprite_at(uint32_t k, int32_t *x, int32_t *y)
     *y = k == 2u ? 70 : 174 - s->h;
 }
 
+/* Shard's light: each note sends a band of spectrum across the glass of his chest, the moonlight caught inside him.
+ * A lens round his chest (sprite pixels), the band's six colours two pixels each, crossing it diagonally in
+ * DR_SWEEP_MS, each half the glass's own colour (light inside it, not paint on it); the outline stays. */
+#define DR_SWEEP_MS 560u
+#define DR_SWEEP_Y0 108                      /* the screen rows it can touch: DR_SWEEP_Y0 .. + DR_SWEEP_H - 1 */
+#define DR_SWEEP_H 42
+static const uint16_t DR_SPECTRUM[6] = {DR_RGB(236, 72, 72), DR_RGB(250, 150, 50), DR_RGB(250, 222, 70),
+                                        DR_RGB(90, 206, 96), DR_RGB(70, 140, 240), DR_RGB(156, 96, 230)};
+static int32_t dr_sweep_pos(void)            /* where the band is (-1000: none) */
+{
+    int32_t t = (int32_t)(fm1_ms - drm.sweep_t0);       /* (signed: t0 may be fm1_ms | 1, a millisecond ahead) */
+    if (!drm.sweep_t0 || dr.ch != 1u || t >= (int32_t)DR_SWEEP_MS)
+        return -1000;
+    if (t < 0)
+        t = 0;
+    return -32 + t * 76 / (int32_t)DR_SWEEP_MS;
+}
+static uint16_t dr_sweep_px(int32_t pos, int32_t x, int32_t y, uint16_t c)   /* Shard's pixel (x, y), its colour c */
+{
+    int32_t dx = x - 26, dy = y - 62, k;
+    if (pos == -1000 || dx * dx * 256 / 169 + dy * dy * 256 / 256 >= 256)
+        return c;
+    k = (dx + dy - pos + 12) / 2;            /* (lines of dx + dy: rising to his left, as the light in his glass) */
+    return k >= 0 && k < 6 ? (uint16_t)(((DR_SPECTRUM[5 - k] & 0xF7DEu) >> 1) + ((c & 0xF7DEu) >> 1)) : c;   /* (half glass) */
+}
+
 /* the scene's rows y0 .. y0 + h - 1 (h <= 80): background, then the character's runs over it */
 static void dr_scene_rows(int32_t y0, int32_t h)
 {
     const dr_sprite_t *s = &DR_SPRITES[dr.ch];
-    int32_t sx, sy, x, y, pos = 0;
+    int32_t sx, sy, x, y, pos = 0, sweep = dr_sweep_pos();
     uint32_t i;
     cv_begin(240, (uint32_t)h, DR_BG);
     for (y = 0; y < h; y++)
@@ -425,7 +451,8 @@ static void dr_scene_rows(int32_t y0, int32_t h)
                 for (j = 0; j < len; j++) {
                     int32_t p = pos + (int32_t)j, py = sy + p / s->w - y0, px = sx + p % s->w;
                     if (py >= 0 && py < h)
-                        cv_px[py * 240 + px] = swap16(s->pal[idx - 1u]);
+                        cv_px[py * 240 + px] = swap16(idx == 1u ? s->pal[0] :     /* (1: the outline) */
+                                                      dr_sweep_px(sweep, p % s->w, p / s->w, s->pal[idx - 1u]));
                 }
             pos += (int32_t)len;
             if (sy + pos / s->w >= y0 + h)
@@ -461,6 +488,8 @@ static void dr_say(const char *s);
 static struct { uint8_t note, state; uint32_t on, off; } drp[DR_PN];   /* state 0 free, 1 waiting, 2 sounding */
 static void dr_midi(uint32_t note, uint32_t on)
 {
+    if (on)
+        drm.sweep_t0 = fm1_ms | 1u;                      /* (Shard's light, for the player's notes too) */
     (void)midi_enqueue(on ? 0x09u | 0x90u << 8 | (note & 127u) << 16 | 100u << 24 : 0x08u | 0x80u << 8 | (note & 127u) << 16, 1);
 }
 static void dr_play(uint32_t note, uint32_t after_ms, uint32_t ms)
@@ -1078,16 +1107,16 @@ static int dr_frame(void)
     notes = fm1_input_note_edges();
     both = (1u << panel.btn[B_HOME]) | (1u << panel.btn[B_SAVE]);
     if ((fm1_in.buttons & both) == both) {               /* HOME + SAVE held: the countdown, then Melodee */
-        uint32_t held = fm1_ms - drm.combo_t0;
+        int32_t held = (int32_t)(fm1_ms - drm.combo_t0); /* (signed: t0 is fm1_ms | 1, maybe a millisecond ahead) */
         if (!drm.combo_t0)
             drm.combo_t0 = fm1_ms | 1u;
-        else if (held >= DR_HOLD_MS) {
+        else if (held >= (int32_t)DR_HOLD_MS) {
             drm.combo_t0 = 0;
             dr_leave();
             return 1;
         } else {
             char m[24] = "MELODEE IN ";
-            m[11] = (char)('0' + (DR_HOLD_MS - held + 999u) / 1000u);
+            m[11] = (char)('0' + (DR_HOLD_MS - (uint32_t)(held > 0 ? held : 0) + 999u) / 1000u);
             m[12] = 0;
             if (!drm.msg[0] || drm.msg[11] != m[11])
                 dr_say(m);
@@ -1176,6 +1205,8 @@ static int dr_frame(void)
             drs.next_ms = fm1_ms + 700u;
         }
     }
+    if (notes)                                           /* (Shard: each note sends his light across) */
+        drm.sweep_t0 = fm1_ms | 1u;
     for (i = 0; notes && i < 27u; i++)                   /* the keys' presses: SCRY's answers, TRACE's next notes */
         if ((notes >> i) & 1u) {
             if (dr_kmode == DRK_SCRY && !drm.codex)
@@ -1190,6 +1221,14 @@ static int dr_frame(void)
         dr_trace_poll();
     if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
         drm.wave_ms = fm1_ms;
+        if (drm.sweep_t0 && !(drm.dirty & DR_D_SCENE)) {    /* Shard's light crossing his chest (then one clean pass) */
+            if (dr_sweep_pos() == -1000)
+                drm.sweep_t0 = 0;
+            if (dr.ch == 1u) {
+                dr_scene_rows(DR_SWEEP_Y0, DR_SWEEP_H);
+                cv_blit(0, DR_SWEEP_Y0);
+            }
+        }
         if (dr_wave_update() || (drm.sounding && !(drm.dirty & DR_D_SCENE))) {
             uint32_t any = 0;
             for (i = 0; i < 240u; i++)
