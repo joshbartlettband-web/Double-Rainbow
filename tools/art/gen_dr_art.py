@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk"]          # the cast's order (firmware/src/dr.c DR_CAST)
+SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk", "bog", "hush", "tumbler", "glint", "hermit"]          # the cast's order (firmware/src/dr.c DR_CAST)
 
 
 def rgb565(c):

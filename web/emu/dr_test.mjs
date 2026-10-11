@@ -16,9 +16,9 @@ import fs from "fs";
 const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, OCTDN: 12, OCTUP: 13 };
 const EN = { SELECT: 0, ALGO: 1, PRESETS: 2, K1: 3, K2: 4, K3: 5, K4: 6 };
-const NAMES = ["VESPER", "SHARD", "SQUALL", "WICK", "TOCK", "MOTE", "MURK"];
-const ENGINE = [19, 12, 11, 5, 10, 3, 2];          // PROPHET, FM6, NOISE, VOICE, DRUM, LOFI, PHASE
-const N = NAMES.length, TOCK = 4;
+const NAMES = ["VESPER", "SHARD", "SQUALL", "WICK", "TOCK", "MOTE", "MURK", "BOG", "HUSH", "TUMBLER", "GLINT", "HERMIT"];
+const ENGINE = [19, 12, 11, 5, 10, 3, 2, 0, 0, 12, 15, 19];   // PROPHET FM6 NOISE VOICE DRUM LOFI PHASE ANALOG x2 FM6 CZ-1 PROPHET
+const N = NAMES.length, TOCK = 4, GLINT = 10;
 const P5_CUTOFF = 17;                              // (prophet_patch.c)
 let fails = 0;
 const check = (what, ok) => { console.log(`dr: ${what.padEnd(78)} ${ok ? "ok" : "FAIL"}`); if (!ok) fails++; };
@@ -67,11 +67,16 @@ ex.web_keys(0); render(1500);
 
 const loud = [];
 const P_E0 = ex.web_p_e0();                        // the new four: a knob each, its setting and its sound
-const KNOB = {
-  3: [0, 0, "VOWEL (AH to OO): darker", (lo, hi) => hi.bright - lo.bright < -3],
-  4: [1, 3, "BOOM (decay): longer, louder", (lo, hi) => hi.db - lo.db > 3],
-  5: [2, 4, "ZAP (pitch sweep): darker", (lo, hi) => hi.bright - lo.bright < -3],
-  6: [2, 0, "TIDE (the eight waves): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+const E = (e) => () => ex.web_param(0, P_E0 + e), F = (f) => () => ex.web_p5_field(f);
+const KNOB = {                                     // [knob, the setting under it, what it does, the check]
+  3: [0, E(0), "VOWEL (AH to OO): darker", (lo, hi) => hi.bright - lo.bright < -3],
+  4: [1, E(3), "BOOM (decay): longer, louder", (lo, hi) => hi.db - lo.db > 3],
+  5: [2, E(4), "ZAP (pitch sweep): darker", (lo, hi) => hi.bright - lo.bright < -3],
+  6: [2, E(0), "TIDE (the eight waves): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  7: [0, E(4), "SQUISH (cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  8: [0, E(4), "DUSK (cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  9: [0, E(2), "BARK (modulator level): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  11: [0, F(P5_CUTOFF), "BLARE (Sequential's Iconic Brass, its cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
 };
 for (let c = 0; c < N; c++) {
   if (c) turn(EN.PRESETS, 1);
@@ -80,6 +85,15 @@ for (let c = 0; c < N; c++) {
   loud.push(l.db);
   check(`${NAMES[c]} (PRESETS ${c ? "turned" : "at power-on"}): engine ${ex.web_engine(0)}, sounds (peak ${l.peak.toFixed(3)})`,
         ex.web_dr_char() === c && ex.web_engine(0) === ENGINE[c] && l.peak > 0.02);
+  if (c === GLINT) {                               // TONE: a Casio tone a detent, the card says which
+    const cards = rows(screen(), 198, 240), a = level(phrase);
+    turn(EN.K1, 4);
+    const t = ex.web_dr_knob(0), b = level(phrase), cards5 = rows(screen(), 198, 240);
+    turn(EN.K1, -60);
+    check(`GLINT: TONE steps through Casio's own tones (A-1 -> A-${t}: bright ${a.bright.toFixed(1)} -> ${b.bright.toFixed(1)}), and stops at A-1`,
+          t === 5 && Math.abs(b.bright - a.bright) + Math.abs(b.db - a.db) > 1 && cards5 !== cards &&
+          rows(screen(), 198, 240) === cards && ex.web_dr_knob(0) === 1 && ex.web_engine(0) === 15);
+  }
   if (c === TOCK) {                                // the chip names the drum struck: the kick, then the snare
     const chip = () => rows(screen(), 38, 78);
     ex.web_keys(1 << 7); render(150); ex.web_keys(0); render(200); const kick = chip();
@@ -87,11 +101,11 @@ for (let c = 0; c < N; c++) {
     check("TOCK: the chip names the drum struck (C the kick, D the snare)", kick !== snare);
   }
   if (KNOB[c]) {
-    const [m, e, what, ok] = KNOB[c], v0 = ex.web_dr_knob(m);
-    turn(EN.K1 + m, -60); const p0 = ex.web_param(0, P_E0 + e); const lo = level(phrase);
-    turn(EN.K1 + m, 60); const p1 = ex.web_param(0, P_E0 + e); const hi = level(phrase);
+    const [m, get, what, ok] = KNOB[c], v0 = ex.web_dr_knob(m);
+    turn(EN.K1 + m, -60); const p0 = get(); const lo = level(phrase);
+    turn(EN.K1 + m, 60); const p1 = get(); const hi = level(phrase);
     turn(EN.K1 + m, -60); turn(EN.K1 + m, v0 / 2);
-    check(`${NAMES[c]}: ${what} (E${e} ${p0} -> ${p1}; ${lo.db.toFixed(1)} -> ${hi.db.toFixed(1)} dB, bright ${lo.bright.toFixed(1)} -> ${hi.bright.toFixed(1)})`,
+    check(`${NAMES[c]}: ${what} (${p0} -> ${p1}; ${lo.db.toFixed(1)} -> ${hi.db.toFixed(1)} dB, bright ${lo.bright.toFixed(1)} -> ${hi.bright.toFixed(1)})`,
           p1 !== p0 && ok(lo, hi) && ex.web_dr_knob(m) === v0);
   }
 }

@@ -15,3 +15,8 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-10 18:29,art/gemini/shard_e.jpg,gemini-3.1-flash-image,1K,396,1434,0.067,1
 2026-10-10 18:29,art/gemini/shard_f.jpg,gemini-3.1-flash-image,1K,140,1512,0.067,1
 2026-10-10 18:29,art/gemini/shard_d.jpg,gemini-3.1-flash-image,1K,408,1486,0.067,1
+2026-10-11 05:56,art/gemini/hush_a.jpg,gemini-3.1-flash-image,1K,137,1341,0.067,1
+2026-10-11 05:56,art/gemini/glint_a.jpg,gemini-3.1-flash-image,1K,156,1348,0.067,1
+2026-10-11 05:56,art/gemini/tumbler_a.jpg,gemini-3.1-flash-image,1K,153,1360,0.067,1
+2026-10-11 05:56,art/gemini/bog_a.jpg,gemini-3.1-flash-image,1K,147,1395,0.067,1
+2026-10-11 05:56,art/gemini/hermit_a.jpg,gemini-3.1-flash-image,1K,147,1463,0.067,1

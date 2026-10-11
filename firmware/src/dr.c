@@ -118,7 +118,8 @@ static void dr_splash(void)
 #define ENGI_PHASE 2u
 #define ENGI_LOFI 3u
 #define ENGI_VOICE 5u
-enum { DR_NONE, DR_P5, DR_TP };
+#define ENGI_ANALOG 0u
+enum { DR_NONE, DR_P5, DR_TP, DR_PRESET };   /* DR_PRESET: the knob picks the engine's preset (lo .. hi), a step a detent */
 typedef struct { uint8_t kind, id; int16_t lo, hi; } dr_route_t;
 typedef struct { const char *name, *under; uint8_t def; dr_route_t r[3]; } dr_macro_t;
 typedef struct {
@@ -131,7 +132,7 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 7u
+#define DR_NCHAR 12u
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
  * filter (the older one, saturating sooner: the warmth), half key tracking, velocity on the filter and the
@@ -227,6 +228,51 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"TIDE", "WAVE|SHAPE", 70, {{DR_TP, P_E0, 0, 7}}},
         {"DEPTH", "SUB", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
     }, {110, 230, 214}},                                        /* her glow */
+    /* BOG: ANALOG's ACID, the TB-303's squelch: one saw, a resonant low-pass and a short envelope sweeping it, mono
+     * with a slide. SQUISH is the cutoff, GOO the resonance, GULP how far and how long the envelope sweeps it, GRIT
+     * the drive. {WAVE DTN MIX NOIS | CUT RES DRV KTR} */
+    {"BOG", "ANALOG", "Squelch is a love language.", ENGI_ANALOG, 4, DR_E_KEEP, {0, 0, 0, 0}, 116, 0, 18, {
+        {"SQUISH", "CUTOFF", 40, {{DR_TP, P_E0 + 4, 16, 100}}},
+        {"GOO", "RESO", 60, {{DR_TP, P_E0 + 5, 40, 125}}},
+        {"GULP", "ENV AMT|DECAY", 50, {{DR_TP, P_ED_FLT, 10, 63}, {DR_TP, P_DEC, 30, 95}}},
+        {"GRIT", "DRIVE", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
+    }, {170, 240, 90}},                                         /* his throat */
+    /* HUSH: ANALOG's PWM STR, a string machine: a pulse whose width sweeps, a second one detuned against it, a
+     * gentle filter. DUSK darkens, FLUTTER detunes, HOLLOW mixes the two, WINGS is how slowly she arrives and
+     * leaves. */
+    {"HUSH", "ANALOG", "Writes everything down. Says nothing.", ENGI_ANALOG, 3, DR_E_KEEP, {0, 0, 0, 0}, 100, 50, 64, {
+        {"DUSK", "CUTOFF", 56, {{DR_TP, P_E0 + 4, 30, 110}}},
+        {"FLUTTER", "DETUNE", 14, {{DR_TP, P_E0 + 1, 0, 60}}},
+        {"HOLLOW", "OSC MIX", 30, {{DR_TP, P_E0 + 2, 0, 127}}},
+        {"WINGS", "ATTACK|RELEASE", 50, {{DR_TP, P_ATK, 4, 110}, {DR_TP, P_REL, 40, 118}}},
+    }, {214, 196, 240}},                                        /* her ink */
+    /* TUMBLER: FM6's DX TINE, the DX7's electric piano (the sound of a thousand 80s ballads). BARK is the tine's
+     * modulator level (soft to barking), CLANG the modulator's ratio (a bell, then a gong), RING the modulator's decay, SHEEN the chorus every
+     * electric piano of the time went through. {ALG FB MLVL MRAT | MEG VMOD DTUN -} */
+    {"TUMBLER", "FM6", "Opens anything. Asks no one.", ENGI_FM6, 8, DR_E_KEEP, {0, 0, 0, 0}, 106, 40, 40, {
+        {"BARK", "MOD|LEVEL", 50, {{DR_TP, P_E0 + 2, -40, 40}}},
+        {"CLANG", "MOD|RATIO", 26, {{DR_TP, P_E0 + 3, -2, 6}}},
+        {"RING", "MOD|DECAY", 50, {{DR_TP, P_E0 + 4, -40, 40}}},
+        {"SHEEN", "CHORUS", 40, {{DR_TP, P_CHOR, 0, 110}}},
+    }, {230, 190, 90}},                                         /* his brass */
+    /* GLINT: the CZ-1, Casio's own 64 factory tones played from their own data (the engine has no settings to
+     * turn: it is the real tones). TONE picks one (A-1 .. H-8, its name on the line), the rest are the track's
+     * effects: SHINE the chorus, GRIT the distortion, SPACE the reverb. */
+    {"GLINT", "CZ-1", "Takes the best part of everything.", ENGI_CZ, 1, DR_E_KEEP, {0, 0, 0, 0}, 94, 30, 40, {
+        {"TONE", "CASIO|TONES", 1, {{DR_PRESET, 0, 1, 64}}},
+        {"SHINE", "CHORUS", 28, {{DR_TP, P_CHOR, 0, 110}}},
+        {"GRIT", "DIST", 0, {{DR_TP, P_DIST, 0, 80}}},
+        {"SPACE", "REVERB", 36, {{DR_TP, P_REV, 0, 110}}},
+    }, {120, 200, 230}},                                        /* her sheen */
+    /* HERMIT: Sequential's own Iconic Brass (factory program 130), two saws through the filter, the envelope
+     * opening it like a breath. The knobs start where the program has them: BLARE the cutoff, BITE the envelope
+     * amount, SWELL the filter's attack, GROWL the resonance and the vintage drift. */
+    {"HERMIT", "PROPHET", "Lives in a horn. Plays it, too.", ENGI_PROPHET, 130, DR_E_KEEP, {0, 0, 0, 0}, 116, 20, 36, {
+        {"BLARE", "CUTOFF", 26, {{DR_P5, P5_CUTOFF, 10, 88}}},
+        {"BITE", "ENV AMT", 68, {{DR_P5, P5_ENV_FILTER, 40, 127}}},
+        {"SWELL", "ATTACK", 34, {{DR_P5, P5_ATTACK_FILTER, 0, 100}, {DR_P5, P5_ATTACK_AMP, 0, 50}}},
+        {"GROWL", "RESO|VINTAGE", 10, {{DR_P5, P5_RESONANCE, 0, 90}, {DR_P5, P5_VINTAGE, 40, 127}}},
+    }, {255, 150, 90}},                                         /* his claws */
 };
 
 static struct {
@@ -244,6 +290,8 @@ static void dr_macro_apply(track_t *t, uint32_t k, uint32_t m)
     for (r = 0; r < 3u && mc->r[r].kind; r++) {
         const dr_route_t *rt = &mc->r[r];
         int32_t x = rt->lo + ((rt->hi - rt->lo) * v + (rt->hi > rt->lo ? 50 : -50)) / 100;   /* (rounded) */
+        if (rt->kind == DR_PRESET)                       /* (dr_load picks it) */
+            continue;
         if (rt->kind == DR_P5)
             p5_edit_value(t, rt->id, x);
         else {
@@ -258,7 +306,7 @@ static void dr_load(uint32_t k)
 {
     const dr_char_t *c = &DR_CAST[k % DR_NCHAR];
     track_t *t = &trk[0];
-    uint32_t i;
+    uint32_t i, preset;
     if (!dr.ready) {
         uint32_t j, m;
         for (j = 0; j < DR_NCHAR; j++)
@@ -269,9 +317,13 @@ static void dr_load(uint32_t k)
     dr.ch = (uint8_t)(k % DR_NCHAR);
     song.sel = 0;
     set_engine_of(t, c->engine);
-    apply_preset_to(t, c->preset);
+    preset = c->preset;
+    for (i = 0; i < 4u; i++)                             /* (a knob that picks the preset: its tone) */
+        if (c->m[i].r[0].kind == DR_PRESET)
+            preset = dr.mv[dr.ch][i];
+    apply_preset_to(t, preset);
     fm1_irq_off();
-    if (c->engine == ENGI_PROPHET) {
+    if (c->engine == ENGI_PROPHET && !c->preset) {       /* (Vesper: our own program; others a factory one) */
         dr_vesper_program(p5_patch_of(t));
         p5_track_accept(t);
     }
@@ -370,6 +422,44 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
       "or a ringing tone. The more", "it bends, the brighter it", "sounds. No filter needed."},
      {"Turn TIDE slowly: eight waves,", "the last three ring like", "water in a glass. Then turn",
       "BEND from soft to sharp."}},
+    {"Jar four, the reed jar", "Filled in the marsh below.",
+     {"I dipped it in the marsh one", "summer and he was in it,", "singing four notes. He has",
+      "sung the same four ever since.", "He will not stop, and I have", "stopped asking him to."},
+     "ACID", "Roland TB-303, 1981",
+     {"A little bass machine that", "failed, until Chicago found", "it. One saw wave, a filter",
+      "that rings, and an envelope", "that sweeps it shut on every", "note: the squelch."},
+     {"Play a fast low line and turn", "SQUISH up and down while it", "plays. Then turn GOO up until",
+      "the filter sings by itself."}},
+    {"My owl", "She keeps the ledger.",
+     {"She writes these pages when", "my hands shake. She has read", "every one of them, even the",
+      "ones I tore out. She has", "never said what was on them.", "I have never asked."},
+     "STRINGS", "String machines: Solina, Elka, 1970s",
+     {"Not real strings: a pulse", "wave whose width keeps", "moving, a second one tuned",
+      "slightly off, and a chorus.", "Bands in the 70s used them", "for a whole string section."},
+     {"Hold a big chord and turn", "FLUTTER up: the strings", "drift apart. WINGS up makes", "her arrive slowly."}},
+    {"The key", "Not where I left it.",
+     {"The key to this room. Someone", "let it out, or it let itself", "out. The door has not locked",
+      "since, and the jars know it.", "That is why they keep", "getting away."},
+     "FM PIANO", "Yamaha DX7, 1983",
+     {"The DX7's electric piano was", "on a thousand 80s ballads.", "Two waves, one bending the",
+      "other: hit a key hard and", "the bend gets brighter, the", "bark of a real tine."},
+     {"Play slow chords with SHEEN", "up, like an 80s ballad. Then", "turn BARK up and hit the",
+      "keys harder."}},
+    {"The magpie", "Another collector.",
+     {"I am not the only one in", "these hills who keeps sounds.", "She takes the best part of",
+      "everything and keeps it. She", "has sixty-four now. I would", "like to see her collection."},
+     "CZ-1", "Casio, 1986",
+     {"Casio's own sixty-four tones,", "played from the real data. A", "factory tone is a starting",
+      "point: the CZ came with", "brass, strings, bells and", "basses already made."},
+     {"Turn TONE slowly: each step", "is a new Casio tone, its name", "on the line. Find a favorite,",
+      "then add SPACE."}},
+    {"Jar nine", "Moved in. Will not move out.",
+     {"Jar nine held an old brass", "horn. Something moved into", "it, the way crabs do, and",
+      "would not come out again. It", "answers when I call it.", "Loudly."},
+     "PROPHET-5", "Sequential, 1978",
+     {"This is one of Sequential's", "own programs, Iconic Brass.", "Two saw waves, and a filter",
+      "envelope that opens like a", "breath: that swell is what", "synth brass is."},
+     {"Play a chord and let go.", "Turn SWELL up: the brass", "breathes in. BITE down makes", "it softer and rounder."}},
 };
 
 static struct {
@@ -1053,8 +1143,17 @@ static void dr_draw_cards(void)
                 cv_text_fit(x + 3, 26, &AF_S, b, DR_TEXT, DR_SURF, 51);
         } else {
             char s[8];
-            fmt_int(s, v);
-            str_cpy(s + str_len(s), "%", 2);
+            const dr_route_t *pr = &c->m[i].r[0];
+            if (pr->kind == DR_PRESET) {                 /* the tone: A-1 .. H-8, as the CZ-1 numbers them */
+                s[0] = (char)('A' + (v - 1) / 8);
+                s[1] = '-';
+                s[2] = (char)('1' + (v - 1) % 8);
+                s[3] = 0;
+                v = (v - pr->lo) * 100 / (pr->hi - pr->lo);
+            } else {
+                fmt_int(s, v);
+                str_cpy(s + str_len(s), "%", 2);
+            }
             cv_text_on(x + 5, 15, &AF_M, s, DR_TEXT, DR_SURF);
             cv_rect(x + 5, 33, 45, 2, DR_PLUM);
             if (v)
@@ -1249,8 +1348,18 @@ static int dr_frame(void)
     }
     for (i = 0; i < 4u; i++)                             /* the four knobs, 2 % a detent */
         if ((s = fm1_enc_take(panel.enc[EN_K1 + i]) * panel.dir[EN_K1 + i]) != 0) {
-            dr.mv[dr.ch][i] = (uint8_t)clamp(dr.mv[dr.ch][i] + s * 2, 0, 100);
-            dr_macro_apply(&trk[0], dr.ch, i);
+            const dr_route_t *pr = &DR_CAST[dr.ch].m[i].r[0];
+            if (pr->kind == DR_PRESET) {                 /* a tone a detent: the character again with it */
+                uint8_t v = (uint8_t)clamp(dr.mv[dr.ch][i] + s, pr->lo, pr->hi);
+                if (v != dr.mv[dr.ch][i]) {
+                    dr.mv[dr.ch][i] = v;
+                    dr_load(dr.ch);
+                    dr_say(ENGINES[DR_CAST[dr.ch].engine]->presets[v].name);
+                }
+            } else {
+                dr.mv[dr.ch][i] = (uint8_t)clamp(dr.mv[dr.ch][i] + s * 2, 0, 100);
+                dr_macro_apply(&trk[0], dr.ch, i);
+            }
             drm.dirty |= DR_D_CARDS;
         }
     if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0) {   /* ALGORITHM: how the keys play */

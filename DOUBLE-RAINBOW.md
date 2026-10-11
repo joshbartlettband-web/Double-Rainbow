@@ -115,8 +115,18 @@ phase distortion with real controls; her codex page tells the CZ's story.
 | MOTE, an 8-bit gremlin of jar dust | LOFI: PULSE LD | Small. Loud. Probably your fault. | DUTY, SHAPE (pulse, triangle, saw), ZAP (pitch sweep), CHIRP (arpeggio) | Steals the jars' glass stoppers; that is why some jars hum. |
 | MURK, a deep-sea jellyfish | PHASE: STRING, slower | Bends the light. Bends the rules. | BEND (DCW), SWELL (DCW envelope), TIDE (the eight waves), DEPTH (sub) | Jar one, let go on purpose. She knows what is in jar thirteen. |
 
-All seven are leveled within 1.7 dB by measured loudness (the drums by their own measure), and each new character
-has a knob checked in `web/emu/dr_test.mjs` to move its setting and its sound. The art takes about 20 KB for seven.
+**Built: the last five** (concepts `art/gemini/*_a.jpg`), for twelve in all:
+
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| BOG, a swamp toad | ANALOG: ACID (the TB-303 squelch) | Squelch is a love language. | SQUISH (cutoff), GOO (resonance), GULP (envelope amount, decay), GRIT (drive) | Jar four, the reed jar: the same four notes forever. |
+| HUSH, a barn owl | ANALOG: PWM STR (a string machine) | Writes everything down. Says nothing. | DUSK, FLUTTER (detune), HOLLOW (oscillator mix), WINGS (attack, release) | She writes the ledger, and has read the torn-out pages. |
+| TUMBLER, a living brass key | FM6: DX TINE (the DX7 electric piano) | Opens anything. Asks no one. | BARK (mod level), CLANG (mod ratio), RING (mod decay), SHEEN (chorus) | The key to the room: the door has not locked since. |
+| GLINT, a magpie | CZ-1: Casio's own 64 tones | Takes the best part of everything. | TONE (A-1 .. H-8, a tone a detent, its name on the line), SHINE (chorus), GRIT (dist), SPACE (reverb) | Another collector in the hills. |
+| HERMIT, a hermit crab in a horn | PROPHET: Sequential's Iconic Brass | Lives in a horn. Plays it, too. | BLARE (cutoff), BITE (env amount), SWELL (attack), GROWL (resonance, vintage); they start where the program has them | Jar nine: something moved in. |
+
+All twelve are leveled within 1.9 dB by measured loudness (the drums by their own measure), and each new character
+has a knob checked in `web/emu/dr_test.mjs` to move its setting and its sound. The art takes about 33 KB for twelve.
 
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
