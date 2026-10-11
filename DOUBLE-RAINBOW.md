@@ -101,6 +101,15 @@ faint inside his glass (`art/gemini/shard_d.jpg`). **Shard's light** (`firmware/
 band of spectrum across his chest, half the glass's own colour, then he is clear glass again. It is the first of
 the code animations on top of the painted sprites.
 
+**Animations (built), all from code, no stored frames** (`firmware/src/dr.c`; `docs/mockups/animations.gif`):
+
+- **The glow.** Each sprite marks a few of its colours (`tools/art/gen_dr_art.py`: Vesper's eyes, Squall's bolt,
+  Wick's flame, Tock's clock face, Mote's eyes, Murk's bell, Bog's throat, Hush's ink, Tumbler's eyes, Glint's
+  trinkets, Hermit's horn). They brighten with the sound's level and breathe slowly when it is quiet. Only their
+  rows are redrawn, at most 15 times a second; it costs a few bytes of RAM and no pictures.
+- **The float.** Squall and Murk rise and fall 4 px, about every 3 s.
+- **Shard's light** sweeps his chest on each note.
+
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
 three were leveled by measured loudness (BS.1770, within 1 dB on a test phrase).
 
@@ -275,6 +284,16 @@ knob cards for how much of each crystal.
 - **Melodee's factory patches stay,** including Sequential's 200 Prophet-5 programs. We will revisit them down the road.
 - Each character gets its own program, tuned to it and to its macro knobs.
 - Level every character by measured loudness, not by peak (Rainbow mode's lesson; spread under 4 dB).
+
+## Memory (measured at twelve characters)
+
+- **Flash** (the app slot: code, pictures, text): 484 KB of 540 KB used, 56 KB free (the build keeps 10 KB).
+  The twelve sprites are 33 KB of it. Compressing them further (a Huffman code over the runs, as Melodee's fonts
+  are) would make them about 24 KB, saving about 9 KB, when space gets short.
+- **RAM** (.data + .bss): 93.7 KB of 96 KB, 4.6 KB free. This is the tight one. Double Rainbow's own share is
+  about 0.5 KB (the horizon's 240 points, the mode's state, the player); the horizon reads Melodee's scope in
+  place rather than copying it (1 KB saved). The rest is Melodee's (tracks, patterns, projects). The sprites
+  are in flash and use no RAM.
 
 ## Limits to plan around
 

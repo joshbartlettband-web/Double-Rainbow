@@ -147,6 +147,19 @@ turn(EN.PRESETS, 1);
         brighter.bright - bright.bright > 3);
 }
 
+{ // the animations: Vesper's eyes (rows 88..96) brighten with the sound; Squall rises and falls on his own
+  render(3000);
+  const eyes = () => { let m = 0; const fb = screen(); for (let y = 88; y < 97; y++) for (let x = 0; x < 240; x++) { const v = fb[y * 240 + x], s = (v >> 8 | v << 8) & 0xffff; m += ((s >> 11) & 31) + ((s >> 5) & 63) / 2 + (s & 31); } return m / 100; };   // (her eyes' rows, their brightness)
+  let quiet = 0; for (let i = 0; i < 6; i++) { render(150); quiet = Math.max(quiet, eyes()); }
+  ex.web_keys(1 << 7 | 1 << 11 | 1 << 14); render(500);
+  const loudEyes = eyes(); ex.web_keys(0); render(3000);
+  check(`VESPER: her eyes glow brighter while she sounds (${quiet.toFixed(1)} -> ${loudEyes.toFixed(1)})`, loudEyes > quiet + 1);
+  turn(EN.PRESETS, 2); render(800);
+  const seen = new Set(); for (let i = 0; i < 12; i++) { render(250); seen.add(rows(screen(), 60, 160)); }
+  check(`SQUALL floats: he rises and falls with no note (${seen.size} different frames in 3 s)`, seen.size >= 3);
+  turn(EN.PRESETS, -2); render(800);
+}
+
 { // the horizon: the live wave while a note sounds, flat (as it was) when it is over
   render(4000);
   const rest = rows(screen(), 154, 198);
@@ -173,7 +186,8 @@ turn(EN.PRESETS, 1);
   const held = rows(screen(), 198, 240), heldView = ex.web_dr_view();
   ex.web_buttons(0); render(200);
   check("EDIT held: the cards show what the knobs move; let go: back", held !== cards && (heldView & 8) && rows(screen(), 198, 240) === cards);
-  const scene = rows(screen(), 38, 240);
+  const still = () => rows(screen(), 38, 86) + rows(screen(), 100, 240);   // (not her eyes: they breathe)
+  const scene = still();
   tap(B.SCL);
   const page0 = rows(screen(), 38, 240);
   turn(EN.PRESETS, 1);
@@ -187,7 +201,7 @@ turn(EN.PRESETS, 1);
   tap(B.SCL);
   check("SCL: the codex (the ledger, the engine, something to try: PRESETS, stopping at both ends), SCL: back",
         page0 !== scene && page1 !== page0 && page2 !== page1 && (v1 & 7) === 3 && (v2 & 7) === 5 && (v0 & 7) === 1 &&
-        ex.web_dr_view() === 0 && rows(screen(), 38, 240) === scene && ex.web_dr_char() === 0);
+        ex.web_dr_view() === 0 && still() === scene && ex.web_dr_char() === 0);
   check("the keys still play in the codex and with EDIT held", (() => {
     tap(B.SCL); const a = level(() => { ex.web_keys(1 << 9); render(400); ex.web_keys(0); render(100); }); tap(B.SCL);
     ex.web_buttons(1 << B.EDIT); const b = level(() => { ex.web_keys(1 << 9); render(400); ex.web_keys(0); render(100); });

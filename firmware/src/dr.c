@@ -467,6 +467,8 @@ static struct {
     uint8_t sounding;                        /* the horizon is tracing the wave (and needs one more flat redraw) */
     uint8_t drum;                            /* a drum character: the lane last struck + 1 (Melodee's live notes skip drums) */
     uint32_t wave_ms, sweep_t0;              /* sweep_t0: Shard's light began (0 = none) */
+    uint8_t amp;                             /* the sound's level, 0..255 (the horizon's peak, held and falling) */
+    uint8_t glow, bob;                       /* as drawn: the glow (0..15), the floaters' rise (0..4 px) */
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
 } drm;
@@ -528,18 +530,20 @@ static uint16_t dr_scene_px(int32_t x, int32_t y)
  * flat; louder, it scales with the sound (a quiet note a small ripple, a loud chord the full DR_WAVE_PX) */
 static int dr_wave_update(void)
 {
-    static int16_t snap[SCOPE_N];
+    /* read in place (no copy: RAM is short): from the oldest sample on, past the 64 oldest, which the audio ISR may
+     * be writing over while this runs (it writes at scope_w; a half's render is 32 of them) */
+#define DR_SCOPE(i) ((int32_t)scope_buf[(w + 64u + (i)) & (SCOPE_N - 1u)])
     uint32_t w = scope_w, i, trig = 0, changed = 0;
     int32_t peak = 0, x, m, gate, lo;
-    for (i = 0; i < SCOPE_N; i++) {
-        snap[i] = scope_buf[(w + i) & (SCOPE_N - 1u)];
-        if (snap[i] > peak)
-            peak = snap[i];
-        else if (-snap[i] > peak)
-            peak = -snap[i];
+    for (i = 0; i < SCOPE_N - 64u; i++) {
+        int32_t v = DR_SCOPE(i);
+        if (v > peak)
+            peak = v;
+        else if (-v > peak)
+            peak = -v;
     }
-    for (i = 1; i < SCOPE_N - 240u; i++)
-        if (snap[i - 1] < 0 && snap[i] >= 0) {
+    for (i = 1; i < SCOPE_N - 64u - 240u; i++)
+        if (DR_SCOPE(i - 1u) < 0 && DR_SCOPE(i) >= 0) {
             trig = i;
             break;
         }
@@ -548,11 +552,16 @@ static int dr_wave_update(void)
     m = (int32_t)song.master_q12 > 16 ? (int32_t)song.master_q12 : 16;
     gate = 400 * m >> 12;
     lo = 12000 * m >> 12;
+    {                                                    /* (the glow's level: up at once, down slowly) */
+        int32_t a = peak > gate ? peak * 255 / (lo > 1 ? lo : 1) : 0;
+        a = a > 255 ? 255 : a;
+        drm.amp = (uint8_t)(a > drm.amp ? a : drm.amp * 7 / 8);
+    }
     for (x = 0; x < 240; x++) {
         int32_t v = 0;
         if (peak > (gate > 3 ? gate : 3)) {
             int32_t full = peak > lo ? peak : lo;     /* (quiet: smaller; loud: auto-scaled to the full height) */
-            v = -snap[trig + (uint32_t)x] * DR_WAVE_PX / full;
+            v = -DR_SCOPE(trig + (uint32_t)x) * DR_WAVE_PX / full;
         }
         if (v != dr_wave[x]) {
             dr_wave[x] = (int8_t)v;
@@ -560,6 +569,7 @@ static int dr_wave_update(void)
         }
     }
     return (int)changed;
+#undef DR_SCOPE
 }
 
 /* where the character stands: Squall and Murk float */
@@ -567,7 +577,7 @@ static void dr_sprite_at(uint32_t k, int32_t *x, int32_t *y)
 {
     const dr_sprite_t *s = &DR_SPRITES[k];
     *x = 120 - s->w / 2;
-    *y = k == 2u || k == 6u ? 70 : 174 - s->h;          /* (Squall and Murk float) */
+    *y = k == 2u || k == 6u ? 68 + drm.bob : 174 - s->h; /* (Squall and Murk float, rising and falling) */
 }
 
 /* Shard's light: each note sends a band of spectrum across the glass of his chest, the moonlight caught inside him.
@@ -596,12 +606,40 @@ static uint16_t dr_sweep_px(int32_t pos, int32_t x, int32_t y, uint16_t c)   /* 
     return k >= 0 && k < 6 ? (uint16_t)(((DR_SPECTRUM[5 - k] & 0xF7DEu) >> 1) + ((c & 0xF7DEu) >> 1)) : c;   /* (half glass) */
 }
 
+/* The animations, drawn from the painted sprites in code (no frames stored):
+ *   the glow: the colours each sprite marks (tools/art/gen_dr_art.py: eyes, a flame, a bolt, a throat) brighten
+ *     with the sound, and breathe slowly when it is quiet; only their rows are redrawn, when the level changes
+ *   the float: Squall and Murk rise and fall 4 px, about every 3 s
+ *   Shard's light: above. */
+static uint32_t dr_wave8(uint32_t ph)        /* 0..255: a smooth rise and fall, ph 0..255 a period */
+{
+    static const uint8_t S[17] = {0, 2, 10, 22, 38, 57, 79, 103, 128, 152, 176, 198, 217, 233, 245, 253, 255};
+    ph &= 255u;
+    return ph < 128u ? S[ph >> 3] : S[(255u - ph) >> 3];
+}
+static uint32_t dr_glow_level(void)          /* the glow to draw, 0..15 */
+{
+    uint32_t idle = 1u + dr_wave8(fm1_ms / 10u) * 3u / 255u, a = drm.amp * 15u / 255u;
+    return a > idle ? a : idle;
+}
+static uint16_t dr_glow_px(uint16_t c, uint32_t g)   /* c brightened towards a warm white by g (0..15) */
+{
+    uint32_t r = c >> 11, gr = (c >> 5) & 63u, b = c & 31u, k = g * 15u;   /* (up to about 88 %) */
+    r += (31u - r) * k / 256u;
+    gr += (63u - gr) * k / 256u;
+    b += (28u - (b < 28u ? b : 28u)) * k / 256u;
+    return (uint16_t)(r << 11 | gr << 5 | b);
+}
+
 /* the scene's rows y0 .. y0 + h - 1 (h <= 80): background, then the character's runs over it */
 static void dr_scene_rows(int32_t y0, int32_t h)
 {
     const dr_sprite_t *s = &DR_SPRITES[dr.ch];
     int32_t sx, sy, x, y, pos = 0, sweep = dr_sweep_pos();
     uint32_t i;
+    uint16_t pal[15];
+    for (i = 0; i < 15u; i++)                            /* (the glowing colours, as bright as drm.glow says) */
+        pal[i] = (s->glow >> i) & 1u ? dr_glow_px(s->pal[i], drm.glow) : s->pal[i];
     cv_begin(240, (uint32_t)h, DR_BG);
     for (y = 0; y < h; y++)
         for (x = 0; x < 240; x++)
@@ -615,7 +653,7 @@ static void dr_scene_rows(int32_t y0, int32_t h)
                     int32_t p = pos + (int32_t)j, py = sy + p / s->w - y0, px = sx + p % s->w;
                     if (py >= 0 && py < h)
                         cv_px[py * 240 + px] = swap16(idx == 1u ? s->pal[0] :     /* (1: the outline) */
-                                                      dr_sweep_px(sweep, p % s->w, p / s->w, s->pal[idx - 1u]));
+                                                      dr_sweep_px(sweep, p % s->w, p / s->w, pal[idx - 1u]));
                 }
             pos += (int32_t)len;
             if (sy + pos / s->w >= y0 + h)
@@ -1418,6 +1456,29 @@ static int dr_frame(void)
         dr_trace_poll();
     if (!drm.codex && fm1_ms - drm.wave_ms >= 30u) {      /* the horizon: ~30 redraws a second while it moves */
         drm.wave_ms = fm1_ms;
+        {
+            const dr_sprite_t *sp = &DR_SPRITES[dr.ch];
+            uint32_t g = dr_glow_level(), bob = (dr.ch == 2u || dr.ch == 6u) ? dr_wave8(fm1_ms / 12u) * 4u / 255u : 0u;
+            if (bob != drm.bob) {                        /* a floater moved: the whole scene (the chip with it) */
+                drm.bob = (uint8_t)bob;
+                drm.dirty |= DR_D_SCENE;
+            }
+            if (g != drm.glow && sp->glow && !(drm.dirty & DR_D_SCENE) && (fm1_ms / 30u) & 1u) {
+                int32_t sx, sy, y0, y1;                  /* (at most every other pass: about 15 a second) */
+                drm.glow = (uint8_t)g;
+                dr_sprite_at(dr.ch, &sx, &sy);
+                y0 = sy + sp->g0;
+                y1 = sy + sp->g1 + 1;
+                y0 = y0 < DR_Y_SCENE + 40 ? DR_Y_SCENE + 40 : y0;   /* (not under the note's chip) */
+                y1 = y1 > DR_Y_CARDS ? DR_Y_CARDS : y1;
+                while (y0 < y1) {
+                    int32_t h = y1 - y0 > 80 ? 80 : y1 - y0;
+                    dr_scene_rows(y0, h);
+                    cv_blit(0, y0);
+                    y0 += h;
+                }
+            }
+        }
         if (drm.sweep_t0 && !(drm.dirty & DR_D_SCENE)) {    /* Shard's light crossing his chest (then one clean pass) */
             if (dr_sweep_pos() == -1000)
                 drm.sweep_t0 = 0;
