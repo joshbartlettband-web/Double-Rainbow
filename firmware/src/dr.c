@@ -639,6 +639,25 @@ static uint16_t dr_glow_px(uint16_t c, uint32_t g)   /* c brightened towards a w
     return (uint16_t)(r << 11 | gr << 5 | b);
 }
 
+/* the next run of a sprite (its Huffman code, DR_HUFF: canonical, MSB first, read a bit at a time; no table in RAM) */
+static uint32_t dr_run_next(const uint8_t **d, uint32_t *acc, uint32_t *nb)
+{
+    uint32_t code = 0, first = 0, idx = 0, len;
+    for (len = 0; len < 15u; len++) {
+        if (!*nb) {
+            *acc = *(*d)++;
+            *nb = 8;
+        }
+        code |= (*acc >> --*nb) & 1u;
+        if (code - first < DR_HUFF[len])
+            break;
+        idx += DR_HUFF[len];
+        first = (first + DR_HUFF[len]) << 1;
+        code <<= 1;
+    }
+    return DR_HUFF[15u + idx + code - first];
+}
+
 /* the scene's rows y0 .. y0 + h - 1 (h <= 80): background, then the character's runs over it */
 static void dr_scene_rows(int32_t y0, int32_t h)
 {
@@ -653,9 +672,11 @@ static void dr_scene_rows(int32_t y0, int32_t h)
         for (x = 0; x < 240; x++)
             cv_px[y * 240 + x] = swap16(dr_scene_px(x, y0 + y));
     dr_sprite_at(dr.ch, &sx, &sy);
-    if (sy + s->h > y0 && sy < y0 + h)
+    if (sy + s->h > y0 && sy < y0 + h) {
+        const uint8_t *d = s->run;
+        uint32_t acc = 0, nb = 0;
         for (i = 0; i < s->n; i++) {                    /* the runs, row-major from the sprite's top left */
-            uint32_t idx = s->run[i] >> 4, len = (s->run[i] & 15u) + 1u, j;
+            uint32_t r = dr_run_next(&d, &acc, &nb), idx = r >> 4, len = (r & 15u) + 1u, j;
             if (idx)
                 for (j = 0; j < len; j++) {
                     int32_t p = pos + (int32_t)j, row = p / s->w, col = p % s->w, px = sx + col, py;
@@ -682,6 +703,7 @@ static void dr_scene_rows(int32_t y0, int32_t h)
             if (sy + pos / s->w >= y0 + h)
                 break;
         }
+    }
 }
 
 /* the spellbook modes on ALGORITHM (seq.c dr_kmode: how the keys play; SCRY and TRACE, below) */

@@ -293,8 +293,9 @@ knob cards for how much of each crystal.
 ## Memory (measured at twelve characters)
 
 - **Flash** (the app slot: code, pictures, text): 484 KB of 540 KB used, 56 KB free (the build keeps 10 KB).
-  The twelve sprites are 33 KB of it. Compressing them further (a Huffman code over the runs, as Melodee's fonts
-  are) would make them about 24 KB, saving about 9 KB, when space gets short.
+  The twelve sprites are now 25 KB of it (was 34 KB): their runs are Huffman-coded with one shared code, decoded a
+  bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. That
+  freed about 9 KB, room for roughly two more characters (about 3 KB of art and 1 KB of text each).
 - **RAM** (.data + .bss): 93.7 KB of 96 KB, 4.6 KB free. This is the tight one. Double Rainbow's own share is
   about 0.5 KB (the horizon's 240 points, the mode's state, the player); the horizon reads Melodee's scope in
   place rather than copying it (1 KB saved), and all of Double Rainbow's state lives in the **pool** (`app.ld`: the
