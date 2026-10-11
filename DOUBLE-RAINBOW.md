@@ -292,16 +292,24 @@ knob cards for how much of each crystal.
 
 ## Memory (measured at twelve characters)
 
-- **Flash** (the app slot: code, pictures, text): 484 KB of 540 KB used, 56 KB free (the build keeps 10 KB).
-  The twelve sprites are now 25 KB of it (was 34 KB): their runs are Huffman-coded with one shared code, decoded a
-  bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. That
-  freed about 9 KB, room for roughly two more characters (about 3 KB of art and 1 KB of text each).
-- **RAM** (.data + .bss): 93.7 KB of 96 KB, 4.6 KB free. This is the tight one. Double Rainbow's own share is
-  about 0.5 KB (the horizon's 240 points, the mode's state, the player); the horizon reads Melodee's scope in
-  place rather than copying it (1 KB saved), and all of Double Rainbow's state lives in the **pool** (`app.ld`: the
-  same on-chip RAM, zeroed at boot, 175 KB spare against .bss's 4.6 KB), not in .bss. Each build lists the 15
-  biggest users of .bss, to find what else could move. The rest is Melodee's (tracks, patterns, projects). The sprites
-  are in flash and use no RAM.
+- **Flash** (the app slot: code, pictures, text): 476 KB of 540 KB used, 65 KB free (the build keeps 10 KB).
+  The twelve sprites are 25 KB of it (was 34 KB): their runs are Huffman-coded with one shared code, decoded a
+  bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. A new
+  character costs about 3 KB of art and 1 KB of text and sound, so flash is not what limits the cast.
+- **RAM** (.data + .bss): 92.1 KB of 96 KB, 6.1 KB free. This is the tight one. Double Rainbow's own share is
+  about 0.5 KB, and it lives in the **pool** (`app.ld`: the same on-chip RAM, zeroed at boot), not in .bss; the
+  horizon reads Melodee's scope in place rather than copying it (1 KB saved). New characters add no RAM. The pool
+  has about 60 KB to spare above the audio arena's worst case (174 KB on demand, 112 KB needed).
+  Each build lists the 15 biggest .data/.bss users. The rest is Melodee's: patterns 11.4 KB, tracks 10 KB, the
+  recorder 18 KB, FM6's lookup tables 12 KB, the editor and templates about 6 KB. The sprites are in flash and
+  use no RAM.
+- **Where more RAM could come from**, if a feature needs it (none does yet; each is a change to Melodee's core and
+  needs a test on the device):
+  1. FM6's lookup tables (12 KB) are initialised data in RAM for speed. They could be copied from flash into the
+     pool at boot instead, the way `.data` is copied now. Same speed, 12 KB of .data back.
+  2. The recorder's buffers (18 KB) are plain zeroed state and could move to the pool as they are.
+  3. Patterns and tracks (21 KB) could move too, but they are what the audio interrupt reads every step, so they
+     want the most careful testing.
 
 ## Limits to plan around
 
