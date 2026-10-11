@@ -108,6 +108,11 @@ the code animations on top of the painted sprites.
   trinkets, Hermit's horn). They brighten with the sound's level and breathe slowly when it is quiet. Only their
   rows are redrawn, at most 15 times a second; it costs a few bytes of RAM and no pictures.
 - **The float.** Squall and Murk rise and fall 4 px, about every 3 s.
+- **The blink.** Every few seconds the eyes shut for a moment, now and then twice. The eye boxes are marked by hand
+  (`tools/art/dr_eyes.py`, which also previews every face open and shut); the shut eyes are made at build time and
+  stored as small patches (under 1 KB for all twelve). Tock has a clock for an eye and does not blink.
+- **The squash.** Each note presses the character down 4 px, top first, and it springs back over 0.2 s (not Tock,
+  a machine).
 - **Shard's light** sweeps his chest on each note.
 
 Every knob was checked to change the sound (brightness, level, swell, tail or pitch, measured on renders), and the
@@ -292,7 +297,9 @@ knob cards for how much of each crystal.
   are) would make them about 24 KB, saving about 9 KB, when space gets short.
 - **RAM** (.data + .bss): 93.7 KB of 96 KB, 4.6 KB free. This is the tight one. Double Rainbow's own share is
   about 0.5 KB (the horizon's 240 points, the mode's state, the player); the horizon reads Melodee's scope in
-  place rather than copying it (1 KB saved). The rest is Melodee's (tracks, patterns, projects). The sprites
+  place rather than copying it (1 KB saved), and all of Double Rainbow's state lives in the **pool** (`app.ld`: the
+  same on-chip RAM, zeroed at boot, 175 KB spare against .bss's 4.6 KB), not in .bss. Each build lists the 15
+  biggest users of .bss, to find what else could move. The rest is Melodee's (tracks, patterns, projects). The sprites
   are in flash and use no RAM.
 
 ## Limits to plan around

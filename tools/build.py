@@ -271,6 +271,9 @@ def check(img, syms, dis, rt):
     bss = sym("_bss_end") - 0x01C08000
     pool = sym("_pool_end") - sym("_pool_start")
     notes.append(f"image {len(img)} B; RAM .data+.bss {bss} B of 98304; pool {pool} B of {0x54000}")
+    big = sorted(((int(m.group(2), 16), m.group(3)) for m in
+                  re.finditer(r"^[0-9a-f]+ .{7} (\.s?bss|\.s?data)\s+([0-9a-f]+) (\S+)$", syms, re.M)), reverse=True)
+    notes.append("RAM's biggest (.data/.bss): " + ", ".join(f"{n} {v}" for v, n in big[:15]))
     arena = sym("_resource_end") - sym("_resource_start")
     if arena:
         notes.append(f"audio working arena {arena} B available on demand (minimum 114688)")

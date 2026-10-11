@@ -9,6 +9,9 @@
  * (Alexander's band). Pixel-art finish: ordered dither between the sky's steps. */
 
 #define DR_RGB(r, g, b) RGB(r, g, b)
+/* Double Rainbow's state lives in the pool (app.ld: the same on-chip RAM, zeroed at boot like .bss), not in .bss:
+ * .bss is Melodee's, 96 KB and nearly full; the pool has room */
+#define DR_POOL __attribute__((section(".pool")))
 
 /* the bows: centre (DR_CX, DR_CY), each band 2 px wide; radii outward (primary violet .. red, secondary red .. violet) */
 #define DR_CX 120
@@ -279,7 +282,7 @@ static struct {
     uint8_t ch;                              /* the character on track 1 */
     uint8_t mv[DR_NCHAR][4];                 /* each character's knobs, 0..100 (kept while switching) */
     uint8_t ready;
-} dr;
+} dr DR_POOL;
 
 /* one knob of the character on track 1: its routes, from its value */
 static void dr_macro_apply(track_t *t, uint32_t k, uint32_t m)
@@ -469,9 +472,11 @@ static struct {
     uint32_t wave_ms, sweep_t0;              /* sweep_t0: Shard's light began (0 = none) */
     uint8_t amp;                             /* the sound's level, 0..255 (the horizon's peak, held and falling) */
     uint8_t glow, bob;                       /* as drawn: the glow (0..15), the floaters' rise (0..4 px) */
+    uint8_t shut, squash;                    /* as drawn: the eyes shut (a blink), the squash (0..4 px, on a note) */
+    uint32_t blink_ms, squash_t0;            /* the next blink; the squash's note (0 none) */
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
-} drm;
+} drm DR_POOL;
 enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE = 16, DR_D_ALL = 31 };
 
 /* the scene's background at (x, y): the sky, a faint moonbow, the hill. The hill's edge is the horizon, and it
@@ -479,7 +484,7 @@ enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE =
  * in the character's glow over the dark ground; silent, it lies flat on the hill. */
 #define DR_Y_WAVE 154                        /* the rows the horizon can reach: DR_Y_WAVE .. DR_Y_CARDS - 1 */
 #define DR_WAVE_PX 10                        /* the wave's height either way */
-static int8_t dr_wave[240];
+static int8_t dr_wave[240] DR_POOL;
 static int32_t dr_scene_hill(int32_t x)
 {
     int32_t d = x - 120;
@@ -610,6 +615,9 @@ static uint16_t dr_sweep_px(int32_t pos, int32_t x, int32_t y, uint16_t c)   /* 
  *   the glow: the colours each sprite marks (tools/art/gen_dr_art.py: eyes, a flame, a bolt, a throat) brighten
  *     with the sound, and breathe slowly when it is quiet; only their rows are redrawn, when the level changes
  *   the float: Squall and Murk rise and fall 4 px, about every 3 s
+ *   the blink: every few seconds the eyes shut for a moment (the sprite's eye boxes and their shut pixels:
+ *     tools/art/dr_eyes.py), now and then twice
+ *   the squash: each note presses the character down 4 px, top first, and it springs back over 0.2 s
  *   Shard's light: above. */
 static uint32_t dr_wave8(uint32_t ph)        /* 0..255: a smooth rise and fall, ph 0..255 a period */
 {
@@ -635,7 +643,7 @@ static uint16_t dr_glow_px(uint16_t c, uint32_t g)   /* c brightened towards a w
 static void dr_scene_rows(int32_t y0, int32_t h)
 {
     const dr_sprite_t *s = &DR_SPRITES[dr.ch];
-    int32_t sx, sy, x, y, pos = 0, sweep = dr_sweep_pos();
+    int32_t sx, sy, x, y, pos = 0, sweep = dr_sweep_pos(), sq = drm.squash;
     uint32_t i;
     uint16_t pal[15];
     for (i = 0; i < 15u; i++)                            /* (the glowing colours, as bright as drm.glow says) */
@@ -650,10 +658,25 @@ static void dr_scene_rows(int32_t y0, int32_t h)
             uint32_t idx = s->run[i] >> 4, len = (s->run[i] & 15u) + 1u, j;
             if (idx)
                 for (j = 0; j < len; j++) {
-                    int32_t p = pos + (int32_t)j, py = sy + p / s->w - y0, px = sx + p % s->w;
+                    int32_t p = pos + (int32_t)j, row = p / s->w, col = p % s->w, px = sx + col, py;
+                    uint32_t ix = idx;
+                    py = (sq ? sy + sq + row * (s->h - sq) / s->h : sy + row) - y0;   /* (squashed: rows close up) */
+                    if (drm.shut) {                      /* a blink: the shut eye's pixels over the open ones */
+                        uint32_t e, off = 0;
+                        for (e = 0; e < s->ne; e++) {
+                            const uint8_t *b = s->eye[e];
+                            uint32_t bw = b[2] - b[0] + 1u;
+                            if (col >= b[0] && col <= b[2] && row >= b[1] && row <= b[3]) {
+                                uint32_t k = off + (uint32_t)(row - b[1]) * bw + (uint32_t)(col - b[0]);
+                                uint32_t v = (s->shut[k >> 1] >> ((k & 1u) ? 0 : 4)) & 15u;
+                                ix = v ? v : ix;
+                            }
+                            off += bw * (b[3] - b[1] + 1u);
+                        }
+                    }
                     if (py >= 0 && py < h)
-                        cv_px[py * 240 + px] = swap16(idx == 1u ? s->pal[0] :     /* (1: the outline) */
-                                                      dr_sweep_px(sweep, p % s->w, p / s->w, pal[idx - 1u]));
+                        cv_px[py * 240 + px] = swap16(ix == 1u ? s->pal[0] :      /* (1: the outline) */
+                                                      dr_sweep_px(sweep, col, row, pal[ix - 1u]));
                 }
             pos += (int32_t)len;
             if (sy + pos / s->w >= y0 + h)
@@ -686,7 +709,7 @@ static void dr_say(const char *s);
  * midi_enqueue: channel 1 is track 1, the character), from the main loop at their times. A few notes at once. */
 #include "dr_songs.h"                        /* DR_SONGS (tools/gen_dr_songs.py) */
 #define DR_PN 8u
-static struct { uint8_t note, state; uint32_t on, off; } drp[DR_PN];   /* state 0 free, 1 waiting, 2 sounding */
+static struct { uint8_t note, state; uint32_t on, off; } drp[DR_PN] DR_POOL;   /* state 0 free, 1 waiting, 2 sounding */
 static void dr_midi(uint32_t note, uint32_t on)
 {
     if (on)
@@ -760,7 +783,7 @@ static struct {
     uint8_t drill, pool[3], streak, best, run, misses, hint, asked, reveal;
     uint8_t a, b;                            /* NOTES: tonic, target notes; INTERVALS: the two notes; CHORDS: b = chord */
     uint32_t next_ms;                        /* a new question (or the same again) at this time; 0 = none due */
-} drs;
+} drs DR_POOL;
 static void dr_scry_ask(int again)
 {
     uint32_t d = drs.drill, i, root;
@@ -855,7 +878,7 @@ static void dr_scry_answer(uint32_t k)        /* key k pressed during a question
 static struct {
     uint8_t song, pos, done, demo, dpos;
     uint32_t done_ms, dnext;
-} drt;
+} drt DR_POOL;
 static uint32_t dr_trace_skip(uint32_t pos)   /* the next note from pos, past rests (n: the end) */
 {
     const dr_song_t *sg = &DR_SONGS[drt.song % DR_NSONGS];
@@ -1434,8 +1457,11 @@ static int dr_frame(void)
             drs.next_ms = fm1_ms + 700u;
         }
     }
-    if (notes)                                           /* (Shard: each note sends his light across) */
+    if (notes) {                                         /* (Shard: each note sends his light across; all squash) */
         drm.sweep_t0 = fm1_ms | 1u;
+        if (!drm.squash_t0)
+            drm.squash_t0 = fm1_ms | 1u;
+    }
     if (notes && drum_track(&trk[0])) {                  /* (Tock: the drum the lowest new key strikes) */
         for (i = 0; !((notes >> i) & 1u); i++)
             ;
@@ -1459,10 +1485,44 @@ static int dr_frame(void)
         {
             const dr_sprite_t *sp = &DR_SPRITES[dr.ch];
             uint32_t g = dr_glow_level(), bob = (dr.ch == 2u || dr.ch == 6u) ? dr_wave8(fm1_ms / 12u) * 4u / 255u : 0u;
-            if (bob != drm.bob) {                        /* a floater moved: the whole scene (the chip with it) */
+            uint32_t shut = 0, sq = 0;
+            if (!drm.blink_ms)
+                drm.blink_ms = fm1_ms + 2000u;
+            if ((int32_t)(fm1_ms - drm.blink_ms) >= 0) {   /* a blink: shut 130 ms; one in four a double */
+                uint32_t t = fm1_ms - drm.blink_ms;
+                shut = t < 130u || ((drm.blink_ms & 3u) == 0u && t >= 260u && t < 390u);
+                if (t >= 400u)
+                    drm.blink_ms = fm1_ms + 2500u + dr_rand() % 4000u;
+            }
+            if (drm.squash_t0) {                         /* the squash: 4 px at the note, springing back */
+                int32_t t = (int32_t)(fm1_ms - drm.squash_t0);   /* (signed: t0 is fm1_ms | 1) */
+                sq = t < 50 ? 4u : t < 110 ? 2u : t < 180 ? 1u : 0u;
+                if (!sq)
+                    drm.squash_t0 = 0;
+            }
+            if (bob != drm.bob || (sq != drm.squash && dr.ch != 4u)) {   /* (moved: the whole scene, the chip with it) */
                 drm.bob = (uint8_t)bob;
+                drm.squash = (uint8_t)(dr.ch != 4u ? sq : 0u);         /* (Tock is a machine: he does not squash) */
                 drm.dirty |= DR_D_SCENE;
             }
+            if (shut != drm.shut && sp->ne && !(drm.dirty & DR_D_SCENE)) {   /* the eyes' rows only */
+                int32_t sx, sy, y0 = 999, y1 = 0;
+                uint32_t e;
+                drm.shut = (uint8_t)shut;
+                dr_sprite_at(dr.ch, &sx, &sy);
+                for (e = 0; e < sp->ne; e++) {
+                    y0 = sy + sp->eye[e][1] < y0 ? sy + sp->eye[e][1] : y0;
+                    y1 = sy + sp->eye[e][3] + 1 > y1 ? sy + sp->eye[e][3] + 1 : y1;
+                }
+                y0 += drm.squash;                        /* (close enough while squashed: it is brief) */
+                y1 += drm.squash;
+                y0 = y0 < DR_Y_SCENE + 40 ? DR_Y_SCENE + 40 : y0;
+                if (y1 > y0) {
+                    dr_scene_rows(y0, y1 - y0);
+                    cv_blit(0, y0);
+                }
+            } else if (shut != drm.shut)
+                drm.shut = (uint8_t)shut;
             if (g != drm.glow && sp->glow && !(drm.dirty & DR_D_SCENE) && (fm1_ms / 30u) & 1u) {
                 int32_t sx, sy, y0, y1;                  /* (at most every other pass: about 15 a second) */
                 drm.glow = (uint8_t)g;

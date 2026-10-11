@@ -154,6 +154,12 @@ turn(EN.PRESETS, 1);
   ex.web_keys(1 << 7 | 1 << 11 | 1 << 14); render(500);
   const loudEyes = eyes(); ex.web_keys(0); render(3000);
   check(`VESPER: her eyes glow brighter while she sounds (${quiet.toFixed(1)} -> ${loudEyes.toFixed(1)})`, loudEyes > quiet + 1);
+  const amber = () => { let n = 0; const fb = screen(); for (let y = 88; y < 97; y++) for (let x = 90; x < 150; x++) { const v = fb[y * 240 + x], s = (v >> 8 | v << 8) & 0xffff; n += ((s >> 11) & 31) > 24 && ((s >> 5) & 63) > 36 && (s & 31) < 16; } return n; };
+  let open = 0, shut = 99; for (let i = 0; i < 300; i++) { render(30); const n = amber(); open = Math.max(open, n); shut = Math.min(shut, n); }
+  check(`VESPER blinks: her amber eyes (${open} px) are gone for a moment (${shut} px) every few seconds`, open > 10 && shut === 0);
+  const top = () => { let x = 0; const fb = screen(); for (let y = 60; y < 72; y++) for (let c = 100; c < 150; c++) x = (x * 31 + fb[y * 240 + c]) >>> 0; return x; };   // (above her head, right of the chip)
+  render(500); const head = top(); ex.web_keys(1 << 7); render(60); const pressed = top(); render(400); ex.web_keys(0); render(1500);
+  check("VESPER squashes on a note (her head dips) and springs back", pressed !== head && top() === head);
   turn(EN.PRESETS, 2); render(800);
   const seen = new Set(); for (let i = 0; i < 12; i++) { render(250); seen.add(rows(screen(), 60, 160)); }
   check(`SQUALL floats: he rises and falls with no note (${seen.size} different frames in 3 s)`, seen.size >= 3);
