@@ -4,7 +4,7 @@
  * guards; then LCD, input (TIMER5 IRQ, 10 kHz), audio (ALNK0 IRQ). */
 extern uint32_t _data_start[], _data_end[], _data_load[], _bss_start[], _bss_end[];
 extern uint32_t _dsp_start[], _dsp_end[], _dsp_load[], _dt_start[], _dt_end[], _dt_load[];
-extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[];
+extern uint32_t _pool_start[], _pool_end[], _pd_start[], _pd_end[], _pd_load[], _rt_start[], _rt_end[], _rt_load[];
 
 
 /* TIMER5 outranks ALNK0, so the scan keeps its 100 us pace while a half buffer renders: before,
@@ -325,6 +325,8 @@ void fm1_cstart(void)
         *d = 0;
     for (s = _data_load, d = _data_start; d < _data_end; s++, d++)
         *d = *s;
+    for (s = _pd_load, d = _pd_start; d < _pd_end; s++, d++)
+        *d = *s;                                /* the per-sample lookup tables, in the pool */
     for (s = _rt_load, d = _rt_start; d < _rt_end; s++, d++)
         *d = *s;                                /* flash driver code that must run from RAM */
     for (s = _dsp_load, d = _dsp_start; d < _dsp_end; s++, d++)

@@ -211,13 +211,14 @@ def build_app():
     elf = OUT / "melodee.elf"
     tc("pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
        OUT / "melodee.o", "-o", elf)
-    for sect in ("text.bin", "data.bin", "ramtext.bin", "dsptext.bin", "dsptables.bin"):
+    for sect in ("text.bin", "data.bin", "ramtext.bin", "dsptext.bin", "dsptables.bin", "pooldata.bin"):
         (OUT / sect).unlink(missing_ok=True)
     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".data", elf, OUT / "data.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".dsp_text", elf, OUT / "dsptext.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".dsp_tables", elf, OUT / "dsptables.bin"),
                                ("common/bin/objcopy", "-O", "binary", "-j", ".ram_text", elf, OUT / "ramtext.bin"),
+                               ("common/bin/objcopy", "-O", "binary", "-j", ".pool_data", elf, OUT / "pooldata.bin"),
                                ("common/bin/objdump", "-t", elf),
                                ("common/bin/objdump", "-d", elf),
                                ("common/bin/objdump", "-d", "-j", ".ram_text", elf))
@@ -226,8 +227,9 @@ def build_app():
     def symv(name):
         return int(re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M).group(1), 16)
     img = bytearray((OUT / "text.bin").read_bytes())
-    # .ram_text and .data follow .text at their load addresses; crt0 copies them by words
-    for sect, lname in (("ramtext.bin", "_rt_load"), ("dsptext.bin", "_dsp_load"), ("dsptables.bin", "_dt_load"), ("data.bin", "_data_load")):
+    # .ram_text, the tables and .data follow .text at their load addresses (in app.ld's order); main copies them by words
+    for sect, lname in (("ramtext.bin", "_rt_load"), ("dsptext.bin", "_dsp_load"), ("dsptables.bin", "_dt_load"),
+                        ("pooldata.bin", "_pd_load"), ("data.bin", "_data_load")):
         load = symv(lname)
         if load % 4:
             raise SystemExit(f"{lname} {load:#x} is not word aligned")
@@ -269,8 +271,11 @@ def check(img, syms, dis, rt):
         mm = re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M)
         return int(mm.group(1), 16) if mm else 0
     bss = sym("_bss_end") - 0x01C08000
-    pool = sym("_pool_end") - sym("_pool_start")
-    notes.append(f"image {len(img)} B; RAM .data+.bss {bss} B of 98304; pool {pool} B of {0x54000}")
+    pool = sym("_pool_end") - (sym("_pd_start") or sym("_pool_start"))   # tables + zeroed buffers
+    notes.append(f"image {len(img)} B; RAM .data+.bss {bss} B of 98304; pool {pool} B of {0x54000}"
+                 f" (lookup tables {sym('_pd_end') - sym('_pd_start')} B of it)")
+    if sym("_pd_end") - sym("_pd_start") < 8192:  # FM6's tables: if they slipped back into .data, say so
+        errors.append("the lookup tables (.data.tables) are not in the pool")
     big = sorted(((int(m.group(2), 16), m.group(3)) for m in
                   re.finditer(r"^[0-9a-f]+ .{7} (\.s?bss|\.s?data)\s+([0-9a-f]+) (\S+)$", syms, re.M)), reverse=True)
     notes.append("RAM's biggest (.data/.bss): " + ", ".join(f"{n} {v}" for v, n in big[:15]))

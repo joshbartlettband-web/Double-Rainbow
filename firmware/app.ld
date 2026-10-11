@@ -5,7 +5,8 @@
  * 0x01C00000..0x01C06000 holds .ram_text (code that must run while the flash
  * is busy: the flash driver); 0x01C06000..0x01C08000 stays for RAM-run debug.
  * RAM  : .data/.bss (96 KiB)
- * POOL : big zero-initialised buffers (FX lines, canvases), section .pool
+ * POOL : big zero-initialised buffers (FX lines, canvases), section .pool, and
+ *        the per-sample lookup tables (.data.tables), copied from flash at boot
  * STACKS with 256-byte guard bands; NOINIT survives resets and UBOOT entry.
  * 0x01C7FD50.. is reserved: boot_info, boot-state mailbox, vector table. */
 MEMORY
@@ -25,6 +26,8 @@ SECTIONS
     _dsp_load = LOADADDR(.dsp_text);
     .dsp_tables : { _dt_start = .; *(.dsp_tables*) . = ALIGN(4); _dt_end = .; } > RAMTEXT AT > XIP
     _dt_load = LOADADDR(.dsp_tables);
+    .pool_data : { . = ALIGN(4); _pd_start = .; *(.data.tables*) . = ALIGN(4); _pd_end = .; } > POOL AT > XIP
+    _pd_load = LOADADDR(.pool_data);
     .data : { . = ALIGN(4); _data_start = .; *(.data*) *(.sdata*) . = ALIGN(4); _data_end = .; } > RAM AT > XIP
     _data_load = LOADADDR(.data);
     .bss (NOLOAD) : { _bss_start = .; *(.bss*) *(.sbss*) *(COMMON) . = ALIGN(4); _bss_end = .; } > RAM

@@ -2,16 +2,16 @@
 /* A bounded performance store shared by the project's 32 banks. Step notes
  * are its editable overview; the original onsets, velocities and independent
  * releases live here. QNT changes only the playback schedule. */
-static recorded_note_t recording[RECORD_MAX];
-static struct { uint32_t held, left; } recording_run[RECORD_MAX];
-static uint8_t recording_flags[RECORD_MAX]; /* 1: live hold; 2: skip upcoming snapped onset; 4: heard this loop */
+static recorded_note_t recording[RECORD_MAX] __attribute__((section(".pool")));
+static struct { uint32_t held, left; } recording_run[RECORD_MAX] __attribute__((section(".pool")));
+static uint8_t recording_flags[RECORD_MAX] __attribute__((section(".pool"))); /* 1: live hold; 2: skip upcoming snapped onset; 4: heard this loop */
 static uint32_t recording_fraction[NTRK];
 /* Index by bank and cache onset arithmetic outside the steady audio tick. */
 #define RECORDING_EMPTY8 RECORD_MAX, RECORD_MAX, RECORD_MAX, RECORD_MAX, RECORD_MAX, RECORD_MAX, RECORD_MAX, RECORD_MAX
 static uint16_t recording_head[NTRK * NPAT] = {RECORDING_EMPTY8, RECORDING_EMPTY8, RECORDING_EMPTY8, RECORDING_EMPTY8};
 _Static_assert(NTRK * NPAT == 32u, "recording head initializer covers every bank");
 #undef RECORDING_EMPTY8
-static uint16_t recording_next[RECORD_MAX];
+static uint16_t recording_next[RECORD_MAX] __attribute__((section(".pool")));
 static uint32_t recording_due[RECORD_MAX] __attribute__((section(".pool")));
 static uint16_t recording_refs[NTRK][128] __attribute__((section(".pool")));
 static struct { uint32_t period, key; } recording_schedule[NTRK];
