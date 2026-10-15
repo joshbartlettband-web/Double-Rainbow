@@ -18,6 +18,7 @@ enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET, 
        ED_TRACK, ED_TRACK_MIX, ED_TRACK_DUMP, ED_TRACK_STEP,                    /* v3: tracks */
        ED_TRACK_PARAM, ED_TRACK_CHANGED, ED_SONG,
        ED_UI_STATE, ED_UI_SET, ED_UI_PALETTES, ED_FAV_GET, ED_FAV_SET,
+       ED_NAME = 50,                                                           /* Double Rainbow: the kid's name */
        ED_MOTION = 64, ED_BACKUP_LIST, ED_BACKUP_GET, ED_BACKUP_PUT,                               /* v6: song chain */
        ED_AUDIO_STATS = 72, ED_PATTERN, ED_BANK_SONG };                                       /* USB audio diagnostics (68..71: FM6, editor_fm6.c) */
 
@@ -274,6 +275,7 @@ static int ed_flash_stop(void)
 }
 
 #include "editor_preferences.c"
+#include "dr_name.c"                     /* Double Rainbow's kid's name (ED_NAME; dr.c has it first) */
 #include "editor_backup.c"
 #include "editor_fm6.c"
 #include "editor_cz.c"
@@ -399,6 +401,19 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
             ui.force = 1;
         }
         ed_motion_reply(a[0], rc);
+        break;
+    }
+    case ED_NAME: {                                        /* [10 letters or spaces] -> rc, the name kept (10 bytes) */
+        const uint8_t *b = DR_NAME_AT;                     /* rc: 0 saved, 1 not a name, 3 / 4 the flash (as UI_SET) */
+        uint32_t rc = 0, ok;
+        if (na == DR_NAME_MAX)
+            rc = dr_name_store(a) ? ed_ui_save() : 1u;
+        else if (na)
+            rc = 1;
+        ed_b(rc);
+        ok = (uint32_t)dr_name_ok(b);
+        for (i = 0; i < DR_NAME_MAX; i++)
+            ed_b(ok ? b[i] : ' ');
         break;
     }
     case ED_INFO:

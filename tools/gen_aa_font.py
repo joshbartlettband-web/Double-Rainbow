@@ -45,7 +45,7 @@ HUFF = [("M", "L")]
 # L draws "MELODEE", the UPDATE MODE countdown digit, the HOME notes / chord roots and the calibration's
 # control names (panel.c B_NAME / E_NAME): a sparse face, the space as its range and the rest as extras
 # (ui_test.c checks that every L string is covered)
-L_CHARS = " #+./-0123456789ABCDEFGHIKLMNOPQRSTUVWXY"   # W: Double Rainbow's title
+L_CHARS = " #+./-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"   # W: Double Rainbow's title; J, Z: a kid's name on it
 
 
 def preset(name):

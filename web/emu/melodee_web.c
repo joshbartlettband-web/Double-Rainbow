@@ -458,6 +458,8 @@ EXPORT uint32_t web_kb_note(uint32_t k) { return kb_note[k % 27u]; }    /* what 
 EXPORT uint32_t web_p5_field(uint32_t id) { return p5_patch_of(&trk[0])->raw[id % P5_RAW_MAX]; }
 EXPORT int32_t web_param(uint32_t t, uint32_t id) { return trk[t % NTRK].p[id % P_COUNT]; }
 EXPORT int32_t web_bpm(void) { return song.g[G_BPM]; }
+EXPORT uint32_t web_dr_name_on(void) { return drm.name_on; }
+EXPORT uint32_t web_dr_name(uint32_t i) { char n[DR_NAME_MAX + 1]; return dr_name_load(n) > i ? (uint32_t)n[i] : 0u; }
 EXPORT uint32_t web_step_note(uint32_t t, uint32_t i) { return trk[t % NTRK].step[i % NSTEP].note[0]; }
 EXPORT uint32_t web_p_e0(void) { return P_E0; }                      /* (core.h: the engine's eight) */
 EXPORT uint32_t web_sample_rate(void) { return FS; }

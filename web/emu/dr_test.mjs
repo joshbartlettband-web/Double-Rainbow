@@ -358,6 +358,32 @@ function trace() {
   tap(B.PLAY); render(500);                               // (playing, for HOME + SAVE to stop)
 }
 
+{ // YOUR NAME: HOME held and ALGORITHM open it, PRESETS a letter, ALGORITHM the place, SAVE keeps it; it stays after
+  // a power-off, and the startup screen greets it
+  const splashTop = (e) => { let gold = 0; const s = new Uint16Array(e.memory.buffer, e.web_screen(), 240 * 240);
+    for (let i = 0; i < 240 * 70; i++) { const v = (s[i] >> 8) | (s[i] & 255) << 8;   // (big-endian, as the LCD takes it)
+      if ((v >> 11) > 26 && ((v >> 5) & 63) > 40 && (v & 31) < 16) gold++; } return gold; };
+  ex.web_buttons(1 << B.HOME); render(100); turn(EN.ALGO, 1); ex.web_buttons(0); render(200);
+  const opened = ex.web_dr_name_on();
+  ex.web_keys(1 << 7); render(100); ex.web_keys(0); render(100);                       // (the keys still play)
+  const letters = [10, 15, 4];                                                        // J O D: J's the 10th after the space
+  for (let i = 0; i < letters.length; i++) { turn(EN.PRESETS, letters[i]); turn(EN.ALGO, 1); }
+  tap(B.SAVE); render(1500);                                                          // (settings_poll writes it)
+  const name = [0, 1, 2, 3].map((i) => ex.web_dr_name(i)).filter((c) => c).map((c) => String.fromCharCode(c)).join("");
+  check(`HOME held, ALGORITHM: YOUR NAME; PRESETS, ALGORITHM, SAVE: kept (${name})`, opened === 1 && ex.web_dr_name_on() === 0 && name === "JOD");
+  const { instance: again } = await WebAssembly.instantiate(bytes, {});              // a power-off: the same flash
+  const e2 = again.exports; e2._initialize();
+  new Uint8Array(e2.memory.buffer, e2.web_nor(), e2.web_nor_size()).set(new Uint8Array(mem.buffer, ex.web_nor(), ex.web_nor_size()));
+  e2.web_master(1023); e2.web_boot();
+  for (let k = 0; k < 300 * 44.1; k += 128) e2.web_render(128);
+  const named = splashTop(e2);
+  const kept = [0, 1, 2].map((i) => String.fromCharCode(e2.web_dr_name(i))).join("");
+  check(`after a power-off: still ${kept}, and the startup screen says hello (${named} gold px in the sky)`, kept === "JOD" && named > 150);
+  ex.web_buttons(1 << B.HOME); render(100); turn(EN.ALGO, 1); ex.web_buttons(0); render(200);
+  turn(EN.PRESETS, -1); tap(B.HOME); render(300);                                     // HOME: left as it was
+  check("HOME leaves YOUR NAME as it was", ex.web_dr_name_on() === 0 && ex.web_dr_name(0) === 74);
+}
+
 tap(B.OCTUP);
 check("OCT+: the keys an octave up", ex.web_octave() === 1);
 tap(B.OCTDN);

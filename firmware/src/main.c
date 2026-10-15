@@ -284,7 +284,8 @@ static void fm1_main(void)
             melodee_dbg.stage = 2;
             ui_leds();
             ui_draw();
-        }
+        } else
+            settings_poll();                            /* (Double Rainbow's too: the kid's name, the website's) */
         melodee_dbg.stage = 9;
         while (fm1_ms - m < 15u) {                               /* ~60 UI frames/s at most */
             if (!drm.on)

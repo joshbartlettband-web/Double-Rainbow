@@ -92,16 +92,29 @@ static uint16_t dr_pixel(int32_t x, int32_t y)
     return DR_RGB(r, g, b);
 }
 
-/* the startup screen (main.c, in place of Melodee's), drawn once in two strips */
+#include "dr_name.c"                     /* the kid's name: kept in the settings (also editor.c's NAME) */
+static const aafont_t *dr_name_font(const char *s)   /* the big letters when the name fits */
+{
+    return text_w(&AF_L, s) <= 224 ? &AF_L : &AF_M;
+}
+
+/* the startup screen (main.c, in place of Melodee's), drawn once in two strips; a kept name is greeted in the sky */
 static void dr_splash(void)
 {
     uint32_t half, x, y;
+    char name[DR_NAME_MAX + 1];
+    uint32_t named = dr_name_load(name);
     for (half = 0; half < 2u; half++) {
         uint32_t y0 = half * 120u;
         cv_begin(240, 120, DR_GROUND);
         for (y = 0; y < 120u; y++)
             for (x = 0; x < 240u; x++)
                 cv_px[y * 240u + x] = swap16(dr_pixel((int32_t)x, (int32_t)(y0 + y)));
+        if (!half && named) {                            /* HELLO, and the name under it, over the bows */
+            const aafont_t *f = dr_name_font(name);
+            cv_text(120 - text_w(&AF_M, "HELLO") / 2, 14, &AF_M, "HELLO", DR_RGB(63, 224, 197));
+            cv_text(120 - text_w(f, name) / 2, 36, f, name, DR_RGB(255, 205, 96));
+        }
         if (half) {                                      /* the title on the flat ground (rows 152..239) */
             cv_text_c(120, 156 - 120, &AF_L, "DOUBLE", DR_RGB(255, 205, 96), DR_GROUND);
             cv_text_c(120, 186 - 120, &AF_L, "RAINBOW", DR_RGB(255, 205, 96), DR_GROUND);
@@ -476,6 +489,8 @@ static struct {
     uint32_t blink_ms, squash_t0;            /* the next blink; the squash's note (0 none) */
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
+    uint8_t name_on, name_cur, name_lit;     /* YOUR NAME is open (HOME held, ALGORITHM); the place being changed; drawn lit */
+    char name_ed[DR_NAME_MAX + 1];           /* .. the name as it is being written: 10 letters or spaces */
 } drm DR_POOL;
 /* the beat (below, after the LEDs: dr_beat_*) */
 static struct {
@@ -1493,6 +1508,88 @@ static void dr_beat_leave(void)
     drb.ready = 0;
 }
 
+/* YOUR NAME (HOME held, then ALGORITHM): the name the startup screen greets. PRESETS a letter (a space first, then
+ * A to Z), ALGORITHM the next place, SAVE keeps it, HOME leaves it as it was. Rainbow mode's grown-ups' NAME, the same
+ * controls. The whole screen is its own while it is open; the keys still play, the beat stops. */
+static void dr_name_open(void)
+{
+    char cur[DR_NAME_MAX + 1];
+    uint32_t i, n = dr_name_load(cur);
+    for (i = 0; i < DR_NAME_MAX; i++)
+        drm.name_ed[i] = i < n ? cur[i] : ' ';
+    drm.name_ed[DR_NAME_MAX] = 0;
+    drm.name_cur = (uint8_t)(n < DR_NAME_MAX ? n : 0u);
+    drm.name_on = 1;
+    drm.name_lit = 0xFF;
+    drm.combo_t0 = 0;
+    dr_beat_play(0);                                     /* (quiet; and Melodee writes settings only while stopped) */
+}
+
+static void dr_name_close(void)
+{
+    drm.name_on = 0;
+    drm.dirty = DR_D_ALL;
+}
+
+static void dr_name_draw(void)
+{
+    static const char *const HELP[4] = {"PRESETS: a letter", "ALGORITHM: the next place", "SAVE: keep it",
+                                        "HOME: leave it as it was"};
+    uint32_t lit = ((fm1_ms / 400u) & 1u) == 0u, i;
+    if (lit == drm.name_lit)
+        return;
+    drm.name_lit = (uint8_t)lit;
+    cv_begin(240, 120, DR_BG);
+    cv_text_c(120, 10, &AF_L, "YOUR NAME", DR_GOLD, DR_BG);
+    cv_text_c(120, 46, &AF_S, "the startup screen says hello", DR_MID, DR_BG);
+    for (i = 0; i < DR_NAME_MAX; i++) {                  /* the ten places, 22 px apart */
+        char c[2] = {drm.name_ed[i], 0};
+        int32_t x = 10 + (int32_t)i * 22;
+        uint16_t box = i == drm.name_cur && lit ? DR_TEAL : DR_SURF;
+        cv_rrect(x, 72, 20, 30, 4, box, DR_BG);
+        if (c[0] != ' ')
+            cv_text_c(x + 10, 79, &AF_M, c, i == drm.name_cur && lit ? DR_BG : DR_TEXT, box);
+        else if (i != drm.name_cur || !lit)
+            cv_rect(x + 5, 96, 10, 2, DR_DIM);           /* (an empty place: a line) */
+    }
+    cv_blit(0, 0);
+    cv_begin(240, 120, DR_BG);
+    for (i = 0; i < 4u; i++)
+        cv_text_c(120, 14 + (int32_t)i * 20, &AF_S, HELP[i], i < 2u ? DR_TEXT : DR_MID, DR_BG);
+    cv_blit(0, 120);
+}
+
+static void dr_name_input(uint32_t pressed)
+{
+    static const char ABC[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    int32_t s, i;
+    uint32_t e;
+    if ((s = fm1_enc_take(panel.enc[EN_PRESET]) * panel.dir[EN_PRESET]) != 0) {   /* PRESETS: the letter */
+        for (i = 0; i < 27 && ABC[i] != drm.name_ed[drm.name_cur]; i++)
+            ;
+        drm.name_ed[drm.name_cur] = ABC[(i % 27 + (s > 0 ? 1 : 26)) % 27];
+        drm.name_lit = 0xFF;
+    }
+    if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0) {        /* ALGORITHM: the place */
+        drm.name_cur = (uint8_t)clamp((int32_t)drm.name_cur + (s > 0 ? 1 : -1), 0, (int32_t)DR_NAME_MAX - 1);
+        drm.name_lit = 0xFF;
+    }
+    for (e = 0; e < NELEM(panel.enc); e++)               /* (the rest turn nothing here) */
+        (void)fm1_enc_take(panel.enc[e]);
+    if (pressed & (1u << panel.btn[B_SAVE])) {           /* SAVE: kept, and said hello to */
+        char m[24] = "HELLO, ", n[DR_NAME_MAX + 1];
+        dr_name_store((const uint8_t *)drm.name_ed);
+        dr_name_close();
+        if (dr_name_load(n)) {
+            str_cpy(m + 7, n, DR_NAME_MAX + 1u);
+            str_cpy(m + str_len(m), "!", 2);
+            dr_say(m);
+        } else
+            dr_say("NO NAME: THE TITLE ALONE");
+    } else if (pressed & (1u << panel.btn[B_HOME]))      /* HOME: as it was */
+        dr_name_close();
+}
+
 /* power-on (main.c, after project_boot): the first character, the screen to draw */
 static void dr_boot(void)
 {
@@ -1500,6 +1597,14 @@ static void dr_boot(void)
     dr_load(0);
     drm.on = 1;
     drm.dirty = DR_D_ALL;
+    {                                                    /* a kept name: hello on the line too */
+        char m[24] = "HELLO, ", n[DR_NAME_MAX + 1];
+        if (dr_name_load(n)) {
+            str_cpy(m + 7, n, DR_NAME_MAX + 1u);
+            str_cpy(m + str_len(m), "!", 2);
+            dr_say(m);
+        }
+    }
 }
 
 /* to Melodee: track 1 back to Melodee's own start (its default sound, then the BOOT project or the template, as
@@ -1534,6 +1639,14 @@ static int dr_frame(void)
     song.grid = 0;
     pressed = fm1_input_edges(&released);
     notes = fm1_input_note_edges();
+    if (drm.name_on) {                                   /* YOUR NAME: its own controls and screen */
+        dr_name_input(pressed);
+        if (drm.name_on) {
+            dr_name_draw();
+            dr_leds();
+            return 1;
+        }
+    }
     both = (1u << panel.btn[B_HOME]) | (1u << panel.btn[B_SAVE]);
     if ((fm1_in.buttons & both) == both) {               /* HOME + SAVE held: the countdown, then Melodee */
         int32_t held = (int32_t)(fm1_ms - drm.combo_t0); /* (signed: t0 is fm1_ms | 1, maybe a millisecond ahead) */
@@ -1614,7 +1727,10 @@ static int dr_frame(void)
             }
             drm.dirty |= DR_D_CARDS;
         }
-    if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0) {   /* ALGORITHM: how the keys play */
+    if ((s = fm1_enc_take(panel.enc[EN_ALGO]) * panel.dir[EN_ALGO]) != 0 && ((fm1_in.buttons >> panel.btn[B_HOME]) & 1u)) {
+        dr_name_open();                                  /* HOME held, ALGORITHM: YOUR NAME */
+        return 1;
+    } else if (s) {                                      /* ALGORITHM: how the keys play */
         uint32_t m = (uint32_t)clamp((int32_t)dr_kmode + (s > 0 ? 1 : -1), DRK_SOLO, DRK_TRACE);
         if (m != dr_kmode)
             dr_kmode_set(m);
