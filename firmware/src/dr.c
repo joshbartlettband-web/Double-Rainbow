@@ -148,7 +148,7 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 20u
+#define DR_NCHAR 24u
 #define DR_ECHO 14u                          /* (her ECHO knob is code: dr_frame schedules the repeats) */
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
@@ -362,6 +362,41 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"ROLL", "DECAY", 60, {{DR_TP, P_DEC, 20, 100}}},
         {"RATTLE", "RES|CRUSH", 20, {{DR_TP, P_E0 + 3, 50, 127}, {DR_TP, P_E0 + 7, 0, 80}}},
     }, {107, 134, 43}},                                         /* his moss */
+    /* STRAY: FM6's SYNC LEAD, a bright lead that carries a tune: the voice a toy hero would have. HEROIC is how much
+     * the wave is bent (the modulator's level), PLASTIC how hollow it rings (the ratio), CAPE the vibrato, SEARCH how
+     * far each note slides up into place (Melodee's glide). */
+    {"STRAY", "FM6", "Looking for where he goes.", ENGI_FM6, 17, DR_E_KEEP, {0, 0, 0, 0}, 118, 20, 30, {
+        {"HEROIC", "MOD|LEVEL", 46, {{DR_TP, P_E0 + 2, -30, 40}}},
+        {"PLASTIC", "MOD|RATIO", 25, {{DR_TP, P_E0 + 3, -4, 8}}},
+        {"CAPE", "VIBRATO", 20, {{DR_TP, P_LD_PIT, 0, 3}, {DR_TP, P_LRATE, 50, 84}}},
+        {"SEARCH", "SLIDE", 0, {{DR_TP, P_GLIDE, 0, 60}}},
+    }, {0, 0, 0}},                                              /* (plastic: no light) */
+    /* TUPPENCE: ANALOG's SAW LEAD with a slow, soft start: a bow drawn across a string. BOW is how slowly the note
+     * speaks, SCRAPE how much the bow bites (the filter's resonance), SWAY the vibrato, BODY the cello's wood (the
+     * cutoff). */
+    {"TUPPENCE", "ANALOG", "Plays what she can reach.", ENGI_ANALOG, 0, DR_E_KEEP, {40, 90, 115, 60}, 100, 30, 50, {
+        {"BOW", "ATTACK", 40, {{DR_TP, P_ATK, 0, 90}}},
+        {"SCRAPE", "RESO", 30, {{DR_TP, P_E0 + 5, 5, 100}}},
+        {"SWAY", "VIBRATO", 30, {{DR_TP, P_LD_PIT, 0, 2}, {DR_TP, P_LRATE, 50, 80}}},
+        {"BODY", "CUTOFF", 56, {{DR_TP, P_E0 + 4, 30, 110}}},
+    }, {0, 0, 0}},
+    /* GLOAM: FM6's BELLS, a tower's bells. CREAK is a slow wobble, TOLL how hard the bells are struck (the modulator's
+     * level), TOWER how many are stacked (detune), MIST the reverb. */
+    {"GLOAM", "FM6", "Drawn once. Still standing.", ENGI_FM6, 11, DR_E_KEEP, {0, 0, 0, 0}, 104, 30, 70, {
+        {"CREAK", "LFO|PITCH", 20, {{DR_TP, P_LD_PIT, 0, 3}, {DR_TP, P_LRATE, 10, 40}}},
+        {"TOLL", "MOD|LEVEL", 40, {{DR_TP, P_E0 + 2, -40, 40}}},
+        {"TOWER", "DETUNE", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
+        {"MIST", "REVERB", 60, {{DR_TP, P_REV, 20, 127}}},
+    }, {203, 170, 120}},                                        /* its windows */
+    /* TINKER: FM6's CLAVINET, a hammer on a string: a click, then a ring. CLICK is how bright the click is (the
+     * modulator's level), TOOLS which tool is out (the ratio: scissors, file, opener), SNAP how short it is, SPRING the
+     * release. */
+    {"TINKER", "FM6", "Always a tool for it.", ENGI_FM6, 13, DR_E_KEEP, {0, 0, 0, 0}, 120, 10, 30, {
+        {"CLICK", "MOD|LEVEL", 50, {{DR_TP, P_E0 + 2, -40, 40}}},
+        {"TOOLS", "MOD|RATIO", 25, {{DR_TP, P_E0 + 3, -4, 8}}},
+        {"SNAP", "MOD|DECAY", 50, {{DR_TP, P_E0 + 4, -40, 30}}},
+        {"SPRING", "RELEASE", 40, {{DR_TP, P_REL, 10, 90}}},
+    }, {0, 0, 0}},
 };
 
 static struct {
@@ -608,6 +643,34 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
      {"Noise is every pitch at once.", "Dust is the same, thinned to", "single clicks, grains. Run it",
       "through a filter that rings and", "each grain gets a pitch: a", "stone struck, a note."},
      {"Play single notes and turn", "CLACK up and down. SCATTER", "adds more stones. ROLL sets", "how long each one rings."}},
+    {"The stray", "Not from my shelves.",
+     {"He is not mine. Nothing of", "his is in this room, and no", "jar holds his sound. He walked",
+      "in along the Line, looking for", "where he was left. He keeps", "to the middle of the floor."},
+     "LEAD SYNTH", "The voice that carries the tune",
+     {"A lead is the one voice that", "plays the melody: bright and", "loud enough to hear over the",
+      "rest. FM makes it by bending", "one wave with another, and", "the bend is the edge."},
+     {"Play a tune and turn HEROIC", "up: a brighter edge. Then turn", "SEARCH up: each note slides", "up into place."}},
+    {"The mouse", "Lives in the dollhouse.",
+     {"There is a dollhouse behind", "the shelves, and it is a model", "of this room, jar for jar.",
+      "She lives in it. She plays a", "cello made for a doll. She has", "seen everything, at her size."},
+     "BOWED STRING", "A sawtooth, softened",
+     {"A bow drags across a string,", "lets go, and drags again: a", "sawtooth wave. A filter that",
+      "closes a little takes the buzz", "away and leaves the wood: a", "cello, or as near as a mouse."},
+     {"Play slow notes and turn BOW", "up: they take time to speak.", "BODY down is a woodier tone.", "SWAY adds a gentle waver."}},
+    {"The drawing", "Done in one line.",
+     {"A castle, drawn on paper in a", "single line that never lifts,", "and I did not draw it. At night",
+      "the line moves, and so does", "the castle. It is the Line,", "in a place it can stand."},
+     "FM BELLS", "A bell is not in tune with itself",
+     {"A real bell rings several", "pitches at once, and not in a", "tidy ratio. That is why it",
+      "sounds like metal. FM makes the", "same: one wave bending", "another at an odd ratio."},
+     {"Play low, slow notes and turn", "TOLL up: struck harder, a", "brighter clang. CREAK is a", "slow waver. MIST: the hall."}},
+    {"The tool", "Cut the seals. Remembers all.",
+     {"Every jar had a seal, and he", "cut them. I know the sound of", "each cut. He folds his tools",
+      "away when I look at him, and", "shows me his handle, which", "is red. I have asked nothing."},
+     "CLAVINET", "Hammer on string, Hohner 1960s",
+     {"A clavinet is a keyboard that", "strikes a string with a hammer", "and stops it on the way up:",
+      "a click, then a ring. FM makes", "the click by a quick burst of", "bend at the very start."},
+     {"Play short, fast notes and turn", "CLICK up for a sharper snap.", "TOOLS changes the tone, a new", "tool for every setting."}},
 };
 
 static struct {
@@ -1579,6 +1642,18 @@ static const dr_beat_t DR_BEATS[DR_NCHAR] = {   /* the cast's order */
     {"STONEFALL", 94, 90, 98,                    /* Cairn: clacks and knocks */
      {"x.....x...x.....", 0, 0, 0, 0, "....x.......x...", "x.x...x.x...x.x.", "..x.......x....."},
      {36, 0, 0, 0, 43, 0, 0, 0, 36, 0, 0, 0, 41, 0, 0, 0}},
+    {"SEARCHING", 104, 90, 98,                   /* Stray: steady steps, calling out */
+     {"x...x...x...x...", 0, "........x.......", "x.x.x.x.x.x.x.x.", 0, 0, "..x...x...x...x.", 0},
+     {36, 0, 0, 0, 43, 0, 0, 0, 41, 0, 0, 0, 43, 0, 48, 0}},
+    {"NIBBLE", 84, 90, 100,                      /* Tuppence: small, soft, a little hurried */
+     {"x.......x.......", "........x.......", 0, "x.x.x.x.x.x.x.x.", 0, 0, "..x...x...x...x.", 0},
+     {36, 1, 1, 0, 43, 1, 1, 0, 41, 1, 1, 0, 43, 1, 0, 0}},
+    {"SKETCH", 90, 92, 100,                      /* Gloam: low and creaking, a drawn-out beat */
+     {"x.........x.....", 0, 0, 0, "......x.......x.", "........x.......", "x...x...x...x...", 0},
+     {33, 1, 1, 1, 1, 1, 1, 1, 31, 1, 1, 1, 36, 1, 1, 1}},
+    {"FOLD OUT", 116, 90, 98,                    /* Tinker: snaps, clicks, a tool at a time */
+     {"x..x..x...x..x..", 0, "....x.......x...", "x.xxx.xxx.xxx.x.", 0, 0, "..x...x...x...x.", "x...x...x...x..."},
+     {36, 0, 0, 36, 0, 0, 43, 0, 0, 36, 0, 48, 0, 0, 43, 0}},
 };
 
 static int32_t dr_beat_shift(void)           /* the bass's move from C: the chord's root (WEAVE, CAST) or the key */

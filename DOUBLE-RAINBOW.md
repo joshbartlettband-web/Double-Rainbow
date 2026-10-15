@@ -184,6 +184,22 @@ same peak), within 6 dB of the others; the other sixteen are within 3 dB. **Josh
 whether the clacks sound like stones, Top's wobble, the Rabbit's metal against its warmth, Fork's DRIFT with a chord,
 and the Ants' COLONY and SWARM.
 
+**Built: four more, for twenty-four** (concepts `art/gemini/stray_a.jpg`, `tuppence_a.jpg`, `gloam_a.jpg`,
+`tinker_a.jpg`, at 512 px; screens `docs/mockups/four_screens.png`). The fire that never burns out was dropped (too
+close to Wick), and the pocket knife became a multi-tool with no blade out.
+
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| STRAY, a lost action figure | FM6: SYNC LEAD, a bright lead | Looking for where he goes. | HEROIC (mod level), PLASTIC (mod ratio), CAPE (vibrato), SEARCH (a slide up into each note) | Not from the shelves: he walked in along the Line. |
+| TUPPENCE, a mouse with a dollhouse cello | ANALOG: SAW LEAD with a slow, soft start: a bowed string | Plays what she can reach. | BOW (attack), SCRAPE (resonance), SWAY (vibrato), BODY (cutoff) | The dollhouse is a model of the Jarkeeper's room, jar for jar. |
+| GLOAM, an enchanted drawing of a castle | FM6: BELLS, a tower's bells | Drawn once. Still standing. | CREAK (a slow wobble), TOLL (mod level), TOWER (detune), MIST (reverb) | Drawn in one line that never lifts: the Line itself, in a place it can stand. |
+| TINKER, a multi-tool | FM6: CLAVINET, a click then a ring | Always a tool for it. | CLICK (mod level), TOOLS (mod ratio), SNAP (mod decay), SPRING (release) | He cut the seals off the jars, and remembers every one. |
+
+Gloam is on BELLS because the organ patches have no audible modulator, so a TOLL knob did nothing on them (Fork,
+Pip, Rabbit and Stray do have one). Stray has no blink: his face is too small at this size to show it. Tinker joins
+Tock, Pip and Cairn as leveled by his own measure. **Josh to listen:** Stray's lead against the others, Tuppence's
+bow (BOW up, slow notes), Gloam's bells in a low register, Tinker's clicks.
+
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
 
@@ -303,6 +319,10 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Rabbit | MOONRISE | 76 | slow, warm and wide |
 | Top | SPINNING | 132 | a round, rolling ride |
 | Cairn | STONEFALL | 94 | clacks and knocks |
+| Stray | SEARCHING | 104 | steady steps, calling out |
+| Tuppence | NIBBLE | 84 | small, soft, a little hurried |
+| Gloam | SKETCH | 90 | low and creaking |
+| Tinker | FOLD OUT | 116 | snaps and clicks, a tool at a time |
 
 ## Songs for TRACE
 
@@ -387,7 +407,7 @@ knob cards for how much of each crystal.
 ## Memory (measured at twelve characters)
 
 - **Flash** (the app slot: code, pictures, text): 476 KB of 540 KB used, 65 KB free (the build keeps 10 KB).
-  The twenty sprites are about 38 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a
+  The twenty-four sprites are about 46 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a
   bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. A new
   character costs about 3 KB of art and 1 KB of text and sound, so flash is not what limits the cast.
 - **RAM** (.data + .bss): 60.8 KB of 96 KB, 37 KB free. FM6's lookup tables (12 KB) are now copied from flash into

@@ -22,6 +22,10 @@ EYES = {
     "rabbit": [(20, 40, 28, 45)],
     "top": [(27, 25, 33, 31), (38, 23, 44, 29)],
     "cairn": [(11, 29, 17, 36), (34, 29, 41, 36)],
+    "stray": [],
+    "tuppence": [(22, 25, 27, 31)],
+    "gloam": [(28, 51, 33, 58), (38, 51, 43, 58)],
+    "tinker": [(45, 34, 50, 40), (55, 34, 60, 40)],
 }
 OUTLINE = (34, 18, 12)
 LID = {"hermit": (231, 89, 58)}          # by hand where the colour round the eye is not the lid (Hermit: his horn)

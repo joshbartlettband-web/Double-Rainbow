@@ -27,3 +27,8 @@ python3 tools/art/procchar.py art/gemini/ants_b.jpg ants 96 110 90 4            
 python3 tools/art/procchar.py art/gemini/rabbit_a.jpg rabbit 104 90 90 4
 python3 tools/art/procchar.py art/gemini/top_a.jpg top 104 80 90 4
 python3 tools/art/procchar.py art/gemini/cairn_a.jpg cairn 100 90 90 4
+python3 tools/art/procchar.py art/gemini/stray_a.jpg stray 104 70 90 4
+python3 tools/art/procchar.py art/gemini/tuppence_a.jpg tuppence 100 100 90 4
+python3 tools/art/procchar.py art/gemini/gloam_a.jpg gloam 104 80 90 4
+python3 tools/art/procchar.py art/gemini/tinker_a.jpg tinker 104 90 90 4
+python3 tools/art/clear_fringe.py stray tuppence                              # the last of the magenta, in the gaps
