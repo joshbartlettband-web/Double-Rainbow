@@ -211,6 +211,24 @@ changes nothing, so you go at your own pace. At the end it starts again from the
 lighting as it goes. The songs are written readably in `tools/gen_dr_songs.py` (the build checks they fit the keys);
 14 songs take about 1.3 KB.
 
+## A kid's name (built)
+
+The startup screen can say hello to a kid by name: HELLO, and the name in big letters over the bows (the line on
+the character screen says it too). Two ways to set it, both in Rainbow mode as well:
+
+- **On the FM-1:** HOME held, then ALGORITHM opens YOUR NAME. PRESETS picks a letter (a space, then A to Z),
+  ALGORITHM the next of ten places, SAVE keeps it, HOME leaves it as it was. The beat stops while it is open
+  (Melodee writes settings only while stopped). `docs/mockups/your_name.png`, `docs/mockups/hello_splash.png`.
+- **On the website:** the installer has a name box. The name goes over USB to the FM-1 only (the editor's NAME,
+  cmd 50: ten letters or spaces, the reply its result and the name kept), never to a server, and the page keeps
+  nothing. Typed before installing, it is sent when the install is done; sending it empty clears it.
+  `web/test_name_page.py` checks the box against a fake FM-1.
+
+It is kept in eleven spare settings bytes (the retired SLICE engine's favourites row, bytes 20 to 30: ten letters or
+spaces and a check byte), the same place and check as Rainbow mode, so an old install keeps all its settings
+(`firmware/src/dr_name.c`). `dr_test.mjs` enters a name, powers off and checks the hello. Double Rainbow now runs
+Melodee's settings save in its own loop; before, nothing it changed was ever written.
+
 ## Beats (built)
 
 After Rainbow mode's: each character has its own beat, played by Melodee's sequencer, with the 808 kit on track 4
