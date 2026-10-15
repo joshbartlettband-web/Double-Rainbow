@@ -148,7 +148,8 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 12u
+#define DR_NCHAR 15u
+#define DR_ECHO 14u                          /* (her ECHO knob is code: dr_frame schedules the repeats) */
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
  * filter (the older one, saturating sooner: the warmth), half key tracking, velocity on the filter and the
@@ -289,6 +290,34 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"SWELL", "ATTACK", 34, {{DR_P5, P5_ATTACK_FILTER, 0, 100}, {DR_P5, P5_ATTACK_AMP, 0, 50}}},
         {"GROWL", "RESO|VINTAGE", 10, {{DR_P5, P5_RESONANCE, 0, 90}, {DR_P5, P5_VINTAGE, 40, 127}}},
     }, {255, 150, 90}},                                         /* his claws */
+    /* BURROW: ANALOG's SUB BASS on a saw, mono, with a slide: the note under the note. DEEP darkens it, THUMP
+     * gives each note a soft filter kick, GROWL the drive, DIG how slowly he slides from one held note to the next
+     * (Melodee's glide). {WAVE DTN MIX NOIS | CUT RES DRV KTR} */
+    {"BURROW", "ANALOG", "Digs where the low notes go.", ENGI_ANALOG, 7, {0, -128, -128, -128, 40, 10, 20, -128},
+     {0, 0, 0, 0}, 99, 0, 12, {
+        {"DEEP", "DARKER", 40, {{DR_TP, P_E0 + 4, 90, 20}}},
+        {"THUMP", "ENV AMT|DECAY", 30, {{DR_TP, P_ED_FLT, 0, 50}, {DR_TP, P_DEC, 40, 72}}},
+        {"GROWL", "DRIVE", 15, {{DR_TP, P_E0 + 6, 0, 100}}},
+        {"DIG", "SLIDE", 0, {{DR_TP, P_GLIDE, 0, 70}}},
+    }, {248, 176, 72}},                                         /* his lantern */
+    /* PIP: FM6's MARIMBA (Melodee's own: the DX7's rang out too fast to hear over the others): a struck bar. KNOCK is the mallet (the modulator's level: the tap's
+     * brightness), WOOD the bar (the modulator's ratio), RING how long the tap rings, ROOM the reverb. */
+    {"PIP", "FM6", "Taps everything twice.", ENGI_FM6, 5, DR_E_KEEP, {0, 0, 0, 0}, 127, 10, 34, {
+        {"KNOCK", "MOD|LEVEL", 50, {{DR_TP, P_E0 + 2, -40, 40}}},
+        {"WOOD", "MOD|RATIO", 25, {{DR_TP, P_E0 + 3, -2, 6}}},
+        {"RING", "MOD|DECAY", 85, {{DR_TP, P_E0 + 4, -40, 40}}},
+        {"ROOM", "REVERB", 30, {{DR_TP, P_REV, 0, 110}}},
+    }, {217, 55, 48}},                                          /* his crest */
+    /* ECHO: VOICE's WHISPER, given more buzz so it holds a tune: a breathy choir that is mostly fog. VOWEL shapes
+     * it, WHISPER trades the buzz for breath, ECHO brings each note back softer a moment later (code: dr_echo, Melodee
+     * has no delay), FADE is how slowly a note leaves. {VOWEL VOWL2 TALK SHIFT | BUZZ BREATH Q RAND} */
+    {"ECHO", "VOICE", "Says what you said. Later.", ENGI_VOICE, 3, {10, -128, 0, -128, 80, 40, 70, -128},
+     {40, 90, 110, 80}, 90, 30, 70, {
+        {"VOWEL", "AH|TO OO", 15, {{DR_TP, P_E0, 0, 127}}},
+        {"WHISPER", "MORE|BREATH", 30, {{DR_TP, P_E0 + 5, 10, 120}, {DR_TP, P_E0 + 4, 100, 30}}},
+        {"ECHO", "REPEATS", 40, {{DR_NONE, 0, 0, 0}}},
+        {"FADE", "RELEASE", 50, {{DR_TP, P_REL, 30, 120}}},
+    }, {205, 235, 225}},                                        /* her eyes */
 };
 
 static struct {
@@ -387,95 +416,119 @@ static void project_boot(void);              /* project.c (included after this f
 typedef struct { const char *entry, *when, *lore[6], *title, *sub, *body[6], *tip[4]; } dr_codex_t;
 static const dr_codex_t DR_CODEX[DR_NCHAR] = {
     {"The moth", "Never caught. Not yet.",
-     {"She came the night jar twelve", "broke, drawn to the glass and", "the moonlight in it. She has",
-      "followed it ever since. Every", "lamp in the hills goes out as", "she passes. I keep mine lit."},
+     {"She came the night jar twelve", "broke and the Line leapt. A", "moth will follow any light",
+      "that moves, and the Line glows", "when it moves. She makes it", "move. I keep watch."},
      "PROPHET-5", "Sequential, 1978",
      {"The first synth that could", "remember its sounds. Two", "oscillators feed one filter",
       "that trims the brightness", "away, and that is where", "the warmth comes from."},
      {"Hold a chord and turn GLOW", "up slowly. Then turn BLOOM", "all the way up and play", "slow notes."}},
     {"Jar twelve, the glass", "It did not stay broken.",
      {"The storm got out. The jar", "did not stay in pieces: the", "glass pulled itself together",
-      "around the moonlight it had", "swallowed, and walked off.", "It will not lie to me. Pity."},
+      "around the moonlight. Now it", "splits the Line into colors.", "It will not lie to me. Pity."},
      "FM SYNTHESIS", "Chowning 1967, Yamaha DX7 1983",
      {"John Chowning found it by", "speeding up a vibrato until", "it stopped wobbling and",
       "became a new tone. One wave", "bends another, and that is", "the glassy shine."},
      {"Turn METAL slowly: each step", "is a new ratio between the", "waves. Low SHINE is a soft", "piano, high is a bell."}},
     {"Jar twelve, a storm", "Caught at the cliffs, 3 a.m.",
-     {"Small, but it held a whole", "night of weather. It broke", "the jar from the inside and",
-      "took the moonbow's second", "arc with it. I want it back.", "All of it."},
+     {"Small, but it held a whole", "night of weather. It broke", "the jar from the inside, and",
+      "the Line has not lain flat", "since. It took the second arc", "with it. I want it all back."},
      "NOISE", "Every pitch at once",
      {"White noise hisses, pink is", "softer, like rain, and brown", "rumbles like thunder. Repeat",
       "a scrap of noise fast enough", "and it turns into a note:", "that is Squall's voice."},
      {"Turn HOWL up slowly: the hiss", "gets shorter and buzzier until", "it howls. Then turn GUST up",
       "and hold a long note."}},
     {"The night-light", "Never once let go out.",
-     {"The only light I allow in the", "room. She was meant to watch", "the jars, not sing to them.",
-      "The night twelve broke, she", "saw who did it. She will not", "say. She sings instead."},
+     {"The only light I allow in the", "room. She was set to watch", "the Line, not to sing to it.",
+      "She saw who broke jar twelve.", "She will not say. She hums", "one steady note instead."},
      "VOICE", "How vowels are made",
      {"Your throat buzzes and your", "mouth shapes the buzz. Each", "vowel is a shape: a few loud",
       "bands of pitch, the formants.", "Move them and AH turns into", "OO. That is all a vowel is."},
      {"Hold a note and turn VOWEL", "slowly from AH to OO. Then", "turn TALK up: she moves", "between two vowels by herself."}},
     {"The clock", "Wound every night at nine.",
-     {"He sits on my shelf and", "counts. He has counted every", "night since jar one, and he",
-      "has never once lost the beat.", "He knows how long the jars", "have been here. So do I."},
+     {"He counts the Line: every", "rise and every fall of it,", "every night since jar one,",
+      "and he has never once lost", "the beat. He knows how long", "the jars have been here."},
      "DRUM MACHINE", "Roland TR-808, 1980",
      {"No recordings inside: every", "drum is a little circuit. The", "kick is a ringing filter left",
       "to fade, the hats are metal", "made of six square waves", "beating against each other."},
      {"From the first C up: C is the", "kick, D the snare, F# the", "closed hat, A# the open one.",
       "BOOM up: a long, deep kick."}},
     {"The dust", "On no shelf. Yet.",
-     {"Not a sound I caught. He came", "with the dust between the", "shelves, and he takes the",
-      "stoppers off my jars. That is", "why some of them hum at", "night. I count the stoppers."},
+     {"Not a sound I caught. He is", "the dust in the Line, the", "crackle between the notes. He",
+      "takes the stoppers off my", "jars: that is why some hum at", "night. I count the stoppers."},
      "CHIPTUNE", "Game consoles, 1980s",
      {"Old game machines had a few", "plain voices: square waves,", "a triangle, a hiss. Composers",
       "made them sing with fast", "arpeggios and pitch sweeps.", "Fewer bits, more crunch."},
      {"Turn CHIRP up and hold a key:", "the note becomes a fast", "arpeggio, like an old game.", "SHAPE: pulse, triangle, saw."}},
     {"Jar one", "Let go. On purpose.",
-     {"The oldest jar, and the only", "one I ever opened myself.", "I had my reasons. Some nights",
-      "she drifts back and looks at", "the shelf. She knows what is", "in jar thirteen."},
+     {"The oldest jar, and the only", "one I ever opened myself. She", "bends the Line the way water",
+      "bends light. Some nights she", "drifts back to the shelf. She", "knows what is in jar thirteen."},
      "PHASE", "Phase distortion: Casio CZ, 1984",
      {"Casio's trick: read a sine", "wave at an uneven speed and", "it bends into a saw, a square",
       "or a ringing tone. The more", "it bends, the brighter it", "sounds. No filter needed."},
      {"Turn TIDE slowly: eight waves,", "the last three ring like", "water in a glass. Then turn",
       "BEND from soft to sharp."}},
     {"Jar four, the reed jar", "Filled in the marsh below.",
-     {"I dipped it in the marsh one", "summer and he was in it,", "singing four notes. He has",
-      "sung the same four ever since.", "He will not stop, and I have", "stopped asking him to."},
+     {"I dipped it in the marsh one", "summer and he was in it,", "singing four notes. The Line",
+      "takes the same four shapes", "every night. He will not stop.", "I have stopped asking him to."},
      "ACID", "Roland TB-303, 1981",
      {"A little bass machine that", "failed, until Chicago found", "it. One saw wave, a filter",
       "that rings, and an envelope", "that sweeps it shut on every", "note: the squelch."},
      {"Play a fast low line and turn", "SQUISH up and down while it", "plays. Then turn GOO up until",
       "the filter sings by itself."}},
-    {"My owl", "She keeps the ledger.",
-     {"She writes these pages when", "my hands shake. She has read", "every one of them, even the",
-      "ones I tore out. She has", "never said what was on them.", "I have never asked."},
+    {"My owl", "She reads the Line.",
+     {"She reads the Line the way", "you read a page: one look and", "she can name the sound that",
+      "drew it. She has read the", "pages I tore out. She has", "never said a word of them."},
      "STRINGS", "String machines: Solina, Elka, 1970s",
      {"Not real strings: a pulse", "wave whose width keeps", "moving, a second one tuned",
       "slightly off, and a chorus.", "Bands in the 70s used them", "for a whole string section."},
      {"Hold a big chord and turn", "FLUTTER up: the strings", "drift apart. WINGS up makes", "her arrive slowly."}},
     {"The key", "Not where I left it.",
-     {"The key to this room. Someone", "let it out, or it let itself", "out. The door has not locked",
-      "since, and the jars know it.", "That is why they keep", "getting away."},
+     {"The key to this room. It tunes", "the jars to hold their sounds.", "Someone let it out, or it let",
+      "itself out. Since then the", "jars ring loose, and the Line", "keeps getting through."},
      "FM PIANO", "Yamaha DX7, 1983",
      {"The DX7's electric piano was", "on a thousand 80s ballads.", "Two waves, one bending the",
       "other: hit a key hard and", "the bend gets brighter, the", "bark of a real tine."},
      {"Play slow chords with SHEEN", "up, like an 80s ballad. Then", "turn BARK up and hit the",
       "keys harder."}},
     {"The magpie", "Another collector.",
-     {"I am not the only one in", "these hills who keeps sounds.", "She takes the best part of",
-      "everything and keeps it. She", "has sixty-four now. I would", "like to see her collection."},
+     {"I am not the only one in", "these hills who keeps sounds.", "She snips the brightest bits",
+      "off the Line and keeps them.", "She has sixty-four now. I", "would like to see them."},
      "CZ-1", "Casio, 1986",
      {"Casio's own sixty-four tones,", "played from the real data. A", "factory tone is a starting",
       "point: the CZ came with", "brass, strings, bells and", "basses already made."},
      {"Turn TONE slowly: each step", "is a new Casio tone, its name", "on the line. Find a favorite,",
       "then add SPACE."}},
     {"Jar nine", "Moved in. Will not move out.",
-     {"Jar nine held an old brass", "horn. Something moved into", "it, the way crabs do, and",
-      "would not come out again. It", "answers when I call it.", "Loudly."},
+     {"Jar nine held an old brass", "horn. Something moved into", "it, the way crabs do. When it",
+      "answers me, the Line jumps", "all the way to the tops of", "the hills. Loudly."},
      "PROPHET-5", "Sequential, 1978",
      {"This is one of Sequential's", "own programs, Iconic Brass.", "Two saw waves, and a filter",
       "envelope that opens like a", "breath: that swell is what", "synth brass is."},
      {"Play a chord and let go.", "Turn SWELL up: the brass", "breathes in. BITE down makes", "it softer and rounder."}},
+    {"The badger", "Lives under the hills.",
+     {"The low notes sink. They go", "under the Line, into the", "hills, and he digs after them.",
+      "He brings them back up in his", "lantern, one at a time. He", "has never dropped one. Yet."},
+     "SUB BASS", "The note under the note",
+     {"The bass is the lowest part:", "you feel it as much as you", "hear it. A triangle wave is",
+      "nearly pure, one pitch and a", "little shine. Under a song it", "holds everything up."},
+     {"Play low notes and turn DEEP", "up: you feel more than hear.", "Hold one key, add another:",
+      "DIG up slides between them."}},
+    {"The woodpecker", "Taps on every jar.",
+     {"He taps each jar on the shelf", "and listens. A full jar rings", "one way, an empty one another,",
+      "and he can tell from the Line", "which is which. He tapped jar", "thirteen once. He went quiet."},
+     "FM MARIMBA", "Frequency modulation, struck",
+     {"A marimba bar is struck once", "and rings out. The tap is", "bright and noisy, then only",
+      "the bar's own tone is left.", "FM makes that tap by bending", "the wave hard for an instant."},
+     {"Play quick notes and turn", "KNOCK up: harder mallets.", "WOOD changes the bar. RING",
+      "lets each note ring longer."}},
+    {"Jar thirteen", "Sealed. Not by me.",
+     {"I never filled jar thirteen.", "It was full when I found it,", "and sealed. Its Line is a copy",
+      "of another sound's, a beat", "behind. I do not know whose.", "I think I am about to."},
+     "VOICE ECHO", "A voice, and the hill's reply",
+     {"A breathy voice with no words:", "a buzz shaped into a vowel,", "with air around it. An echo",
+      "is the same sound coming back", "a moment later, softer, the", "way a shout comes off a hill."},
+     {"Play a slow tune and turn", "ECHO up: each note answers", "itself. WHISPER turns her",
+      "voice into breath."}},
 };
 
 static struct {
@@ -772,32 +825,34 @@ static void dr_beat_play(uint32_t on);
 /* The player: SCRY's questions and TRACE's demonstrations, as notes into Melodee's MIDI input queue (usb.c
  * midi_enqueue: channel 1 is track 1, the character), from the main loop at their times. A few notes at once. */
 #include "dr_songs.h"                        /* DR_SONGS (tools/gen_dr_songs.py) */
-#define DR_PN 8u
-static struct { uint8_t note, state; uint32_t on, off; } drp[DR_PN] DR_POOL;   /* state 0 free, 1 waiting, 2 sounding */
-static void dr_midi(uint32_t note, uint32_t on)
+#define DR_PN 16u
+static struct { uint8_t note, state, vel; uint32_t on, off; } drp[DR_PN] DR_POOL;   /* state 0 free, 1 waiting, 2 sounding */
+static void dr_midi(uint32_t note, uint32_t on, uint32_t vel)
 {
     if (on)
         drm.sweep_t0 = fm1_ms | 1u;                      /* (Shard's light, for the player's notes too) */
-    (void)midi_enqueue(on ? 0x09u | 0x90u << 8 | (note & 127u) << 16 | 100u << 24 : 0x08u | 0x80u << 8 | (note & 127u) << 16, 1);
+    (void)midi_enqueue(on ? 0x09u | 0x90u << 8 | (note & 127u) << 16 | (vel & 127u) << 24 : 0x08u | 0x80u << 8 | (note & 127u) << 16, 1);
 }
-static void dr_play(uint32_t note, uint32_t after_ms, uint32_t ms)
+static void dr_play_v(uint32_t note, uint32_t after_ms, uint32_t ms, uint32_t vel)
 {
     uint32_t i;
     for (i = 0; i < DR_PN; i++)
         if (!drp[i].state) {
             drp[i].note = (uint8_t)note;
+            drp[i].vel = (uint8_t)vel;
             drp[i].on = fm1_ms + after_ms;
             drp[i].off = fm1_ms + after_ms + ms;
             drp[i].state = 1;
             return;
         }
 }
+static void dr_play(uint32_t note, uint32_t after_ms, uint32_t ms) { dr_play_v(note, after_ms, ms, 100); }
 static void dr_play_stop(void)                /* everything waiting forgotten, everything sounding ended */
 {
     uint32_t i;
     for (i = 0; i < DR_PN; i++) {
         if (drp[i].state == 2u)
-            dr_midi(drp[i].note, 0);
+            dr_midi(drp[i].note, 0, 0);
         drp[i].state = 0;
     }
 }
@@ -806,11 +861,11 @@ static int dr_play_poll(void)                 /* due notes on and off; 1 while a
     uint32_t i, busy = 0;
     for (i = 0; i < DR_PN; i++) {
         if (drp[i].state == 1u && (int32_t)(fm1_ms - drp[i].on) >= 0) {
-            dr_midi(drp[i].note, 1);
+            dr_midi(drp[i].note, 1, drp[i].vel);
             drp[i].state = 2;
         }
         if (drp[i].state == 2u && (int32_t)(fm1_ms - drp[i].off) >= 0) {
-            dr_midi(drp[i].note, 0);
+            dr_midi(drp[i].note, 0, 0);
             drp[i].state = 0;
         }
         busy |= drp[i].state;
@@ -1420,6 +1475,15 @@ static const dr_beat_t DR_BEATS[DR_NCHAR] = {   /* the cast's order */
     {"PARADE", 100, 89, 99,                      /* Hermit: a brass band's street beat */
      {"x..x....x..x....", "..x..x.x..x..x.x", 0, "xxxxxxxxxxxxxxxx", 0, 0, 0, "x...x...x...x..."},
      {36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43}},
+    {"DEEP DOWN", 86, 92, 96,                    /* Burrow: a slow, heavy nod (the bass is his) */
+     {"x.....x...x.....", "........x.......", 0, "x.x.x.x.x.x.x.x.", 0, 0, 0, 0},
+     {36, 0, 0, 0, 0, 0, 0, 0, 31, 0, 0, 0, 0, 0, 0, 0}},
+    {"WOODBLOCK", 112, 90, 98,                   /* Pip: a clave, tapped */
+     {"x.......x.......", 0, 0, "x.x.x.x.x.x.x.x.", 0, 0, "x..x..x...x.x...", "....x.......x..."},
+     {36, 0, 0, 43, 0, 0, 36, 0, 0, 0, 43, 0, 48, 0, 0, 0}},
+    {"AFTERGLOW", 92, 92, 102,                   /* Echo: half time, with room for her repeats */
+     {"x.........x.....", "........x.......", 0, "..x...x...x...x.", "......x.......x.", 0, 0, 0},
+     {36, 1, 1, 1, 1, 1, 1, 1, 41, 1, 1, 1, 43, 1, 1, 1}},
 };
 
 static int32_t dr_beat_shift(void)           /* the bass's move from C: the chord's root (WEAVE, CAST) or the key */
@@ -1812,6 +1876,22 @@ static int dr_frame(void)
         drm.sweep_t0 = fm1_ms | 1u;
         if (!drm.squash_t0)
             drm.squash_t0 = fm1_ms | 1u;
+    }
+    if (notes && dr.ch == DR_ECHO && dr_kmode <= DRK_CAST && dr.mv[DR_ECHO][2]) {
+        uint32_t v = dr.mv[DR_ECHO][2], reps = v <= 33u ? 1u : v <= 66u ? 2u : 3u, r, j;   /* ECHO: each new note */
+        uint32_t gap = 30000u / (uint32_t)(song.g[G_BPM] >= 40 ? song.g[G_BPM] : 120);   /* comes back an eighth */
+        for (i = 0; i < 27u; i++)                                                         /* later, softer, 1..3 times */
+            if ((notes >> i) & 1u) {
+                uint32_t vel = 100;
+                for (r = 1; r <= reps; r++) {
+                    vel = vel * 3u / 5u;
+                    if (kb_chn[i])
+                        for (j = 0; j < kb_chn[i]; j++)
+                            dr_play_v(kb_chord[i][j], r * gap, gap * 7u / 10u, vel);
+                    else
+                        dr_play_v(kb_note[i], r * gap, gap * 7u / 10u, vel);
+                }
+            }
     }
     if (notes && drum_track(&trk[0])) {                  /* (Tock: the drum the lowest new key strikes) */
         for (i = 0; !((notes >> i) & 1u); i++)

@@ -45,6 +45,17 @@ its glass, which caught the moonlight on the way out (the rainbow in his chest).
 moths do, and has followed the two of them ever since. The double moonbow's second, reversed arc is where escaped
 sounds go: Squall took it with him.
 
+**The Line (agreed).** The hills' edge is the Line, drawn by whatever sound is loose in the hills: when nothing
+sounds it lies flat, and every note redraws it (the horizon on the character screen does exactly this). The
+Jarkeeper keeps sounds in jars to keep the Line still, and every sound let out makes it move again. The room is an
+arcane machine more than a cupboard: tuned glass jars wired in copper, numbered like channels. The ledger is written
+in traces, not words, and Hush is the one who reads it. Each character is a way the Line moves: Shard splits it into
+colors, Tock counts it, Mote is the dust in it, Squall keeps it from lying flat, Murk bends it, Wick hums one steady
+line, Tumbler tunes the jars that hold it, Glint snips bits off it, Hermit's horn throws it to the hilltops, Bog draws
+the same four shapes on it, Vesper follows its glow, Burrow digs under it, Pip taps the jars to hear it, and Echo's
+jar holds a copy of someone else's. Code carries it, not new paintings: every glow flickers with the Line, and
+Hush's locket shows it live.
+
 - **Every new character is another jar.** Unlocking one frees it, and each remembers something about the Jarkeeper.
 - **The codex is the Jarkeeper's ledger**, a page per character in the Jarkeeper's own voice (cryptic, possessive,
   never cruel), then the engine's real story, then something to try.
@@ -134,13 +145,27 @@ phase distortion with real controls; her codex page tells the CZ's story.
 | Character | Engine | Line | Knobs (what they move) | Ledger hook |
 | --- | --- | --- | --- | --- |
 | BOG, a swamp toad | ANALOG: ACID (the TB-303 squelch) | Squelch is a love language. | SQUISH (cutoff), GOO (resonance), GULP (envelope amount, decay: the squelch, slowed 30 % on Josh's ear), GRIT (drive) | Jar four, the reed jar: the same four notes forever. |
-| HUSH, a barn owl | ANALOG: PWM STR (a string machine) | Writes everything down. Says nothing. | DUSK, FLUTTER (detune), HOLLOW (oscillator mix), WINGS (attack, release) | She writes the ledger, and has read the torn-out pages. |
+| HUSH, a barn owl who listens (a grooved listening face, a scope locket that shows the Line live) | ANALOG: PWM STR (a string machine) | Writes everything down. Says nothing. | DUSK, FLUTTER (detune), HOLLOW (oscillator mix), WINGS (attack, release) | She reads the Line like a page, and has read the torn-out pages. |
 | TUMBLER, a living brass key | FM6: DX TINE (the DX7 electric piano) | Opens anything. Asks no one. | BARK (mod level), CLANG (mod ratio), RING (mod decay), SHEEN (chorus) | The key to the room: the door has not locked since. |
 | GLINT, a magpie | CZ-1: Casio's own 64 tones | Takes the best part of everything. | TONE (A-1 .. H-8, a tone a detent, its name on the line), SHINE (chorus), GRIT (dist), SPACE (reverb) | Another collector in the hills. |
 | HERMIT, a hermit crab in a horn | PROPHET: Sequential's Iconic Brass | Lives in a horn. Plays it, too. | BLARE (cutoff), BITE (env amount), SWELL (attack), GROWL (resonance, vintage); they start where the program has them | Jar nine: something moved in. |
 
 All twelve are leveled within 1.9 dB by measured loudness (the drums by their own measure), and each new character
 has a knob checked in `web/emu/dr_test.mjs` to move its setting and its sound. The art takes about 33 KB for twelve.
+
+**Built: three more, for fifteen** (concepts `art/gemini/burrow_a.jpg`, `pip_a.jpg`, `echo_a.jpg`; screens
+`docs/mockups/new_three_screens.png`):
+
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| BURROW, a badger with a lantern | ANALOG: SUB BASS on a saw, mono | Digs where the low notes go. | DEEP (darker), THUMP (filter kick), GROWL (drive), DIG (a slide between held notes) | The low notes sink under the Line; he digs them back up. |
+| PIP, a woodpecker with mallets | FM6: MARIMBA (Melodee's own; the DX7's rang out too fast) | Taps everything twice. | KNOCK (mallet: mod level), WOOD (mod ratio), RING (mod decay), ROOM (reverb) | Taps every jar to hear if it is full. He tapped jar thirteen. |
+| ECHO, the fog from jar thirteen | VOICE: WHISPER with more buzz | Says what you said. Later. | VOWEL, WHISPER (more breath), ECHO (each note back 1 to 3 times, an eighth apart, softer), FADE (release) | Jar thirteen was full and sealed when the Jarkeeper found it. |
+
+Melodee has no delay (0.12 took it out for memory), so Echo's ECHO is code: each new note is sent again an eighth
+note later at the tempo, softer each time (`dr_frame`, through Double Rainbow's note player), in SOLO, WEAVE and
+CAST only. Pip is leveled as a struck sound, by its own measure like Tock's drums: a marimba dies away, so its
+average is lower at the same peak. **Josh to listen:** Pip's level against the others, and Echo's repeats.
 
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
@@ -252,6 +277,9 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Tumbler | LOCKPICK | 104 | funk |
 | Glint | SHINY | 118 | disco |
 | Hermit | PARADE | 100 | a brass band's street beat |
+| Burrow | DEEP DOWN | 86 | a slow, heavy nod |
+| Pip | WOODBLOCK | 112 | a clave, tapped |
+| Echo | AFTERGLOW | 92 | half time, room for her repeats |
 
 ## Songs for TRACE
 
@@ -336,7 +364,7 @@ knob cards for how much of each crystal.
 ## Memory (measured at twelve characters)
 
 - **Flash** (the app slot: code, pictures, text): 476 KB of 540 KB used, 65 KB free (the build keeps 10 KB).
-  The twelve sprites are 25 KB of it (was 34 KB): their runs are Huffman-coded with one shared code, decoded a
+  The fifteen sprites are 30 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a
   bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. A new
   character costs about 3 KB of art and 1 KB of text and sound, so flash is not what limits the cast.
 - **RAM** (.data + .bss): 60.8 KB of 96 KB, 37 KB free. FM6's lookup tables (12 KB) are now copied from flash into

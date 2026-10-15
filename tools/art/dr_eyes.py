@@ -14,6 +14,9 @@ EYES = {
     "tumbler": [(15, 19, 22, 23), (26, 19, 35, 23)],
     "glint": [(68, 7, 73, 12)],
     "hermit": [(26, 46, 31, 52), (36, 46, 41, 52)],
+    "burrow": [(52, 15, 60, 22)],
+    "pip": [(38, 23, 44, 29)],
+    "echo": [(5, 20, 10, 26), (18, 20, 23, 26)],
 }
 OUTLINE = (34, 18, 12)
 LID = {"hermit": (231, 89, 58)}          # by hand where the colour round the eye is not the lid (Hermit: his horn)

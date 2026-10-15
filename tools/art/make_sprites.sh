@@ -18,3 +18,7 @@ python3 tools/art/procchar.py art/gemini/hush_e.jpg hush 104 96 90 4      # the 
 python3 tools/art/procchar.py art/gemini/tumbler_a.jpg tumbler 104 80 90 4
 python3 tools/art/procchar.py art/gemini/glint_a.jpg glint 104 100 90 4
 python3 tools/art/procchar.py art/gemini/hermit_a.jpg hermit 100 110 90 4
+python3 tools/art/procchar.py art/gemini/burrow_a.jpg burrow 104 100 90 4 \
+    --keep=248,176,72 --keep=255,226,150                                          # his lantern's flame
+python3 tools/art/procchar.py art/gemini/pip_a.jpg pip 100 100 90 4
+python3 tools/art/procchar.py art/gemini/echo_a.jpg echo 104 96 90 4

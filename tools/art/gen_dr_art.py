@@ -24,11 +24,14 @@ GLOW = {                                 # by hand, as the sprites' own colours:
     "hush": [],                                         # (her locket shows the Line instead: SCOPE)
     "hermit": [(235, 202, 125), (220, 171, 88)],        # the horn's shine
     "bog": [(180, 251, 70), (205, 234, 133)],           # the throat
+    "burrow": [(248, 176, 72), (255, 226, 150)],        # his lantern
+    "pip": [(217, 55, 48)],                             # his crest
+    "echo": [(205, 235, 225)],                          # her eyes and the fog's glow
 }
 SCOPE = {                                # a window that shows the Line, the live wave (firmware/src/dr.c dr_scope_px):
     "hush": [(43, 63, 68), (54, 132, 121)],             # her locket's glass and its painted trace
 }
-SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk", "bog", "hush", "tumbler", "glint", "hermit"]          # the cast's order (firmware/src/dr.c DR_CAST)
+SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk", "bog", "hush", "tumbler", "glint", "hermit", "burrow", "pip", "echo"]          # the cast's order (firmware/src/dr.c DR_CAST)
 
 
 def rgb565(c):
