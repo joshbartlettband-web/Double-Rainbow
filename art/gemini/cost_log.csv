@@ -40,3 +40,7 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-15 14:19,art/gemini/gloam_a.jpg,gemini-3.1-flash-image,512,0,0,0.0,0
 2026-10-15 14:19,art/gemini/stray_a.jpg,gemini-3.1-flash-image,512,0,0,0.0,0
 2026-10-15 14:19,art/gemini/stray_a.jpg,gemini-3.1-flash-image,512,0,0,0.0,0
+2026-10-15 15:21,art/gemini/tuppence_a.jpg,gemini-3.1-flash-image,512,145,963,0.045,1
+2026-10-15 15:21,art/gemini/stray_a.jpg,gemini-3.1-flash-image,512,149,986,0.045,1
+2026-10-15 15:21,art/gemini/tinker_a.jpg,gemini-3.1-flash-image,512,160,1089,0.045,1
+2026-10-15 15:21,art/gemini/gloam_a.jpg,gemini-3.1-flash-image,512,161,1059,0.045,1
