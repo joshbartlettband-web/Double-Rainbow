@@ -1471,7 +1471,7 @@ static void dr_say(const char *s)
  * EDIT while held, OCT- / OCT+ while the keys are shifted */
 static void dr_leds(void)
 {
-    static const uint8_t USED[] = {B_SCL, B_EDIT, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ};
+    static const uint8_t USED[] = {B_SCL, B_EDIT, B_GLO, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ};
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
     uint32_t k, c, guide = 0, blink = (fm1_ms / 160u) & 1u;
     if (dr_kmode == DRK_SCRY) {                           /* SCRY: the home note or the first note lit, the hint blinking */
@@ -1880,8 +1880,9 @@ static int dr_frame(void)
         if (drm.codex) {                                 /* the codex: its pages */
             drm.page = (uint8_t)clamp((int32_t)drm.page + (s > 0 ? 1 : -1), 0, 2);
             drm.dirty = DR_D_ALL;
-        } else {                                         /* the next or the previous character */
-            dr_load((dr.ch + (s > 0 ? 1u : DR_NCHAR - 1u)) % DR_NCHAR);
+        } else {                                         /* the next or the previous character (GLO held: five) */
+            uint32_t by = ((fm1_in.buttons >> panel.btn[B_GLO]) & 1u) ? 5u : 1u;
+            dr_load((dr.ch + (s > 0 ? by : DR_NCHAR - by)) % DR_NCHAR);
             drb.beat = dr.ch;                            /* (their own beat; playing on if it was) */
             if (drb.on)
                 dr_beat_load(dr.ch);

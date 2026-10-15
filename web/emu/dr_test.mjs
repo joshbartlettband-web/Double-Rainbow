@@ -411,6 +411,17 @@ function trace() {
   check("HOME leaves YOUR NAME as it was", ex.web_dr_name_on() === 0 && ex.web_dr_name(0) === 74);
 }
 
+{ // GLO held, PRESETS: five characters a detent (round the cast both ways)
+  const c0 = ex.web_dr_char();
+  ex.web_buttons(1 << B.GLO); render(100); turn(EN.PRESETS, 1); ex.web_buttons(0); render(200);
+  const up = ex.web_dr_char();
+  ex.web_buttons(1 << B.GLO); render(100); turn(EN.PRESETS, -2); ex.web_buttons(0); render(200);
+  const down = ex.web_dr_char();
+  check(`GLO held, PRESETS: five a detent (${NAMES[c0]} -> ${NAMES[up]}, then back two detents -> ${NAMES[down]})`,
+        up === (c0 + 5) % N && down === (c0 + N - 5) % N);
+  turn(EN.PRESETS, -(down - c0 + N) % N === 0 ? 0 : (c0 - down + N) % N); render(500);
+}
+
 tap(B.OCTUP);
 check("OCT+: the keys an octave up", ex.web_octave() === 1);
 tap(B.OCTDN);

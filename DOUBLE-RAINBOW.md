@@ -199,6 +199,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | ALGORITHM | How the keys play: SOLO, WEAVE, CAST, SCRY, TRACE (below). |
 | SELECT | The key for WEAVE, CAST and SCRY, a fifth at a time. In TRACE: the song. |
 | PLAY | SOLO, WEAVE, CAST: the character's beat, on and off (below). SCRY: hear the question again. TRACE: hear the song (PLAY or any key stops it). |
+| GLO held | PRESETS jumps five characters a detent (twenty is a long way round one at a time). |
 | SEQ | The next beat (it starts if it was off). Held, with SELECT: the tempo, 4 BPM a detent. |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
