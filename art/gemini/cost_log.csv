@@ -20,3 +20,9 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-11 05:56,art/gemini/tumbler_a.jpg,gemini-3.1-flash-image,1K,153,1360,0.067,1
 2026-10-11 05:56,art/gemini/bog_a.jpg,gemini-3.1-flash-image,1K,147,1395,0.067,1
 2026-10-11 05:56,art/gemini/hermit_a.jpg,gemini-3.1-flash-image,1K,147,1463,0.067,1
+2026-10-11 15:13,art/gemini/burrow_a.jpg,gemini-3.1-flash-image,1K,148,1325,0.067,1
+2026-10-11 15:13,art/gemini/echo_a.jpg,gemini-3.1-flash-image,1K,151,1382,0.067,1
+2026-10-11 15:13,art/gemini/pip_a.jpg,gemini-3.1-flash-image,1K,136,1488,0.067,1
+2026-10-15 03:06,art/gemini/hush_b.jpg,gemini-3.1-flash-image,1K,318,1445,0.067,1
+2026-10-15 03:06,art/gemini/hush_c.jpg,gemini-3.1-flash-image,1K,352,1462,0.067,1
+2026-10-15 03:06,art/gemini/hush_d.jpg,gemini-3.1-flash-image,1K,387,1415,0.067,1

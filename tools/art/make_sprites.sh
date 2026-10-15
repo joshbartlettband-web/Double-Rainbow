@@ -14,7 +14,7 @@ python3 tools/art/fix_mote.py                                                   
 python3 tools/art/procchar.py art/gemini/mote_a_fix.png mote 100 110 90 4
 python3 tools/art/procchar.py art/gemini/murk_a.jpg murk 104 96 90 4
 python3 tools/art/procchar.py art/gemini/bog_a.jpg bog 92 110 90 4
-python3 tools/art/procchar.py art/gemini/hush_a.jpg hush 104 96 90 4
+python3 tools/art/procchar.py art/gemini/hush_d.jpg hush 104 96 90 4      # her own wing tip in the ink pot, no pen
 python3 tools/art/procchar.py art/gemini/tumbler_a.jpg tumbler 104 80 90 4
 python3 tools/art/procchar.py art/gemini/glint_a.jpg glint 104 100 90 4
 python3 tools/art/procchar.py art/gemini/hermit_a.jpg hermit 100 110 90 4

@@ -21,7 +21,7 @@ GLOW = {                                 # by hand, as the sprites' own colours:
     "tock": [(83, 188, 159), (70, 96, 77)],             # the clock face
     "mote": [(225, 208, 61), (211, 213, 129)],          # his eyes
     "tumbler": [(59, 138, 111)],                        # his eyes
-    "hush": [(231, 183, 114)],                          # the ink at the quill's tip
+    "hush": [(145, 88, 152), (146, 67, 136)],           # the ink in her pot
     "hermit": [(235, 202, 125), (220, 171, 88)],        # the horn's shine
     "bog": [(180, 251, 70), (205, 234, 133)],           # the throat
 }
