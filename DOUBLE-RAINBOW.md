@@ -133,7 +133,7 @@ phase distortion with real controls; her codex page tells the CZ's story.
 
 | Character | Engine | Line | Knobs (what they move) | Ledger hook |
 | --- | --- | --- | --- | --- |
-| BOG, a swamp toad | ANALOG: ACID (the TB-303 squelch) | Squelch is a love language. | SQUISH (cutoff), GOO (resonance), GULP (envelope amount, decay), GRIT (drive) | Jar four, the reed jar: the same four notes forever. |
+| BOG, a swamp toad | ANALOG: ACID (the TB-303 squelch) | Squelch is a love language. | SQUISH (cutoff), GOO (resonance), GULP (envelope amount, decay: the squelch, slowed 30 % on Josh's ear), GRIT (drive) | Jar four, the reed jar: the same four notes forever. |
 | HUSH, a barn owl | ANALOG: PWM STR (a string machine) | Writes everything down. Says nothing. | DUSK, FLUTTER (detune), HOLLOW (oscillator mix), WINGS (attack, release) | She writes the ledger, and has read the torn-out pages. |
 | TUMBLER, a living brass key | FM6: DX TINE (the DX7 electric piano) | Opens anything. Asks no one. | BARK (mod level), CLANG (mod ratio), RING (mod decay), SHEEN (chorus) | The key to the room: the door has not locked since. |
 | GLINT, a magpie | CZ-1: Casio's own 64 tones | Takes the best part of everything. | TONE (A-1 .. H-8, a tone a detent, its name on the line), SHINE (chorus), GRIT (dist), SPACE (reverb) | Another collector in the hills. |
@@ -175,7 +175,7 @@ call it.
 | --- | --- | --- |
 | **SOLO** (built) | Each key plays its note. | Rainbow's 1 FRIEND |
 | **WEAVE** (built) | Strum. A black key picks a chord and plays its root low; the white keys strum its notes upward from C3, like an Omnichord. | Rainbow's STRUM (u/veecheech) |
-| **CAST** (built) | Chords under a tune. A black key holds its chord (softer) while the white keys play a melody. Jazz players call this comping. | Rainbow's ACCORDION |
+| **CAST** (built) | Chords under a tune. A black key holds its chord (softer) while the white keys play a melody. Jazz players call this comping. The white keys follow the key SELECT picked: each keeps its letter and takes the key signature (in G every F is F#, in F every B is Bb), so the tune stays in key with the chords. | Rainbow's ACCORDION |
 | **SCRY** (built) | Ear training. Hear it, then find it on the keys: notes, intervals, chords. The pool grows as you get them right. | Rainbow's GUESS (u/nutty_cartoon) |
 | **TRACE** (built) | Learn a song. The next key lights and you play at your own pace. | Rainbow's FOLLOW (u/nutty_cartoon) |
 

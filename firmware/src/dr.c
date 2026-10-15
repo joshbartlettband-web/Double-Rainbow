@@ -237,7 +237,7 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
     {"BOG", "ANALOG", "Squelch is a love language.", ENGI_ANALOG, 4, DR_E_KEEP, {0, 0, 0, 0}, 116, 0, 18, {
         {"SQUISH", "CUTOFF", 40, {{DR_TP, P_E0 + 4, 16, 100}}},
         {"GOO", "RESO", 60, {{DR_TP, P_E0 + 5, 40, 125}}},
-        {"GULP", "ENV AMT|DECAY", 50, {{DR_TP, P_ED_FLT, 10, 63}, {DR_TP, P_DEC, 30, 95}}},
+        {"GULP", "ENV AMT|DECAY", 50, {{DR_TP, P_ED_FLT, 18, 63}, {DR_TP, P_DEC, 34, 99}}},   /* the squelch: 30 % slower, deeper */
         {"GRIT", "DRIVE", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
     }, {170, 240, 90}},                                         /* his throat */
     /* HUSH: ANALOG's PWM STR, a string machine: a pulse whose width sweeps, a second one detuned against it, a

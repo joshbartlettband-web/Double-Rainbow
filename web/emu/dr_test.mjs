@@ -317,9 +317,17 @@ function trace() {
   for (const w of [0, 2, 4, 6, 7]) { ex.web_keys(1 << 5 | 1 << w); render(120); inG.push(ex.web_kb_note(w)); }
   ex.web_keys(0); render(1500);
   check(`WEAVE in G: A#3 is vi, Em, strummed from C3 (${inG.join(" ")})`, inG.join() === [52, 55, 59, 64, 67].join());
+  const tune = () => [0, 6, 7].map((w) => { ex.web_keys(1 << w); render(120); const n = ex.web_kb_note(w); ex.web_keys(0); render(150); return n; });
+  turn(EN.ALGO, 1);                                       // CAST in G: the white keys take its F#
+  const castG = tune();
+  check(`CAST in G: F3 B3 C4 play F#3 B3 C4 (${castG.join(" ")})`, castG.join() === [54, 59, 60].join());
   turn(EN.SELECT, -2);
   check("SELECT the other way: round to F", ex.web_dr_key() === 5);
+  const castF = tune();
+  check(`CAST in F: F3 B3 C4 play F3 Bb3 C4 (${castF.join(" ")})`, castF.join() === [53, 58, 60].join());
+  render(1500);
   turn(EN.SELECT, 1);
+  turn(EN.ALGO, -1);
   scry();
   trace();
   turn(EN.ALGO, 3);

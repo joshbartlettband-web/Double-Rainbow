@@ -148,7 +148,7 @@ static uint32_t scale_map(const track_t *t, int32_t n, int32_t offset)
  * Am C Dm: IV V vi I ii), the upper row their sevenths (Fmaj7 G7 Am7 Cmaj7 Dm7), the top key iv borrowed from C minor
  * (Fm). WEAVE (after u/veecheech's strum idea): a black key picks the chord and plays its root low, the white keys,
  * left to right, its notes upward from C3, so a hand drawn across them strums it. CAST: a black key holds its chord,
- * softer, under the white keys' tune. Read in the audio ISR, set by the main loop. */
+ * softer, under the white keys' tune, played in the key (dr_in_key). Read in the audio ISR, set by the main loop. */
 enum { DRK_SOLO, DRK_WEAVE, DRK_CAST, DRK_SCRY, DRK_TRACE };   /* (SCRY, TRACE: the keys their own notes) */
 static volatile uint8_t dr_kmode;                  /* DRK_*: 0 = the keys as always */
 static volatile uint8_t dr_castkeys;               /* the black keys play their chords as in CAST (SCRY's chord drill) */
@@ -199,6 +199,15 @@ static uint32_t dr_weave_map(uint32_t k)
     return tone;
 }
 
+/* CAST's white keys in the key: each keeps its letter and takes the key signature, so in G every F is F#, in F every
+ * B is Bb (a sharp key raises the letter outside its scale, a flat key lowers it) */
+static int32_t dr_in_key(int32_t n)
+{
+    static const uint16_t MAJOR = 0xAB5u, SHARP_KEYS = 0xAD4u;   /* C D E F G A B; G D A E B F# */
+    uint32_t d = ((uint32_t)n + 12u - dr_key) % 12u;
+    return (MAJOR >> d) & 1u ? n : n + ((SHARP_KEYS >> dr_key) & 1u ? 1 : -1);
+}
+
 static uint32_t kb_map(const track_t *t, uint32_t k)
 {
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];   /* (the engine it switches to) */
@@ -208,6 +217,8 @@ static uint32_t kb_map(const track_t *t, uint32_t k)
     if (e->keys && (n = e->keys(t, k)) >= 0)           /* the engine's own key map (GM kit, slices) */
         return (uint32_t)n;
     n = 53 + (int32_t)k;
+    if (dr_kmode == DRK_CAST && dr_chord_of_key(k) < 0)  /* Double Rainbow's CAST: the tune in the chords' key */
+        n = dr_in_key(n);
     if (t->p[P_QUANT] == Q_SNAP) {                     /* SNAP: every key, rounded down to the scale */
         if (micro_active(t)) {
             uint32_t note = micro_snap(t, n + t->p[P_TRANS]);
