@@ -647,9 +647,11 @@ static uint32_t dr_wave8(uint32_t ph)        /* 0..255: a smooth rise and fall, 
     ph &= 255u;
     return ph < 128u ? S[ph >> 3] : S[(255u - ph) >> 3];
 }
-static uint32_t dr_glow_level(void)          /* the glow to draw, 0..15 */
+static uint32_t dr_glow_level(void)          /* the glow to draw, 0..15: the level, burbling with the Line */
 {
     uint32_t idle = 1u + dr_wave8(fm1_ms / 10u) * 3u / 255u, a = drm.amp * 15u / 255u;
+    int32_t w = dr_wave[(fm1_ms / 16u) % 240u];          /* (the wave where a slow eye runs along it: 0 .. DR_WAVE_PX) */
+    a = a * (10u + 6u * (uint32_t)(w < 0 ? -w : w) / 10u) / 16u;
     return a > idle ? a : idle;
 }
 static uint16_t dr_glow_px(uint16_t c, uint32_t g)   /* c brightened towards a warm white by g (0..15) */
@@ -678,6 +680,22 @@ static uint32_t dr_run_next(const uint8_t **d, uint32_t *acc, uint32_t *nb)
         code <<= 1;
     }
     return DR_HUFF[15u + idx + code - first];
+}
+
+/* a window on the Line (a sprite's scope colours, tools/art/gen_dr_art.py SCOPE: Hush's locket): dark glass with the
+ * horizon's own wave across it, lit as loud as the sound; when nothing sounds, the Line lies flat in it too */
+static int32_t dr_scope_y(const dr_sprite_t *s, int32_t c)    /* the Line's row at the window's column c */
+{
+    int32_t w = s->sc[2] - s->sc[0] + 1, half = (s->sc[3] - s->sc[1]) / 2 - 1;
+    return (s->sc[1] + s->sc[3] + 1) / 2 + dr_wave[c * 120 / w] * half / DR_WAVE_PX;   /* (the wave's first half) */
+}
+static uint16_t dr_scope_px(const dr_sprite_t *s, int32_t col, int32_t row)
+{
+    int32_t c = col - s->sc[0], y = dr_scope_y(s, c), p = c ? dr_scope_y(s, c - 1) : y;
+    uint32_t g = drm.amp * 15u / 255u;
+    if (row >= (y < p ? y : p) && row <= (y > p ? y : p))  /* (joined to the column before: no gaps) */
+        return dr_glow_px(DR_RGB(40, 176, 150), g < 3u ? 3u : g > 9u ? 9u : g);   /* (teal still, loud)*/
+    return DR_RGB(20, 34, 40);
 }
 
 /* the scene's rows y0 .. y0 + h - 1 (h <= 80): background, then the character's runs over it */
@@ -719,6 +737,7 @@ static void dr_scene_rows(int32_t y0, int32_t h)
                     }
                     if (py >= 0 && py < h)
                         cv_px[py * 240 + px] = swap16(ix == 1u ? s->pal[0] :      /* (1: the outline) */
+                                                      (s->scope >> (ix - 1u)) & 1u ? dr_scope_px(s, col, row) :
                                                       dr_sweep_px(sweep, col, row, pal[ix - 1u]));
                 }
             pos += (int32_t)len;
@@ -1888,6 +1907,17 @@ static int dr_frame(void)
             if (!(drm.dirty & DR_D_SCENE)) {
                 dr_scene_rows(DR_Y_WAVE, DR_Y_CARDS - DR_Y_WAVE);
                 cv_blit(0, DR_Y_WAVE);
+                if (DR_SPRITES[dr.ch].scope) {           /* (a window on the Line: Hush's locket, its rows) */
+                    const dr_sprite_t *s = &DR_SPRITES[dr.ch];
+                    int32_t sx, sy, y0, y1, sq = drm.squash;
+                    dr_sprite_at(dr.ch, &sx, &sy);
+                    y0 = sy + sq + s->sc[1] * (s->h - sq) / s->h;   /* (as dr_scene_rows maps them, squashed or not) */
+                    y1 = sy + sq + (s->sc[3] + 1) * (s->h - sq) / s->h;
+                    if (y0 >= DR_Y_SCENE + 40 && y1 <= DR_Y_WAVE && y1 > y0) {
+                        dr_scene_rows(y0, y1 - y0);
+                        cv_blit(0, y0);
+                    }
+                }
             }
         }
     }

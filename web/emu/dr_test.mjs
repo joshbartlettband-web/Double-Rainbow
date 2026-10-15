@@ -164,7 +164,13 @@ turn(EN.PRESETS, 1);
   turn(EN.PRESETS, 2); render(800);
   const seen = new Set(); for (let i = 0; i < 12; i++) { render(250); seen.add(rows(screen(), 60, 160)); }
   check(`SQUALL floats: he rises and falls with no note (${seen.size} different frames in 3 s)`, seen.size >= 3);
-  turn(EN.PRESETS, -2); render(800);
+  turn(EN.PRESETS, 6); render(1500);                      // HUSH: her locket shows the Line, flat when quiet
+  const locket = () => rows(screen(), 120, 140);
+  const still = locket(); ex.web_keys(1 << 7); render(500); const live = locket(); render(300); const live2 = locket();
+  ex.web_keys(0); render(3000);
+  check("HUSH: her locket shows the Line (it moves while she sounds, lies flat again after)",
+        live !== still && locket() === still);
+  turn(EN.PRESETS, -8); render(800);
 }
 
 { // the horizon: the live wave while a note sounds, flat (as it was) when it is over
