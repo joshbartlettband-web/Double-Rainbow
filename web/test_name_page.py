@@ -1,5 +1,5 @@
 """The installer's name box against a fake FM-1 on WebMIDI (Playwright, Chromium):
-  python3 web/test_name_page.py web OUT.png   -> prints what it typed, sent and said
+  python3 web/test_name_page.py web OUT.png   -> prints what it typed, sent and said"""
 import sys, json, re, importlib.util
 from pathlib import Path
 from playwright.sync_api import sync_playwright
