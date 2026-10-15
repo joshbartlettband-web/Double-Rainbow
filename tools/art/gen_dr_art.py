@@ -26,12 +26,17 @@ GLOW = {                                 # by hand, as the sprites' own colours:
     "bog": [(180, 251, 70), (205, 234, 133)],           # the throat
     "burrow": [(248, 176, 72), (255, 226, 150)],        # his lantern
     "pip": [(217, 55, 48)],                             # his crest
+    "fork": [(106, 229, 225)],                          # his eyes
+    "ants": [],                                         # (the choir has no light: its chorus is what moves)
+    "rabbit": [(219, 221, 236)],                        # her moon charm
+    "top": [(192, 88, 64)],                             # his red bands
+    "cairn": [(107, 134, 43)],                          # the moss
     "echo": [(205, 235, 225)],                          # her eyes and the fog's glow
 }
 SCOPE = {                                # a window that shows the Line, the live wave (firmware/src/dr.c dr_scope_px):
     "hush": [(43, 63, 68), (54, 132, 121)],             # her locket's glass and its painted trace
 }
-SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk", "bog", "hush", "tumbler", "glint", "hermit", "burrow", "pip", "echo"]          # the cast's order (firmware/src/dr.c DR_CAST)
+SPRITES = ["vesper", "shard", "squall", "wick", "tock", "mote", "murk", "bog", "hush", "tumbler", "glint", "hermit", "burrow", "pip", "echo", "fork", "ants", "rabbit", "top", "cairn"]          # the cast's order (firmware/src/dr.c DR_CAST)
 
 
 def rgb565(c):
@@ -107,9 +112,11 @@ def pack(name):
 HC_MAXLEN = 15
 
 
-def huff_lengths(count):
-    """code lengths for the symbols (Huffman), none over HC_MAXLEN (the decoder's limit)"""
+def huff_lengths(count, floor=1):
+    """code lengths for the symbols (Huffman), none over HC_MAXLEN (the decoder's limit): if the rarest symbols make a
+    longer code, they are weighed up (a floor on every count, doubled until it fits), which costs a few bytes"""
     import heapq
+    count = {sym: max(c, floor) for sym, c in count.items()}
     heap = [(c, i, [sym]) for i, (sym, c) in enumerate(sorted(count.items()))]
     heapq.heapify(heap)
     length = {sym: 0 for sym in count}
@@ -121,7 +128,7 @@ def huff_lengths(count):
         heapq.heappush(heap, (a[0] + b[0], k, a[2] + b[2]))
         k += 1
     if max(length.values()) > HC_MAXLEN:
-        raise SystemExit(f"dr art: a Huffman code of {max(length.values())} bits (the decoder takes {HC_MAXLEN})")
+        return huff_lengths(count, floor * 2)
     return {sym: max(1, n) for sym, n in length.items()}
 
 

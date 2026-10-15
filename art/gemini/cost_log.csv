@@ -34,3 +34,4 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-15 11:52,art/gemini/rabbit_a.jpg,gemini-3.1-flash-image,512,143,1078,0.045,1
 2026-10-15 11:52,art/gemini/fork_a.jpg,gemini-3.1-flash-image,512,147,981,0.045,1
 2026-10-15 11:52,art/gemini/ants_a.jpg,gemini-3.1-flash-image,512,137,1165,0.045,1
+2026-10-15 12:04,art/gemini/ants_b.jpg,gemini-3.1-flash-image,512,366,1002,0.045,1

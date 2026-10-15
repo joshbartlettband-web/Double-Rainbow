@@ -167,6 +167,23 @@ note later at the tempo, softer each time (`dr_frame`, through Double Rainbow's 
 CAST only. Pip is leveled as a struck sound, by its own measure like Tock's drums: a marimba dies away, so its
 average is lower at the same peak. **Josh to listen:** Pip's level against the others, and Echo's repeats.
 
+**Built: five more, for twenty** (concepts `art/gemini/fork_a.jpg`, `ants_b.jpg`, `rabbit_a.jpg`, `top_a.jpg`,
+`cairn_a.jpg`, made at 512 px to save money; screens `docs/mockups/five_screens.png`). The ants were first drawn as a
+choir of seven (`ants_a.jpg`), too small to read at this size, so they were redrawn as three.
+
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| FORK, a little robotic tuning fork | FM6: TUBULAR, a near-pure ring | A, and nothing else. | PURITY (fewer harmonics), RING (release), DRIFT (detune: two forks beat), CLANG (mod ratio) | The reference: the zero the Line is measured from. |
+| ANTS, a choir of three | ANALOG: STRINGS, a section of many that nearly agree | We are one. We are many. | COLONY (chorus), SWARM (detune spread), MARCH (vibrato), HUM (cutoff) | They carry crumbs of sound along the Line. |
+| RABBIT, a golden rabbit with a moon charm | FM6: GLASS PAD, a warm bed with a thin bell of metal | Warm. Mostly. | WARM (mod ratio), SHEEN (mod level), BLOOM (attack, release), MOON (reverb) | Waits where the moonbow meets the Line. |
+| TOP, an unceasing spinning top | PHASE: ORGAN, full sustain and a long release | Cannot stop. Tried. | SPIN (wobble speed), LEAN (wobble depth), WHIRR (DCW), REV (attack) | The Jarkeeper spun it once, to see how long the Line would stay alive. |
+| CAIRN, a creature of stacked pebbles | NOISE: DUST through a resonant filter that follows the key: a stone struck | Balanced. Don't breathe. | CLACK (filter pitch), SCATTER (density), ROLL (decay), RATTLE (resonance, crush) | Piled over jar seven; the stones stood up and keep watch. |
+
+Pip, Tock and Cairn are leveled by their own measure (struck sounds die away, so their average sits lower at the
+same peak), within 6 dB of the others; the other sixteen are within 3 dB. **Josh to listen:** Cairn's level and
+whether the clacks sound like stones, Top's wobble, the Rabbit's metal against its warmth, Fork's DRIFT with a chord,
+and the Ants' COLONY and SWARM.
+
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
 
@@ -280,6 +297,11 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Burrow | DEEP DOWN | 86 | a slow, heavy nod |
 | Pip | WOODBLOCK | 112 | a clave, tapped |
 | Echo | AFTERGLOW | 92 | half time, room for her repeats |
+| Fork | A=440 | 100 | a metronome's tick over one long note |
+| Ants | PROCESSION | 108 | a steady march of tiny feet |
+| Rabbit | MOONRISE | 76 | slow, warm and wide |
+| Top | SPINNING | 132 | a round, rolling ride |
+| Cairn | STONEFALL | 94 | clacks and knocks |
 
 ## Songs for TRACE
 
@@ -364,7 +386,7 @@ knob cards for how much of each crystal.
 ## Memory (measured at twelve characters)
 
 - **Flash** (the app slot: code, pictures, text): 476 KB of 540 KB used, 65 KB free (the build keeps 10 KB).
-  The fifteen sprites are 30 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a
+  The twenty sprites are about 38 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a
   bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. A new
   character costs about 3 KB of art and 1 KB of text and sound, so flash is not what limits the cast.
 - **RAM** (.data + .bss): 60.8 KB of 96 KB, 37 KB free. FM6's lookup tables (12 KB) are now copied from flash into

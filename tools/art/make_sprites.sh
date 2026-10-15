@@ -22,3 +22,8 @@ python3 tools/art/procchar.py art/gemini/burrow_a.jpg burrow 104 100 90 4 \
     --keep=248,176,72 --keep=255,226,150                                          # his lantern's flame
 python3 tools/art/procchar.py art/gemini/pip_a.jpg pip 100 100 90 4
 python3 tools/art/procchar.py art/gemini/echo_a.jpg echo 104 96 90 4
+python3 tools/art/procchar.py art/gemini/fork_a.jpg fork 104 90 90 4
+python3 tools/art/procchar.py art/gemini/ants_b.jpg ants 96 110 90 4            # three ants (ants_a had seven: too small)
+python3 tools/art/procchar.py art/gemini/rabbit_a.jpg rabbit 104 90 90 4
+python3 tools/art/procchar.py art/gemini/top_a.jpg top 104 80 90 4
+python3 tools/art/procchar.py art/gemini/cairn_a.jpg cairn 100 90 90 4

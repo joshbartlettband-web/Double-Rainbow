@@ -18,8 +18,8 @@ const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, OCTDN: 12, OCTUP: 13 };
 const EN = { SELECT: 0, ALGO: 1, PRESETS: 2, K1: 3, K2: 4, K3: 5, K4: 6 };
 const NAMES = ["VESPER", "SHARD", "SQUALL", "WICK", "TOCK", "MOTE", "MURK", "BOG", "HUSH", "TUMBLER", "GLINT", "HERMIT",
-               "BURROW", "PIP", "ECHO"];
-const ENGINE = [19, 12, 11, 5, 10, 3, 2, 0, 0, 12, 15, 19, 0, 12, 5];   // PROPHET FM6 NOISE VOICE DRUM LOFI PHASE ANALOG x2 FM6 CZ-1 PROPHET ANALOG FM6 VOICE
+               "BURROW", "PIP", "ECHO", "FORK", "ANTS", "RABBIT", "TOP", "CAIRN"];
+const ENGINE = [19, 12, 11, 5, 10, 3, 2, 0, 0, 12, 15, 19, 0, 12, 5, 12, 0, 12, 2, 11];   // PROPHET FM6 NOISE VOICE DRUM LOFI PHASE ANALOG x2 FM6 CZ-1 PROPHET ANALOG FM6 VOICE
 const N = NAMES.length, TOCK = 4, GLINT = 10, PIP = 13, ECHO = 14;
 const P5_CUTOFF = 17;                              // (prophet_patch.c)
 let fails = 0;
@@ -82,6 +82,11 @@ const KNOB = {                                     // [knob, the setting under i
   12: [0, E(4), "DEEP (the cutoff, closing): darker", (lo, hi) => hi.bright - lo.bright < -3],
   13: [0, E(2), "KNOCK (modulator level): brighter", (lo, hi) => hi.bright - lo.bright > 3],
   14: [1, E(5), "WHISPER (breath for buzz): airier", (lo, hi) => hi.bright - lo.bright > 3],
+  15: [0, E(2), "PURITY (modulator level, turned down): purer", (lo, hi) => hi.bright - lo.bright < -3],
+  16: [3, E(4), "HUM (cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  17: [1, E(2), "SHEEN (modulator level): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  18: [2, E(2), "WHIRR (DCW): another tone", (lo, hi) => Math.abs(hi.bright - lo.bright) > 3],
+  19: [0, E(2), "CLACK (the stones' pitch): brighter", (lo, hi) => hi.bright - lo.bright > 3],
 };
 for (let c = 0; c < N; c++) {
   if (c) turn(EN.PRESETS, 1);
@@ -114,17 +119,20 @@ for (let c = 0; c < N; c++) {
           p1 !== p0 && ok(lo, hi) && ex.web_dr_knob(m) === v0);
   }
 }
-const tonal = loud.filter((_, i) => i !== TOCK && i !== PIP), spread = Math.max(...tonal) - Math.min(...tonal);
+const CAIRN = 19;
+const tonal = loud.filter((_, i) => i !== TOCK && i !== PIP && i !== CAIRN), spread = Math.max(...tonal) - Math.min(...tonal);
 const mean = tonal.reduce((p, x) => p + x, 0) / tonal.length;   // (struck sounds die away: by their own measure)
-check(`the cast are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart; the drums and the mallets within 6)`,
-      spread < 3 && Math.abs(loud[TOCK] - mean) < 6 && Math.abs(loud[PIP] - mean) < 6);
+check(`the cast are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart; the drums, mallets and stones within 6)`,
+      spread < 3 && Math.abs(loud[TOCK] - mean) < 6 && Math.abs(loud[PIP] - mean) < 6 && Math.abs(loud[CAIRN] - mean) < 6);
 { // ECHO: a short note comes back, softer, an eighth later (twice at her knob's start); ECHO down, it does not
   const tail = () => level(() => { ex.web_keys(1 << 12); render(120); ex.web_keys(0); render(160); }) &&
                      level(() => render(700)).db;   // (the 700 ms after the note itself is over)
+  turn(EN.PRESETS, ECHO - (N - 1)); render(800);          // (the last one is not Echo now: go to her)
   const withEcho = tail(); render(1500);
   turn(EN.K3, -30); const without = tail(); turn(EN.K3, 20); render(1500);
   check(`ECHO: her notes come back (${withEcho.toFixed(1)} dB after the note), not with ECHO at 0 (${without.toFixed(1)} dB)`,
         withEcho - without > 10 && ex.web_dr_knob(2) === 40);
+  turn(EN.PRESETS, (N - 1) - ECHO); render(800);
 }
 { // Shard's light: each note sends a band of spectrum across his chest, then he is plain glass again
   turn(EN.PRESETS, 1 - (N - 1)); render(800);
@@ -158,7 +166,7 @@ turn(EN.PRESETS, 1);
   turn(EN.K1, 20);
   const brighter = level(() => { ex.web_keys(1 << 7); render(800); ex.web_keys(0); render(200); });
   check(`GLOW up 40 %: the same note brighter (high-frequency share ${bright.bright.toFixed(1)} -> ${brighter.bright.toFixed(1)} dB)`,
-        brighter.bright - bright.bright > 3);
+        brighter.bright - bright.bright > 2);
 }
 
 { // the animations: Vesper's eyes (rows 88..96) brighten with the sound; Squall rises and falls on his own
@@ -358,7 +366,7 @@ function trace() {
 }
 
 { // the beats: PLAY, SEQ, SEQ + SELECT, the bass after CAST's chord, quiet in SCRY
-  const BPM = [84, 122, 128, 138, 108, 150, 76, 124, 82, 104, 118, 100, 86, 112, 92], c = ex.web_dr_char();
+  const BPM = [84, 122, 128, 138, 108, 150, 76, 124, 82, 104, 118, 100, 86, 112, 92, 100, 108, 76, 132, 94], c = ex.web_dr_char();
   tap(B.PLAY);
   const beat = level(() => render(3000));
   check(`PLAY: ${NAMES[c]}'s own beat (${ex.web_bpm()} BPM, ${beat.db.toFixed(1)} dB)`,

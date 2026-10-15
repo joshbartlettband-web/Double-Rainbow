@@ -148,7 +148,7 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 15u
+#define DR_NCHAR 20u
 #define DR_ECHO 14u                          /* (her ECHO knob is code: dr_frame schedules the repeats) */
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
@@ -318,6 +318,50 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"ECHO", "REPEATS", 40, {{DR_NONE, 0, 0, 0}}},
         {"FADE", "RELEASE", 50, {{DR_TP, P_REL, 30, 120}}},
     }, {205, 235, 225}},                                        /* her eyes */
+    /* FORK: FM6's TUBULAR, a struck bar that rings: nearly a pure tone. PURITY is how few harmonics ride on it (the
+     * modulator's level, turned down), RING how long it sings, DRIFT how far its tuning wanders (two forks a little
+     * apart beat against each other), CLANG the strike (the modulator's ratio). */
+    {"FORK", "FM6", "A, and nothing else.", ENGI_FM6, 23, DR_E_KEEP, {0, 0, 0, 0}, 106, 20, 50, {
+        {"PURITY", "MOD|LEVEL", 40, {{DR_TP, P_E0 + 2, 30, -44}}},
+        {"RING", "RELEASE", 50, {{DR_TP, P_REL, 30, 127}}},
+        {"DRIFT", "DETUNE", 0, {{DR_TP, P_E0 + 6, 0, 110}}},
+        {"CLANG", "MOD|RATIO", 25, {{DR_TP, P_E0 + 3, -4, 8}}},
+    }, {106, 229, 225}},                                        /* his eyes */
+    /* ANTS: ANALOG's STRINGS, a section of many that nearly agree. COLONY is the chorus, SWARM how far apart the
+     * voices are tuned, MARCH their shared vibrato, HUM how bright the whole choir sounds. */
+    {"ANTS", "ANALOG", "We are one. We are many.", ENGI_ANALOG, 11, DR_E_KEEP, {0, 0, 0, 0}, 98, 90, 40, {
+        {"COLONY", "CHORUS", 70, {{DR_TP, P_CHOR, 10, 110}}},
+        {"SWARM", "DETUNE", 40, {{DR_TP, P_E0 + 1, 5, 110}}},
+        {"MARCH", "VIBRATO", 20, {{DR_TP, P_LD_PIT, 0, 2}, {DR_TP, P_LRATE, 40, 84}}},
+        {"HUM", "CUTOFF", 56, {{DR_TP, P_E0 + 4, 30, 110}}},
+    }, {0, 0, 0}},                                              /* (the moonbow: no light of their own) */
+    /* RABBIT: FM6's GLASS PAD, a warm bed with a thin bell of metal on top. WARM is how plain the bell is (the
+     * modulator's ratio, low), SHEEN how much metal rings (its level), BLOOM how slowly it arrives and leaves, MOON
+     * the reverb. */
+    {"RABBIT", "FM6", "Warm. Mostly.", ENGI_FM6, 16, DR_E_KEEP, {0, 0, 0, 0}, 118, 40, 60, {
+        {"WARM", "MOD|RATIO", 50, {{DR_TP, P_E0 + 3, 8, -3}}},
+        {"SHEEN", "MOD|LEVEL", 46, {{DR_TP, P_E0 + 2, -44, 30}}},
+        {"BLOOM", "ATTACK|RELEASE", 40, {{DR_TP, P_ATK, 10, 110}, {DR_TP, P_REL, 40, 120}}},
+        {"MOON", "REVERB", 50, {{DR_TP, P_REV, 0, 110}}},
+    }, {219, 221, 236}},                                        /* her charm */
+    /* TOP: PHASE's ORGAN, a tone with no decay at all (full sustain, a long release): it never stops. SPIN is the
+     * wobble's speed, LEAN how far it leans each way, WHIRR how bright it spins, REV how slowly it gets going. */
+    {"TOP", "PHASE", "Cannot stop. Tried.", ENGI_PHASE, 1, DR_E_KEEP, {0, 127, 127, 100}, 82, 40, 50, {
+        {"SPIN", "LFO|SPEED", 40, {{DR_TP, P_LRATE, 20, 100}}},
+        {"LEAN", "LFO|PITCH", 25, {{DR_TP, P_LD_PIT, 0, 3}}},
+        {"WHIRR", "DCW", 40, {{DR_TP, P_E0 + 2, 10, 110}}},
+        {"REV", "ATTACK", 0, {{DR_TP, P_ATK, 0, 100}}},
+    }, {192, 88, 64}},                                          /* his bands */
+    /* CAIRN: NOISE's DUST, the impulses only, through a resonant filter that follows the key: each key is a stone
+     * struck, pitched. CLACK is the stones' pitch (the filter), SCATTER how many fall, ROLL how long each rings, RATTLE
+     * how sharply the filter rings and how crushed the clatter is. */
+    {"CAIRN", "NOISE", "Balanced. Don't breathe.", ENGI_NOISE, 1, {1, 40, 70, 90, 127, 105, 0, 0},
+     {0, 80, 60, 50}, 127, 0, 30, {
+        {"CLACK", "FREQ", 50, {{DR_TP, P_E0 + 2, 40, 110}}},
+        {"SCATTER", "DENSITY", 70, {{DR_TP, P_E0 + 5, 20, 127}}},
+        {"ROLL", "DECAY", 60, {{DR_TP, P_DEC, 20, 100}}},
+        {"RATTLE", "RES|CRUSH", 20, {{DR_TP, P_E0 + 3, 50, 127}, {DR_TP, P_E0 + 7, 0, 80}}},
+    }, {107, 134, 43}},                                         /* his moss */
 };
 
 static struct {
@@ -529,6 +573,41 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
       "is the same sound coming back", "a moment later, softer, the", "way a shout comes off a hill."},
      {"Play a slow tune and turn", "ECHO up: each note answers", "itself. WHISPER turns her",
       "voice into breath."}},
+    {"The reference", "Struck once. Still sounding.",
+     {"The Line needs a zero, or it", "could not be measured. He is", "the zero: one note, held.",
+      "I wound him to ring and he", "has not run down. When he", "drifts, I hear the Line sag."},
+     "TUNING FORK", "John Shore, 1711",
+     {"A tuning fork is two steel", "prongs that ring one pure", "pitch: no harmonics, just the",
+      "note. Two forks a little apart", "make a slow wobble, beats.", "That is how tuners listen."},
+     {"Play a long note, then bring", "DRIFT up and listen: the", "tone starts to beat. PURITY", "down adds harmonics."}},
+    {"The colony", "Thirty thousand. Counted three.",
+     {"They came in through the wall", "and carry crumbs of sound", "along the Line, one each. They",
+      "are very polite about it.", "I count three. I am told", "that is the front row."},
+     "STRINGS", "Many voices, nearly in tune",
+     {"A string section is many", "players who are almost, not", "quite, together. That",
+      "difference is what you hear", "as warmth. A chorus pedal", "fakes it with a copy."},
+     {"Hold a chord and turn COLONY", "up: it fills the room. SWARM", "up makes the voices stray", "apart. HUM sets the shine."}},
+    {"The rabbit", "Rises with the moon.",
+     {"She waits where the moonbow", "meets the Line. Her fur is", "soft; the thin metal on it is",
+      "not. She will not say who put", "it there. She is warm to", "hold, and she is not mine."},
+     "GLASS PAD", "A pad and a bell, one note",
+     {"A pad is a slow, soft tone", "that fills a room. Add a", "thin metal bell on top, same",
+      "pitch, and it shimmers. FM", "makes that bell by bending", "a wave at a simple ratio."},
+     {"Play a slow chord and turn", "SHEEN up for the metal. WARM", "up for a plainer bell. BLOOM", "makes it arrive slowly."}},
+    {"The first thing spun", "Still going. Don't touch it.",
+     {"I spun it once, to see how", "long the Line would stay", "alive. It has not stopped. It",
+      "wobbles, and the Line wobbles", "with it. I cannot sleep", "for the whirring."},
+     "ORGAN", "A tone with no decay",
+     {"An organ tone never fades: it", "holds at full until the key", "lifts. A slow wobble in the",
+      "pitch, a vibrato, is what makes", "a held note feel alive. A", "top does it with its lean."},
+     {"Hold one note and turn LEAN,", "then SPIN. WHIRR changes how", "bright it sounds. REV up", "and it takes a moment to start."}},
+    {"The cairn", "Piled over jar seven.",
+     {"I buried jar seven under", "these stones. They did not", "stay stones: they stand up",
+      "and keep watch over it. They", "click when they walk. If you", "hear it stop, hold still."},
+     "DUST", "Noise, one grain at a time",
+     {"Noise is every pitch at once.", "Dust is the same, thinned to", "single clicks, grains. Run it",
+      "through a filter that rings and", "each grain gets a pitch: a", "stone struck, a note."},
+     {"Play single notes and turn", "CLACK up and down. SCATTER", "adds more stones. ROLL sets", "how long each one rings."}},
 };
 
 static struct {
@@ -704,7 +783,8 @@ static uint32_t dr_glow_level(void)          /* the glow to draw, 0..15: the lev
 {
     uint32_t idle = 1u + dr_wave8(fm1_ms / 10u) * 3u / 255u, a = drm.amp * 15u / 255u;
     int32_t w = dr_wave[(fm1_ms / 16u) % 240u];          /* (the wave where a slow eye runs along it: 0 .. DR_WAVE_PX) */
-    a = a * (10u + 6u * (uint32_t)(w < 0 ? -w : w) / 10u) / 16u;
+    a = a * (12u + 5u * (uint32_t)(w < 0 ? -w : w) / 10u) / 16u;
+    a = a > 15u ? 15u : a;
     return a > idle ? a : idle;
 }
 static uint16_t dr_glow_px(uint16_t c, uint32_t g)   /* c brightened towards a warm white by g (0..15) */
@@ -1484,6 +1564,21 @@ static const dr_beat_t DR_BEATS[DR_NCHAR] = {   /* the cast's order */
     {"AFTERGLOW", 92, 92, 102,                   /* Echo: half time, with room for her repeats */
      {"x.........x.....", "........x.......", 0, "..x...x...x...x.", "......x.......x.", 0, 0, 0},
      {36, 1, 1, 1, 1, 1, 1, 1, 41, 1, 1, 1, 43, 1, 1, 1}},
+    {"A=440", 100, 90, 100,                      /* Fork: a metronome's tick, with a long bass note */
+     {"x...............", 0, 0, 0, 0, 0, "x...x...x...x...", "x.......x......."},
+     {45, 1, 1, 1, 1, 1, 1, 1, 52, 1, 1, 1, 1, 1, 1, 1}},
+    {"PROCESSION", 108, 90, 98,                  /* Ants: a steady march of tiny feet */
+     {"x.......x.......", "....x.......x...", 0, "xxxxxxxxxxxxxxxx", 0, 0, "x.x.x.x.x.x.x.x.", 0},
+     {36, 0, 43, 0, 36, 0, 43, 0, 41, 0, 48, 0, 36, 0, 43, 0}},
+    {"MOONRISE", 76, 94, 100,                    /* Rabbit: slow, warm, wide */
+     {"x.........x.....", "........x.......", 0, "x.x.x.x.x.x.x.x.", 0, 0, 0, 0},
+     {36, 1, 1, 1, 1, 1, 1, 1, 41, 1, 1, 1, 43, 1, 1, 1}},
+    {"SPINNING", 132, 88, 98,                    /* Top: a round, rolling ride */
+     {"x.x.x.x.x.x.x.x.", 0, 0, "xxxxxxxxxxxxxxxx", 0, "......x.......x.", 0, 0},
+     {36, 0, 43, 0, 48, 0, 43, 0, 36, 0, 43, 0, 48, 0, 43, 0}},
+    {"STONEFALL", 94, 90, 98,                    /* Cairn: clacks and knocks */
+     {"x.....x...x.....", 0, 0, 0, 0, "....x.......x...", "x.x...x.x...x.x.", "..x.......x....."},
+     {36, 0, 0, 0, 43, 0, 0, 0, 36, 0, 0, 0, 41, 0, 0, 0}},
 };
 
 static int32_t dr_beat_shift(void)           /* the bass's move from C: the chord's root (WEAVE, CAST) or the key */
