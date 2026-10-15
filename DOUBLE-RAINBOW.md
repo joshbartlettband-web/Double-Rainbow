@@ -321,20 +321,15 @@ knob cards for how much of each crystal.
   The twelve sprites are 25 KB of it (was 34 KB): their runs are Huffman-coded with one shared code, decoded a
   bit at a time as the scene draws, so the pictures come out pixel for pixel the same and need no RAM table. A new
   character costs about 3 KB of art and 1 KB of text and sound, so flash is not what limits the cast.
-- **RAM** (.data + .bss): 92.1 KB of 96 KB, 6.1 KB free. This is the tight one. Double Rainbow's own share is
-  about 0.5 KB, and it lives in the **pool** (`app.ld`: the same on-chip RAM, zeroed at boot), not in .bss; the
-  horizon reads Melodee's scope in place rather than copying it (1 KB saved). New characters add no RAM. The pool
-  has about 60 KB to spare above the audio arena's worst case (174 KB on demand, 112 KB needed).
-  Each build lists the 15 biggest .data/.bss users. The rest is Melodee's: patterns 11.4 KB, tracks 10 KB, the
-  recorder 18 KB, FM6's lookup tables 12 KB, the editor and templates about 6 KB. The sprites are in flash and
-  use no RAM.
-- **Where more RAM could come from**, if a feature needs it (none does yet; each is a change to Melodee's core and
-  needs a test on the device):
-  1. FM6's lookup tables (12 KB) are initialised data in RAM for speed. They could be copied from flash into the
-     pool at boot instead, the way `.data` is copied now. Same speed, 12 KB of .data back.
-  2. The recorder's buffers (18 KB) are plain zeroed state and could move to the pool as they are.
-  3. Patterns and tracks (21 KB) could move too, but they are what the audio interrupt reads every step, so they
-     want the most careful testing.
+- **RAM** (.data + .bss): 60.8 KB of 96 KB, 37 KB free. FM6's lookup tables (12 KB) are now copied from flash into
+  the **pool** at boot (`app.ld` .pool_data; `build.py` fails if they slip back), and the recorder's buffers (19 KB)
+  live there too; Double Rainbow's own state (about 0.5 KB, the beats included) was there already. The pool is the
+  same on-chip RAM, zeroed at boot, so nothing is slower. The audio arena keeps 143 KB on demand (it needs 112 KB).
+  Each build lists the 15 biggest .data/.bss users; the rest is Melodee's (patterns 11.4 KB, tracks 10 KB, the
+  editor and templates about 6 KB). New characters add no RAM, and the sprites are in flash.
+- **If more is ever needed:** patterns and tracks (21 KB) could move to the pool too, but the audio interrupt reads
+  them every step, so they would want a test on the device, and the pool would be down to about 8 KB above the
+  arena's worst case.
 
 ## Limits to plan around
 
@@ -349,6 +344,10 @@ knob cards for how much of each crystal.
   old installs never break.
 - **USB name.** The installer has to recognize Double Rainbow's USB MIDI port name, or it will report "FM-1 not found".
 - **No Bluetooth.** Only M-VAVE's own firmware has it.
+- **One core.** The chip's registers hint at a second CPU (they are named CPU0's), but nothing in Melodee starts
+  one: it runs bare metal on one core, audio in the ALNK0 interrupt at about 66 to 72 % of its 2.9 ms budget at worst
+  (docs/PROPHET5_PROTOTYPE.md). Starting core 1 would mean reverse-engineering JieLi's start-up code, keeping it off
+  the flash while settings save, and its own stacks and guards. Not worth it while the budget holds.
 
 ## The website (built)
 
