@@ -477,6 +477,13 @@ static struct {
     uint32_t note_sig, combo_t0, msg_t0;
     char msg[40];
 } drm DR_POOL;
+/* the beat (below, after the LEDs: dr_beat_*) */
+static struct {
+    uint8_t beat, on, ready, shift;          /* shift: the bass's move from C, + 5 (0 .. 11) */
+    uint8_t seq_turned;                      /* SELECT turned while SEQ is held: the tempo, not the next beat */
+    int16_t bpm0;                            /* Melodee's tempo before the first beat (put back on leaving) */
+    uint32_t t0, q;                          /* the dance: when the beat began, the beats counted */
+} drb DR_POOL;
 enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE = 16, DR_D_ALL = 31 };
 
 /* the scene's background at (x, y): the sky, a faint moonbow, the hill. The hill's edge is the horizon, and it
@@ -727,6 +734,7 @@ static const char *const DR_CHORD_RN[11] = {"IV", "V", "vi", "I", "ii", "IVmaj7"
 
 /* ------------------------------------------------- SCRY and TRACE --- */
 static void dr_say(const char *s);
+static void dr_beat_play(uint32_t on);
 /* The player: SCRY's questions and TRACE's demonstrations, as notes into Melodee's MIDI input queue (usb.c
  * midi_enqueue: channel 1 is track 1, the character), from the main loop at their times. A few notes at once. */
 #include "dr_songs.h"                        /* DR_SONGS (tools/gen_dr_songs.py) */
@@ -970,8 +978,10 @@ static void dr_kmode_set(uint32_t m)
     dr_castkeys = 0;
     drt.demo = 0;
     dr_kmode = (uint8_t)m;
-    if (m == DRK_SCRY || m == DRK_TRACE)
+    if (m == DRK_SCRY || m == DRK_TRACE) {
         song.octave = 0;                                 /* (the keys at their own notes: OCT picks the drill or the song) */
+        dr_beat_play(0);                                 /* (and quiet, for the ear) */
+    }
     if (m == DRK_SCRY) {
         if (!drs.pool[0]) {
             drs.pool[0] = DR_POOL0[0];
@@ -1292,9 +1302,9 @@ static void dr_say(const char *s)
  * EDIT while held, OCT- / OCT+ while the keys are shifted */
 static void dr_leds(void)
 {
-    static const uint8_t USED[] = {B_SCL, B_EDIT, B_HOME, B_SAVE, B_OCTDN, B_OCTUP};
+    static const uint8_t USED[] = {B_SCL, B_EDIT, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ};
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
-    uint32_t k, c, quiz = dr_kmode == DRK_SCRY || dr_kmode == DRK_TRACE, guide = 0, blink = (fm1_ms / 160u) & 1u;
+    uint32_t k, c, guide = 0, blink = (fm1_ms / 160u) & 1u;
     if (dr_kmode == DRK_SCRY) {                           /* SCRY: the home note or the first note lit, the hint blinking */
         if (drs.asked && drs.drill != DRS_CHORDS)
             guide |= 1u << (drs.a - 53u);
@@ -1313,8 +1323,7 @@ static void dr_leds(void)
     }
     for (k = 0; k < NELEM(USED); k++)
         led_put(nb, panel.btn[USED[k]], 1);
-    led_put(nb, panel.btn[B_PLAY], (int)quiz);
-    led_put(nl, panel.btn[B_PLAY], dr_kmode == DRK_TRACE && drt.demo);
+    led_put(nl, panel.btn[B_PLAY], (dr_kmode == DRK_TRACE && drt.demo) || drb.on);   /* (the beat, or TRACE's demo) */
     led_put(nl, panel.btn[B_SCL], drm.codex);
     led_put(nl, panel.btn[B_EDIT], drm.under);
     led_put(nl, panel.btn[B_OCTDN], song.octave < 0);
@@ -1326,6 +1335,162 @@ static void dr_leds(void)
         fm1_led_dim[1][c] = nb[c];
         fm1_led[c] = nl[c];
     }
+}
+
+/* ---- the beats (after Rainbow mode's): each character's own, Melodee's sequencer playing the drums on track 4 (the
+ * 808 kit) and a bass line on track 2 (ANALOG SQR BASS), 16 steps of 1/16; track 3 rests. PLAY starts and stops it
+ * (SOLO, WEAVE, CAST; SCRY and TRACE want quiet), SEQ the next beat, SEQ held with SELECT the tempo. The bass is
+ * written on C, on roots, fifths and octaves, and moved to the key (SOLO) or to the chord a black key picked (WEAVE,
+ * CAST), so it follows the hand. The character bobs on each beat. Drum lanes: kick, snare, clap, closed hat, open
+ * hat, tom, rim, cowbell, 'x' a hit; bass: MIDI notes on C, 0 a rest, 1 the note before held on. */
+typedef struct {
+    const char *name;
+    uint8_t bpm, dlvl, blvl;                 /* the tempo, the kit's and the bass's P_LEVEL */
+    const char *lane[NLANE];
+    uint8_t bass[16];
+} dr_beat_t;
+static const dr_beat_t DR_BEATS[DR_NCHAR] = {   /* the cast's order */
+    {"VELVET", 84, 90, 100,                      /* Vesper: a slow, dramatic half time */
+     {"x.........x.....", "........x.......", 0, "x.x.x.x.x.x.x.x.", "..............x.", 0, 0, 0},
+     {36, 1, 1, 1, 1, 1, 1, 1, 43, 1, 1, 1, 31, 1, 1, 1}},
+    {"GLASS", 122, 89, 99,                       /* Shard: crisp and clean */
+     {"x...x...x...x...", 0, "....x.......x...", "..x...x...x...x.", 0, 0, "x..x..x...x..x..", 0},
+     {36, 0, 0, 36, 0, 0, 48, 0, 36, 0, 0, 36, 0, 43, 0, 0}},
+    {"STORM", 128, 86, 94,                       /* Squall: rolling toms, open hats */
+     {"x..x..x...x..x..", "....x.......x...", 0, 0, "x...x...x...x...", "............xxxx", 0, 0},
+     {36, 0, 0, 36, 0, 0, 36, 0, 36, 0, 0, 36, 0, 0, 43, 0}},
+    {"JITTERS", 138, 91, 101,                    /* Wick: nervous hats, never still */
+     {"x.......x.x.....", "....x.......x...", 0, "xxxxxxxxxxxxxxxx", 0, 0, 0, 0},
+     {36, 0, 36, 0, 0, 0, 36, 0, 43, 0, 43, 0, 0, 0, 48, 0}},
+    {"CLOCKWORK", 108, 98, 108,                  /* Tock: tick, tock */
+     {"x.......x.......", "....x.......x...", 0, 0, 0, 0, "x.x.x.x.x.x.x.x.", "....x.......x..."},
+     {36, 0, 0, 0, 43, 0, 0, 0, 36, 0, 0, 0, 43, 0, 0, 0}},
+    {"ARCADE", 150, 84, 92,                      /* Mote: a chip tune's bounce */
+     {"x...x...x...x...", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, 0, 0},
+     {36, 48, 36, 48, 36, 48, 36, 48, 43, 55, 43, 55, 41, 53, 43, 55}},
+    {"UNDERTOW", 76, 96, 108,                    /* Murk: a deep, slow dub */
+     {"x.......x.......", 0, 0, "..x...x...x...x.", "......x.......x.", 0, "....x.......x...", 0},
+     {36, 1, 1, 0, 0, 0, 36, 0, 31, 1, 1, 0, 0, 0, 0, 0}},
+    {"SQUELCH", 124, 90, 96,                     /* Bog: four on the floor, for the acid */
+     {"x...x...x...x...", 0, "....x.......x...", 0, "..x...x...x...x.", 0, 0, 0},
+     {36, 0, 0, 36, 0, 0, 36, 0, 36, 0, 0, 36, 0, 0, 43, 0}},
+    {"MOONLIT", 82, 96, 106,                     /* Hush: a quiet, nodding night beat */
+     {"x......x..x.....", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, "...........x....", 0},
+     {36, 1, 1, 0, 0, 0, 0, 36, 1, 0, 31, 1, 0, 0, 0, 0}},
+    {"LOCKPICK", 104, 90, 100,                   /* Tumbler: funk, full of corners */
+     {"x..x......x..x..", "....x..x.x..x...", 0, "x.x.x.x.x.x.x.x.", "......x.......x.", 0, 0, 0},
+     {36, 0, 0, 36, 0, 0, 48, 0, 0, 36, 0, 43, 0, 46, 48, 0}},
+    {"SHINY", 118, 90, 100,                      /* Glint: disco */
+     {"x...x...x...x...", 0, "....x.......x...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", 0, 0, 0},
+     {36, 0, 48, 0, 36, 0, 48, 0, 36, 0, 48, 0, 43, 0, 48, 0}},
+    {"PARADE", 100, 89, 99,                      /* Hermit: a brass band's street beat */
+     {"x..x....x..x....", "..x..x.x..x..x.x", 0, "xxxxxxxxxxxxxxxx", 0, 0, 0, "x...x...x...x..."},
+     {36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43}},
+};
+
+static int32_t dr_beat_shift(void)           /* the bass's move from C: the chord's root (WEAVE, CAST) or the key */
+{
+    uint32_t root = dr_key;
+    int8_t iv[4];
+    if (dr_kmode == DRK_WEAVE || dr_kmode == DRK_CAST)
+        dr_chord_tones(dr_chord, &root, iv);
+    return (int32_t)((root + 5u) % 12u) - 5;   /* (-5 .. +6: the nearest way) */
+}
+
+/* the beat n onto tracks 2 (its bass) and 4 (its drums), and its tempo */
+static void dr_beat_load(uint32_t n)
+{
+    const dr_beat_t *b = &DR_BEATS[n % DR_NCHAR];
+    track_t *t = &trk[3], *bt = &trk[1];
+    uint8_t note[16], flags[16];
+    uint32_t i, l;
+    int32_t sh = dr_beat_shift();
+    drb.beat = (uint8_t)(n % DR_NCHAR);
+    if (!drb.ready) {                                    /* the band's sounds, once */
+        const engine_t *e = ENGINES[ENGI_ANALOG];
+        uint32_t p = 0;
+        for (i = 0; i < e->npresets; i++)
+            if (str_eq(e->presets[preset_orig(e, i)].name, "SQR BASS"))
+                p = i;
+        drb.bpm0 = song.g[G_BPM];
+        undo_depth++;
+        set_engine_of(bt, ENGI_ANALOG);
+        apply_preset_to(bt, p);
+        if (t->eng_req != ENGI_DRUM)
+            set_engine_of(t, ENGI_DRUM);
+        undo_depth--;
+        drb.ready = 1;
+    }
+    track_defaults_steps(t);
+    for (l = 0; l < NLANE; l++)
+        for (i = 0; b->lane[l] && i < 16u && b->lane[l][i]; i++)
+            if (b->lane[l][i] == 'x')
+                grid_hit(t, i, l, 1);
+    t->p[P_SLEN] = 16;
+    t->p[P_LEVEL] = b->dlvl;
+    for (i = 0; i < 16u; i++) {
+        note[i] = b->bass[i] > 1u ? (uint8_t)(b->bass[i] + sh) : 0u;
+        flags[i] = b->bass[i] == 1u ? 4u : 0u;           /* (1: a TIE, the note before held on) */
+    }
+    load_pat16(bt, note, flags);
+    drb.shift = (uint8_t)(sh + 5);
+    bt->p[P_LEVEL] = b->blvl;
+    t->p[P_MUTE] = bt->p[P_MUTE] = 0;
+    trk[2].p[P_MUTE] = 1;                                /* (track 3 rests) */
+    song.g[G_BPM] = b->bpm;
+}
+
+static void dr_beat_play(uint32_t on)
+{
+    if (on && !drb.on) {
+        dr_beat_load(drb.beat);
+        transport_req = 1;
+        drb.t0 = fm1_ms;
+        drb.q = 0;
+    } else if (!on && drb.on)
+        transport_req = 2;
+    drb.on = (uint8_t)on;
+}
+
+/* each pass while it plays: the bass after the chord or the key (its notes moved in place), the bob on each beat */
+static void dr_beat_poll(void)
+{
+    const dr_beat_t *b = &DR_BEATS[drb.beat];
+    int32_t sh;
+    uint32_t i, q;
+    if (!drb.on)
+        return;
+    if ((sh = dr_beat_shift()) + 5 != (int32_t)drb.shift) {
+        for (i = 0; i < 16u; i++)
+            if (b->bass[i] > 1u)
+                trk[1].step[i].note[0] = (uint8_t)(b->bass[i] + sh);   /* (one byte a step: safe under the ISR) */
+        drb.shift = (uint8_t)(sh + 5);
+    }
+    q = (uint32_t)((uint64_t)(fm1_ms - drb.t0) * (uint32_t)song.g[G_BPM] / 60000u);
+    if (q != drb.q) {
+        drb.q = q;
+        if (!drm.squash_t0)
+            drm.squash_t0 = fm1_ms | 1u;
+    }
+}
+
+/* to Melodee: the band's tracks and the tempo as they were */
+static void dr_beat_leave(void)
+{
+    uint32_t i;
+    dr_beat_play(0);
+    if (!drb.ready)
+        return;
+    undo_depth++;
+    for (i = 1; i < NPART; i++) {
+        set_engine_of(&trk[i], TRK_DEF[i][0]);
+        apply_preset_to(&trk[i], TRK_DEF[i][1]);
+        track_defaults_steps(&trk[i]);
+        trk[i].p[P_MUTE] = 0;
+    }
+    undo_depth--;
+    song.g[G_BPM] = drb.bpm0;
+    drb.ready = 0;
 }
 
 /* power-on (main.c, after project_boot): the first character, the screen to draw */
@@ -1343,6 +1508,7 @@ static void dr_leave(void)
 {
     track_t *t = &trk[0];
     drm.on = 0;
+    dr_beat_leave();                                     /* (the beat stopped, tracks 2 to 4 and the tempo back) */
     dr_kmode_set(DRK_SOLO);                              /* (Melodee's keys as always; SCRY's and TRACE's notes ended) */
     song.octave = 0;
     dr_key = 0;
@@ -1425,6 +1591,9 @@ static int dr_frame(void)
             drm.dirty = DR_D_ALL;
         } else {                                         /* the next or the previous character */
             dr_load((dr.ch + (s > 0 ? 1u : DR_NCHAR - 1u)) % DR_NCHAR);
+            drb.beat = dr.ch;                            /* (their own beat; playing on if it was) */
+            if (drb.on)
+                dr_beat_load(dr.ch);
             drm.drum = 0;
             drm.dirty = DR_D_ALL;
         }
@@ -1460,9 +1629,34 @@ static int dr_frame(void)
             drt.dpos = 0;
             drt.dnext = fm1_ms;
             drm.dirty |= DR_D_NOTE;
+        } else if (dr_kmode != DRK_SCRY) {               /* SOLO, WEAVE, CAST: the beat */
+            dr_beat_play(!drb.on);
+            dr_say(drb.on ? DR_BEATS[drb.beat].name : "");
         }
     }
-    if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0 && dr_kmode == DRK_TRACE) {
+    if (pressed & (1u << panel.btn[B_SEQ]))
+        drb.seq_turned = 0;
+    if ((released & (1u << panel.btn[B_SEQ])) && !drb.seq_turned && dr_kmode != DRK_SCRY && dr_kmode != DRK_TRACE) {
+        dr_beat_load((drb.beat + 1u) % DR_NCHAR);        /* SEQ: the next beat (heard at once if playing) */
+        if (!drb.on)
+            dr_beat_play(1);
+        dr_say(DR_BEATS[drb.beat].name);
+    }
+    if (((fm1_in.buttons >> panel.btn[B_SEQ]) & 1u) && (s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0) {
+        char m[16];                                      /* SEQ held, SELECT: the tempo, 4 BPM a detent */
+        uint32_t v;
+        song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + (s > 0 ? 4 : -4), 60, 180);
+        drb.seq_turned = 1;
+        drb.t0 = fm1_ms;
+        drb.q = 0;
+        v = (uint32_t)song.g[G_BPM];
+        m[0] = (char)(v >= 100u ? '1' : ' ');
+        m[1] = (char)('0' + v / 10u % 10u);
+        m[2] = (char)('0' + v % 10u);
+        str_cpy(m + 3, " BPM", 5);
+        dr_say(m[0] == ' ' ? m + 1 : m);
+        s = 0;
+    } else if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0 && dr_kmode == DRK_TRACE) {
         dr_trace_start(drt.song + (s > 0 ? 1u : DR_NSONGS - 1u));   /* SELECT in TRACE: the song */
         dr_say(DR_SONGS[drt.song].who);
     } else if (s) {                                      /* SELECT: the key, by fifths */
@@ -1498,6 +1692,7 @@ static int dr_frame(void)
                 dr_trace_press(i);
         }
     (void)dr_play_poll();
+    dr_beat_poll();
     if (dr_kmode == DRK_SCRY && drs.next_ms && !drm.codex && (int32_t)(fm1_ms - drs.next_ms) >= 0)
         dr_scry_ask(drs.reveal == 2u);
     if (dr_kmode == DRK_TRACE)

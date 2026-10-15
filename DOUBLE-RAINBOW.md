@@ -156,7 +156,8 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | KNOB 1 to 4 | The character's four knobs, 2 % a detent. |
 | ALGORITHM | How the keys play: SOLO, WEAVE, CAST, SCRY, TRACE (below). |
 | SELECT | The key for WEAVE, CAST and SCRY, a fifth at a time. In TRACE: the song. |
-| PLAY | SCRY: hear the question again. TRACE: hear the song (PLAY or any key stops it). |
+| PLAY | SOLO, WEAVE, CAST: the character's beat, on and off (below). SCRY: hear the question again. TRACE: hear the song (PLAY or any key stops it). |
+| SEQ | The next beat (it starts if it was off). Held, with SELECT: the tempo, 4 BPM a detent. |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). In SCRY: the drill. In TRACE: the song. |
@@ -209,6 +210,30 @@ blinks. The chip shows the streak and the best. SELECT moves NOTES and CHORDS to
 changes nothing, so you go at your own pace. At the end it starts again from the top. PLAY plays the song with the keys
 lighting as it goes. The songs are written readably in `tools/gen_dr_songs.py` (the build checks they fit the keys);
 14 songs take about 1.3 KB.
+
+## Beats (built)
+
+After Rainbow mode's: each character has its own beat, played by Melodee's sequencer, with the 808 kit on track 4
+and a bass line on track 2 (ANALOG SQR BASS); track 3 rests. PLAY starts and stops it, SEQ goes to the next one, SEQ
+held with SELECT sets the tempo (60 to 180), and changing character changes to their beat. The bass is written on C
+(roots, fifths and octaves) and moves to the key in SOLO, and to the chord a black key picks in WEAVE and CAST, so it
+follows the hand. The character bobs on each beat. SCRY and TRACE stop it, for the ear. Leaving for Melodee puts
+tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character (`dr_test.mjs` checks the level).
+
+| Character | Beat | BPM | Feel |
+| --- | --- | ---: | --- |
+| Vesper | VELVET | 84 | a slow, dramatic half time |
+| Shard | GLASS | 122 | crisp and clean, rim clicks |
+| Squall | STORM | 128 | rolling toms, open hats |
+| Wick | JITTERS | 138 | nervous sixteenth hats |
+| Tock | CLOCKWORK | 108 | tick, tock: rim and cowbell |
+| Mote | ARCADE | 150 | a chip tune's octave bounce |
+| Murk | UNDERTOW | 76 | a deep, slow dub |
+| Bog | SQUELCH | 124 | four on the floor, for the acid |
+| Hush | MOONLIT | 82 | a quiet, nodding night beat |
+| Tumbler | LOCKPICK | 104 | funk |
+| Glint | SHINY | 118 | disco |
+| Hermit | PARADE | 100 | a brass band's street beat |
 
 ## Songs for TRACE
 

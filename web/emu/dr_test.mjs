@@ -5,7 +5,8 @@
 // Checks: it starts in Double Rainbow on Vesper; every character sounds, on its own engine, and they are about as
 // loud as each other (the drums by their own measure); a knob of each new character moves its setting and its sound; PRESETS goes round the cast; a knob moves its value, the real setting under it and
 // the screen; the horizon traces the wave while a note sounds and lies flat again after; EDIT held and the codex
-// (three pages) change the screen; every text fits its room; OCT shifts the keys; HOME +
+// (three pages) change the screen; every text fits its room; the beats (PLAY, SEQ, the tempo, the bass after the
+// chord, quiet in SCRY); OCT shifts the keys; HOME +
 // SAVE let go early stays, held 3 s goes to the full Melodee with track 1's own sound back, and the keys still play.
 // The spellbook modes on ALGORITHM: WEAVE (a black key picks the chord, the white keys strum its notes from C3 up),
 // CAST (a black key holds its chord, four notes for a seventh, under the tune), SCRY (the ear game: a question heard,
@@ -337,6 +338,26 @@ function trace() {
     ex.web_keys(1 << 7); render(100); const n = ex.web_kb_note(7); ex.web_keys(0); render(1500); return n === 60; })());
 }
 
+{ // the beats: PLAY, SEQ, SEQ + SELECT, the bass after CAST's chord, quiet in SCRY
+  const BPM = [84, 122, 128, 138, 108, 150, 76, 124, 82, 104, 118, 100], c = ex.web_dr_char();
+  tap(B.PLAY);
+  const beat = level(() => render(3000));
+  check(`PLAY: ${NAMES[c]}'s own beat (${ex.web_bpm()} BPM, ${beat.db.toFixed(1)} dB)`,
+        ex.web_playing() === 1 && ex.web_bpm() === BPM[c] && beat.db > -34 && beat.db < -22);
+  tap(B.SEQ);
+  check(`SEQ: the next beat (${ex.web_bpm()} BPM)`, ex.web_playing() === 1 && ex.web_bpm() === BPM[(c + 1) % N]);
+  ex.web_buttons(1 << B.SEQ); render(100); turn(EN.SELECT, 2); ex.web_buttons(0); render(200);
+  check(`SEQ held, SELECT: the tempo, not the beat (${ex.web_bpm()} BPM)`, ex.web_bpm() === BPM[(c + 1) % N] + 8);
+  turn(EN.ALGO, 2);                                       // CAST: G#4 picks G7, the bass moves to G
+  ex.web_keys(1 << 15); render(300);
+  const g = ex.web_step_note(1, 0); ex.web_keys(0); render(300);
+  check(`CAST: the bass follows the chord (G7: ${g})`, g === 31 && ex.web_playing() === 1);
+  turn(EN.ALGO, 1);
+  check("SCRY: the beat stops (the ear wants quiet)", ex.web_playing() === 0);
+  turn(EN.ALGO, -3); render(1500);
+  tap(B.PLAY); render(500);                               // (playing, for HOME + SAVE to stop)
+}
+
 tap(B.OCTUP);
 check("OCT+: the keys an octave up", ex.web_octave() === 1);
 tap(B.OCTDN);
@@ -348,6 +369,8 @@ check("OCT-: back", ex.web_octave() === 0);
   ex.web_buttons(1 << B.HOME | 1 << B.SAVE); render(3200); ex.web_buttons(0); render(500);
   check(`held 3 s: the full Melodee, track 1 its own sound again (engine ${ex.web_engine(0)}: ANALOG)`,
         ex.web_dr_on() === 0 && ex.web_engine(0) === 0);
+  check(`and the beat stopped, track 2 Melodee's own again (engine ${ex.web_engine(1)}: FM6), the tempo back (${ex.web_bpm()})`,
+        ex.web_playing() === 0 && ex.web_engine(1) === 12 && ex.web_bpm() === 120);
   const l = level(() => { ex.web_keys(1 << 7); render(400); ex.web_keys(0); render(200); });
   check(`and the keys play Melodee (peak ${l.peak.toFixed(3)})`, l.peak > 0.02);
 }
