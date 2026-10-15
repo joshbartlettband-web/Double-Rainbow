@@ -29,3 +29,8 @@ time,file,model,size,prompt_tokens,output_tokens,usd,ok
 2026-10-15 03:56,art/gemini/hush_e.jpg,gemini-3.1-flash-image,1K,416,1457,0.067,1
 2026-10-15 03:56,art/gemini/hush_f.jpg,gemini-3.1-flash-image,1K,405,1415,0.067,1
 2026-10-15 03:56,art/gemini/hush_g.jpg,gemini-3.1-flash-image,1K,409,1389,0.067,1
+2026-10-15 11:52,art/gemini/cairn_a.jpg,gemini-3.1-flash-image,512,147,966,0.045,1
+2026-10-15 11:52,art/gemini/top_a.jpg,gemini-3.1-flash-image,512,140,932,0.045,1
+2026-10-15 11:52,art/gemini/rabbit_a.jpg,gemini-3.1-flash-image,512,143,1078,0.045,1
+2026-10-15 11:52,art/gemini/fork_a.jpg,gemini-3.1-flash-image,512,147,981,0.045,1
+2026-10-15 11:52,art/gemini/ants_a.jpg,gemini-3.1-flash-image,512,137,1165,0.045,1
