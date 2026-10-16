@@ -33,7 +33,7 @@ GLOW = {                                 # by hand, as the sprites' own colours:
     "cairn": [(107, 134, 43)],                          # the moss
     "stray": [],                                        # (a plastic toy: no light)
     "tuppence": [],
-    "gloam": [(203, 170, 120)],                         # the windows
+    "gloam": [(250, 206, 112)],                         # the windows
     "tinker": [],
     "echo": [(205, 235, 225)],                          # her eyes and the fog's glow
 }

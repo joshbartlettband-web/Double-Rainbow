@@ -49,7 +49,7 @@ def cast_poster():
     im = Image.new("RGB", (W, 150 + rows * (ch + 20) + 20), BG)
     d = ImageDraw.Draw(im)
     d.text((W // 2, 64), "DOUBLE RAINBOW", font=font(60, 800), fill=GOLD, anchor="mm")
-    d.text((W // 2, 116), "The cast: each one a sound the Jarkeeper caught in a jar", font=font(28, 400), fill=DIM, anchor="mm")
+    d.text((W // 2, 116), "The cast: each one a sound the Keeper caught in a jar", font=font(28, 400), fill=DIM, anchor="mm")
     for i, (key, name, eng, line) in enumerate(CAST):
         r, c = divmod(i, cols)
         n_row = min(cols, len(CAST) - r * cols)

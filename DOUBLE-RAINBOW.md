@@ -37,9 +37,9 @@ deep-sea creatures, lantern light and a slightly spooky night carnival.
   teal for the active thing. It is the default on a fresh install; a palette already chosen in the menu (COLOR) is kept.
   It passes Melodee's contrast checks, and Melodee's UI tests (every screen in every palette) run on every push.
 
-## The world: the Jarkeeper (agreed)
+## The world: the Keeper (agreed)
 
-Somewhere in the hills lives **the Jarkeeper**, who catches sounds in glass jars and keeps them on shelves in a
+Somewhere in the hills lives **the Keeper**, who catches sounds in glass jars and keeps them on shelves in a
 room with no light. One night **Squall**, a small storm, broke out of jar twelve. The jar shattered, and **Shard** is
 its glass, which caught the moonlight on the way out (the rainbow in his chest). **Vesper** came to the light, as
 moths do, and has followed the two of them ever since. The double moonbow's second, reversed arc is where escaped
@@ -47,7 +47,7 @@ sounds go: Squall took it with him.
 
 **The Line (agreed).** The hills' edge is the Line, drawn by whatever sound is loose in the hills: when nothing
 sounds it lies flat, and every note redraws it (the horizon on the character screen does exactly this). The
-Jarkeeper keeps sounds in jars to keep the Line still, and every sound let out makes it move again. The room is an
+Keeper keeps sounds in jars to keep the Line still, and every sound let out makes it move again. The room is an
 arcane machine more than a cupboard: tuned glass jars wired in copper, numbered like channels. The ledger is written
 in traces, not words, and Hush is the one who reads it. Each character is a way the Line moves: Shard splits it into
 colors, Tock counts it, Mote is the dust in it, Squall keeps it from lying flat, Murk bends it, Wick hums one steady
@@ -56,10 +56,10 @@ the same four shapes on it, Vesper follows its glow, Burrow digs under it, Pip t
 jar holds a copy of someone else's. Code carries it, not new paintings: every glow flickers with the Line, and
 Hush's locket shows it live.
 
-- **Every new character is another jar.** Unlocking one frees it, and each remembers something about the Jarkeeper.
-- **The codex is the Jarkeeper's ledger**, a page per character in the Jarkeeper's own voice (cryptic, possessive,
+- **Every new character is another jar.** Unlocking one frees it, and each remembers something about the Keeper.
+- **The codex is the Keeper's ledger**, a page per character in the Keeper's own voice (cryptic, possessive,
   never cruel), then the engine's real story, then something to try.
-- **The mystery that pulls you along:** who the Jarkeeper is, and why the sounds are kept. Eerie, never grim.
+- **The mystery that pulls you along:** who the Keeper is, and why the sounds are kept. Eerie, never grim.
 - Keep it consistent: every new character's ledger page should connect to at least one other character, a jar
   number, or the moonbow.
 
@@ -160,7 +160,7 @@ has a knob checked in `web/emu/dr_test.mjs` to move its setting and its sound. T
 | --- | --- | --- | --- | --- |
 | BURROW, a badger with a lantern | ANALOG: SUB BASS on a saw, mono | Digs where the low notes go. | DEEP (darker), THUMP (filter kick), GROWL (drive), DIG (a slide between held notes) | The low notes sink under the Line; he digs them back up. |
 | PIP, a woodpecker with mallets | FM6: MARIMBA (Melodee's own; the DX7's rang out too fast) | Taps everything twice. | KNOCK (mallet: mod level), WOOD (mod ratio), RING (mod decay), ROOM (reverb) | Taps every jar to hear if it is full. He tapped jar thirteen. |
-| ECHO, the fog from jar thirteen | VOICE: WHISPER with more buzz | Says what you said. Later. | VOWEL, WHISPER (more breath), ECHO (each note back 1 to 3 times, an eighth apart, softer), FADE (release) | Jar thirteen was full and sealed when the Jarkeeper found it. |
+| ECHO, the fog from jar thirteen | VOICE: WHISPER with more buzz | Says what you said. Later. | VOWEL, WHISPER (more breath), ECHO (each note back 1 to 3 times, an eighth apart, softer), FADE (release) | Jar thirteen was full and sealed when the Keeper found it. |
 
 Melodee has no delay (0.12 took it out for memory), so Echo's ECHO is code: each new note is sent again an eighth
 note later at the tempo, softer each time (`dr_frame`, through Double Rainbow's note player), in SOLO, WEAVE and
@@ -176,7 +176,7 @@ choir of seven (`ants_a.jpg`), too small to read at this size, so they were redr
 | FORK, a little robotic tuning fork | FM6: TUBULAR, a near-pure ring | A, and nothing else. | PURITY (fewer harmonics), RING (release), DRIFT (detune: two forks beat), CLANG (mod ratio) | The reference: the zero the Line is measured from. |
 | ANTS, a choir of three | ANALOG: STRINGS, a section of many that nearly agree | We are one. We are many. | COLONY (chorus), SWARM (detune spread), MARCH (vibrato), HUM (cutoff) | They carry crumbs of sound along the Line. |
 | RABBIT, a golden rabbit with a moon charm | FM6: GLASS PAD, a warm bed with a thin bell of metal | Warm. Mostly. | WARM (mod ratio), SHEEN (mod level), BLOOM (attack, release), MOON (reverb) | Waits where the moonbow meets the Line. |
-| TOP, an unceasing spinning top | PHASE: ORGAN, full sustain and a long release | Cannot stop. Tried. | SPIN (wobble speed), LEAN (wobble depth), WHIRR (DCW), REV (attack) | The Jarkeeper spun it once, to see how long the Line would stay alive. |
+| TOP, an unceasing spinning top | PHASE: ORGAN, full sustain and a long release | Cannot stop. Tried. | SPIN (wobble speed), LEAN (wobble depth), WHIRR (DCW), REV (attack) | The Keeper spun it once, to see how long the Line would stay alive. |
 | CAIRN, a creature of stacked pebbles | NOISE: DUST through a resonant filter that follows the key: a stone struck | Balanced. Don't breathe. | CLACK (filter pitch), SCATTER (density), ROLL (decay), RATTLE (resonance, crush) | Piled over jar seven; the stones stood up and keep watch. |
 
 Pip, Tock and Cairn are leveled by their own measure (struck sounds die away, so their average sits lower at the
@@ -191,8 +191,8 @@ close to Wick), and the pocket knife became a multi-tool with no blade out.
 | Character | Engine | Line | Knobs (what they move) | Ledger hook |
 | --- | --- | --- | --- | --- |
 | STRAY, a lost action figure | FM6: SYNC LEAD, a bright lead | Looking for where he goes. | HEROIC (mod level), PLASTIC (mod ratio), CAPE (vibrato), SEARCH (a slide up into each note) | Not from the shelves: he walked in along the Line. |
-| TUPPENCE, a mouse with a dollhouse cello | ANALOG: SAW LEAD with a slow, soft start: a bowed string | Plays what she can reach. | BOW (attack), SCRAPE (resonance), SWAY (vibrato), BODY (cutoff) | The dollhouse is a model of the Jarkeeper's room, jar for jar. |
-| GLOAM, an enchanted drawing of a castle | FM6: BELLS, a tower's bells | Drawn once. Still standing. | CREAK (a slow wobble), TOLL (mod level), TOWER (detune), MIST (reverb) | Drawn in one line that never lifts: the Line itself, in a place it can stand. |
+| TUPPENCE, a mouse with a dollhouse cello | ANALOG: SAW LEAD with a slow, soft start: a bowed string | Plays what she can reach. | BOW (attack), SCRAPE (resonance), SWAY (vibrato), BODY (cutoff) | The dollhouse is a model of the Keeper's room, jar for jar. |
+| GLOAM, the Keeper's living logbook | FM6: BELLS, a tower's bells | The Keeper's log. It writes back. | CREAK (a slow wobble), TOLL (mod level), TOWER (detune), MIST (reverb) | The Keeper logged every jar in it, until a castle grew out of the pages in the Line's ink and rang its bells at every word. Repainted after the pale drawing (`gloam_a.jpg`) looked washed out on the dark screen; the options are `docs/mockups/gloam_options.png`, the one used is `gloam_g.jpg`. |
 | TINKER, a multi-tool | FM6: CLAVINET, a click then a ring | Always a tool for it. | CLICK (mod level), TOOLS (mod ratio), SNAP (mod decay), SPRING (release) | He cut the seals off the jars, and remembers every one. |
 
 Gloam is on BELLS because the organ patches have no audible modulator, so a TOLL knob did nothing on them (Fork,
@@ -218,7 +218,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | GLO held | PRESETS jumps five characters a detent (twenty is a long way round one at a time). |
 | SEQ | The next beat (it starts if it was off). Held, with SELECT: the tempo, 4 BPM a detent. |
 | EDIT held | The cards show what each knob really moves. |
-| SCL | The codex: the Jarkeeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
+| SCL | The codex: the Keeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). In SCRY: the drill. In TRACE: the song. |
 | HOME + SAVE held 3 s | The full Melodee, as it would have started (track 1 gets its own sound back; nothing is saved). Double Rainbow comes back at the next power-on. |
 

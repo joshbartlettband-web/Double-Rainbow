@@ -9,16 +9,16 @@ FONT = str(ROOT / "assets" / "fonts" / "InterTight[wght].ttf")
 CAST = [
     ("WICK", "VOICE", "A candle who sings vowels",
      "Sings when she's nervous. She is always nervous.",
-     "The Jarkeeper's night-light, the one light allowed in the room. She saw who broke jar twelve."),
+     "The Keeper's night-light, the one light allowed in the room. She saw who broke jar twelve."),
     ("TOCK", "DRUM", "A clockwork beetle, the rhythm section",
      "Keeps time. Keeps grudges.",
-     "The clock on the Jarkeeper's shelf. He has counted every night since jar one."),
+     "The clock on the Keeper's shelf. He has counted every night since jar one."),
     ("MOTE", "LOFI", "An 8-bit gremlin made of jar dust",
      "Small. Loud. Probably your fault.",
      "Lives between the shelves and steals the round glass stoppers off the jars. They look like marbles to him. It is why some jars hum."),
     ("MURK", "CZ-1", "A deep-sea jellyfish that bends waves",
      "Bends the light. Bends the rules.",
-     "Jar one, the oldest. The only sound the Jarkeeper ever let go on purpose. Nobody knows why."),
+     "Jar one, the oldest. The only sound the Keeper ever let go on purpose. Nobody knows why."),
 ]
 BG, PANEL, GOLD, TEAL, TEXT, DIM = (16, 11, 34), (38, 26, 62), (255, 205, 96), (63, 224, 197), (246, 234, 210), (170, 150, 190)
 

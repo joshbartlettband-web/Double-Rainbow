@@ -26,7 +26,7 @@ def main():
     aspect = sys.argv[3] if len(sys.argv) > 3 else "1:1"
     refs = sys.argv[4:]
     model, size = os.environ.get("GEM", "gemini-3.1-flash-image"), os.environ.get("GEM_SIZE", "1K")
-    cap = float(os.environ.get("GEM_CAP", "3.0"))
+    cap = float(os.environ.get("GEM_CAP", "5.0"))
     if total() + PRICE.get((model, size), 0.15) > cap:
         sys.exit(f"stopped: the next image would pass the ${cap:.2f} cap (spent ${total():.3f})")
     parts = [{"text": prompt}]

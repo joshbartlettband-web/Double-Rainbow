@@ -380,14 +380,14 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"SWAY", "VIBRATO", 30, {{DR_TP, P_LD_PIT, 0, 2}, {DR_TP, P_LRATE, 50, 80}}},
         {"BODY", "CUTOFF", 56, {{DR_TP, P_E0 + 4, 30, 110}}},
     }, {0, 0, 0}},
-    /* GLOAM: FM6's BELLS, a tower's bells. CREAK is a slow wobble, TOLL how hard the bells are struck (the modulator's
+    /* GLOAM: the Keeper's logbook, with a castle growing out of its pages. FM6's BELLS, a tower's bells. CREAK is a slow wobble, TOLL how hard the bells are struck (the modulator's
      * level), TOWER how many are stacked (detune), MIST the reverb. */
-    {"GLOAM", "FM6", "Drawn once. Still standing.", ENGI_FM6, 11, DR_E_KEEP, {0, 0, 0, 0}, 104, 30, 70, {
+    {"GLOAM", "FM6", "The Keeper's log. It writes back.", ENGI_FM6, 11, DR_E_KEEP, {0, 0, 0, 0}, 104, 30, 70, {
         {"CREAK", "LFO|PITCH", 20, {{DR_TP, P_LD_PIT, 0, 3}, {DR_TP, P_LRATE, 10, 40}}},
         {"TOLL", "MOD|LEVEL", 40, {{DR_TP, P_E0 + 2, -40, 40}}},
         {"TOWER", "DETUNE", 20, {{DR_TP, P_E0 + 6, 0, 110}}},
         {"MIST", "REVERB", 60, {{DR_TP, P_REV, 20, 127}}},
-    }, {203, 170, 120}},                                        /* its windows */
+    }, {250, 206, 112}},                                        /* its windows */
     /* TINKER: FM6's CLAVINET, a hammer on a string: a click, then a ring. CLICK is how bright the click is (the
      * modulator's level), TOOLS which tool is out (the ratio: scissors, file, opener), SNAP how short it is, SPRING the
      * release. */
@@ -490,7 +490,7 @@ static void dr_load(uint32_t k)
 
 static void project_boot(void);              /* project.c (included after this file) */
 
-/* the codex, three pages: the Jarkeeper's ledger (the lore, in the Jarkeeper's own voice: DOUBLE-RAINBOW.md, The
+/* the codex, three pages: the Keeper's ledger (the lore, in the Keeper's own voice: DOUBLE-RAINBOW.md, The
  * world), the engine's story, something to try */
 typedef struct { const char *entry, *when, *lore[6], *title, *sub, *body[6], *tip[4]; } dr_codex_t;
 static const dr_codex_t DR_CODEX[DR_NCHAR] = {
@@ -657,9 +657,9 @@ static const dr_codex_t DR_CODEX[DR_NCHAR] = {
      {"A bow drags across a string,", "lets go, and drags again: a", "sawtooth wave. A filter that",
       "closes a little takes the buzz", "away and leaves the wood: a", "cello, or as near as a mouse."},
      {"Play slow notes and turn BOW", "up: they take time to speak.", "BODY down is a woodier tone.", "SWAY adds a gentle waver."}},
-    {"The drawing", "Done in one line.",
-     {"A castle, drawn on paper in a", "single line that never lifts,", "and I did not draw it. At night",
-      "the line moves, and so does", "the castle. It is the Line,", "in a place it can stand."},
+    {"My log", "Every jar, in my own hand.",
+     {"Each night I wrote down every", "jar and what it held. Then a", "castle grew up out of the",
+      "pages in the Line's own ink,", "and its bells ring when I", "write. So I stopped writing."},
      "FM BELLS", "A bell is not in tune with itself",
      {"A real bell rings several", "pitches at once, and not in a", "tidy ratio. That is why it",
       "sounds like metal. FM makes the", "same: one wave bending", "another at an odd ratio."},
@@ -1496,7 +1496,7 @@ static void dr_draw_codex(void)
     char pg[24] = "PRESETS: page 1/3";
     cv_begin(240, 100, DR_BG);
     if (drm.page == 0) {
-        cv_text_on(8, 0, &AF_S, "THE JARKEEPER'S LEDGER", DR_TEAL, DR_BG);
+        cv_text_on(8, 0, &AF_S, "THE KEEPER'S LEDGER", DR_TEAL, DR_BG);
         cv_text_on(8, 17, &AF_M, x->entry, DR_GOLD, DR_BG);
         cv_text_on(8, 37, &AF_S, x->when, DR_MID, DR_BG);
         for (i = 0; i < 3u; i++)
