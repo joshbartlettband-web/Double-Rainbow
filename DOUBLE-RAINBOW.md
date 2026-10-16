@@ -177,7 +177,7 @@ choir of seven (`ants_a.jpg`), too small to read at this size, so they were redr
 | ANTS, a choir of three | ANALOG: STRINGS, a section of many that nearly agree | We are one. We are many. | COLONY (chorus), SWARM (detune spread), MARCH (vibrato), HUM (cutoff) | They carry crumbs of sound along the Line. |
 | RABBIT, a golden rabbit with a moon charm | FM6: GLASS PAD, a warm bed with a thin bell of metal | Warm. Mostly. | WARM (mod ratio), SHEEN (mod level), BLOOM (attack, release), MOON (reverb) | Waits where the moonbow meets the Line. |
 | TOP, an unceasing spinning top | PHASE: ORGAN, full sustain and a long release | Cannot stop. Tried. | SPIN (wobble speed), LEAN (wobble depth), WHIRR (DCW), REV (attack) | The Keeper spun it once, to see how long the Line would stay alive. |
-| CAIRN, a creature of stacked pebbles | NOISE: DUST through a resonant filter that follows the key: a stone struck | Balanced. Don't breathe. | CLACK (filter pitch), SCATTER (density), ROLL (decay), RATTLE (resonance, crush) | Piled over jar seven; the stones stood up and keep watch. |
+| CAIRN, a creature of stacked pebbles | NOISE: DUST through a resonant filter that follows the key: a stone struck, with a core on track 3 (FM6 KALIMBA) so every note has a pitch | Balanced. Don't breathe. | CLACK (filter pitch), SCATTER (density), ROLL (decay), CORE (the kalimba's level) | Piled over jar seven; the stones stood up and keep watch. |
 
 Pip, Tock and Cairn are leveled by their own measure (struck sounds die away, so their average sits lower at the
 same peak), within 6 dB of the others; the other sixteen are within 3 dB. **Josh to listen:** Cairn's level and
@@ -323,6 +323,18 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Tuppence | NIBBLE | 84 | small, soft, a little hurried |
 | Gloam | SKETCH | 90 | low and creaking |
 | Tinker | FOLD OUT | 116 | snaps and clicks, a tool at a time |
+
+## Cores: a second sound on track 3 (built)
+
+Some characters need a pitched heart under them. Cairn's stones are noise through a filter, so on their own the
+notes are hard to hear as notes. A core is a second sound on track 3 that plays every note track 1 plays: the keys,
+the arp and SCRY's and TRACE's player (`voice.c` `dr_core`, set by `dr.c` `dr_core_load`). `DR_CORES` in `dr.c`
+lists them: the character, the engine, the preset by name and the level. A knob can move the core's level
+(`DR_CORE` routes). With a core the beat leaves track 3 playing; without one track 3 is Melodee's own again.
+(PHYS, which has a modal kalimba, is retired in this build, so the cores use the live engines.)
+
+Built: Cairn (FM6 KALIMBA, the CORE knob). Ideas for others, to try by ear: Squall with a low SUB BASS, Echo with
+a quiet GLASS PAD, Ants with a STRINGS bed. Every core costs voices, so keep them for the characters that need one.
 
 ## Songs for TRACE
 

@@ -114,6 +114,16 @@ for (let c = 0; c < N; c++) {
     ex.web_keys(1 << 9); render(150); ex.web_keys(0); render(200); const snare = chip();
     check("TOCK: the chip names the drum struck (C the kick, D the snare)", kick !== snare);
   }
+  if (c === 19) {                                  // CAIRN: his core, a kalimba on track 3 under the stones
+    const v0 = ex.web_dr_knob(3), eng = ex.web_engine(2);
+    turn(EN.K1 + 3, -60); const lo = level(phrase);
+    turn(EN.K1 + 3, 60); const hi = level(phrase);
+    turn(EN.K1 + 3, -60); turn(EN.K1 + 3, v0 / 2);
+    check(`CAIRN: track 3 his core (engine ${eng}: FM6 KALIMBA), CORE louder (${lo.db.toFixed(1)} -> ${hi.db.toFixed(1)} dB)`,
+          eng === 12 && hi.db - lo.db > 2 && ex.web_dr_knob(3) === v0);
+  }
+  if (c === 20)
+    check(`STRAY: no core, track 3 Melodee's own again (engine ${ex.web_engine(2)})`, ex.web_engine(2) === 3);
   if (KNOB[c]) {
     const [m, get, what, ok] = KNOB[c], v0 = ex.web_dr_knob(m);
     turn(EN.K1 + m, -60); const p0 = get(); const lo = level(phrase);

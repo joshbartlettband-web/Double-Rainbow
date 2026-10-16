@@ -135,7 +135,8 @@ static void dr_splash(void)
 #define ENGI_LOFI 3u
 #define ENGI_VOICE 5u
 #define ENGI_ANALOG 0u
-enum { DR_NONE, DR_P5, DR_TP, DR_PRESET };   /* DR_PRESET: the knob picks the engine's preset (lo .. hi), a step a detent */
+enum { DR_NONE, DR_P5, DR_TP, DR_PRESET, DR_CORE };   /* DR_PRESET: the knob picks the engine's preset (lo .. hi), a step
+                                                         * a detent; DR_CORE: a parameter of track 3, the core (DR_CORES) */
 typedef struct { uint8_t kind, id; int16_t lo, hi; } dr_route_t;
 typedef struct { const char *name, *under; uint8_t def; dr_route_t r[3]; } dr_macro_t;
 typedef struct {
@@ -353,14 +354,14 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"REV", "ATTACK", 0, {{DR_TP, P_ATK, 0, 100}}},
     }, {192, 88, 64}},                                          /* his bands */
     /* CAIRN: NOISE's DUST, the impulses only, through a resonant filter that follows the key: each key is a stone
-     * struck, pitched. CLACK is the stones' pitch (the filter), SCATTER how many fall, ROLL how long each rings, RATTLE
-     * how sharply the filter rings and how crushed the clatter is. */
-    {"CAIRN", "NOISE", "Balanced. Don't breathe.", ENGI_NOISE, 1, {1, 40, 70, 90, 127, 105, 0, 0},
+     * struck, pitched. Under it, on track 3, his core (DR_CORES): a kalimba, the stones' ring. CLACK is
+     * the stones' pitch (the filter), SCATTER how many fall, ROLL how long each rings, CORE how loud the ring is. */
+    {"CAIRN", "NOISE", "Balanced. Don't breathe.", ENGI_NOISE, 1, {1, 40, 70, 66, 127, 105, 0, 16},
      {0, 80, 60, 50}, 127, 0, 30, {
         {"CLACK", "FREQ", 50, {{DR_TP, P_E0 + 2, 40, 110}}},
         {"SCATTER", "DENSITY", 70, {{DR_TP, P_E0 + 5, 20, 127}}},
         {"ROLL", "DECAY", 60, {{DR_TP, P_DEC, 20, 100}}},
-        {"RATTLE", "RES|CRUSH", 20, {{DR_TP, P_E0 + 3, 50, 127}, {DR_TP, P_E0 + 7, 0, 80}}},
+        {"CORE", "TRACK 3|LEVEL", 70, {{DR_CORE, P_LEVEL, 40, 127}}},
     }, {107, 134, 43}},                                         /* his moss */
     /* STRAY: FM6's SYNC LEAD, a bright lead that carries a tune: the voice a toy hero would have. HEROIC is how much
      * the wave is bent (the modulator's level), PLASTIC how hollow it rings (the ratio), CAPE the vibrato, SEARCH how
@@ -419,11 +420,23 @@ static void dr_macro_apply(track_t *t, uint32_t k, uint32_t m)
         if (rt->kind == DR_P5)
             p5_edit_value(t, rt->id, x);
         else {
-            const param_desc_t *d = track_desc(t, rt->id);
-            t->p[rt->id] = (int16_t)clamp(x, d->min, d->max);
+            track_t *tt = rt->kind == DR_CORE ? &trk[2] : t;
+            const param_desc_t *d = track_desc(tt, rt->id);
+            tt->p[rt->id] = (int16_t)clamp(x, d->min, d->max);
         }
     }
 }
+
+/* The cores: a second sound on track 3 that plays every note of track 1 (voice.c dr_core), for a character that
+ * needs a pitched heart under it. Cairn's stones clatter around a kalimba's ring. A table so any character can have
+ * one: the engine, its preset by name, the transpose in semitones (P_TRANS: the sequencer's; live notes keep
+ * their pitch) and the level (a DR_CORE knob may move it). */
+typedef struct { uint8_t ch, engine; const char *preset; int8_t trans; uint8_t level; } dr_core_t;
+static const dr_core_t DR_CORES[] = {
+    {19, ENGI_FM6, "KALIMBA", 0, 100},                   /* Cairn: a stone's ring under the clatter */
+};
+
+static void dr_core_load(uint32_t k);
 
 /* the character k onto track 1 (Melodee's own load path: the engine, its preset, then ours), selected */
 static void dr_load(uint32_t k)
@@ -446,6 +459,7 @@ static void dr_load(uint32_t k)
         if (c->m[i].r[0].kind == DR_PRESET)
             preset = dr.mv[dr.ch][i];
     apply_preset_to(t, preset);
+    dr_core_load(dr.ch);
     fm1_irq_off();
     if (c->engine == ENGI_PROPHET && !c->preset) {       /* (Vesper: our own program; others a factory one) */
         dr_vesper_program(p5_patch_of(t));
@@ -694,6 +708,46 @@ static struct {
     int16_t bpm0;                            /* Melodee's tempo before the first beat (put back on leaving) */
     uint32_t t0, q;                          /* the dance: when the beat began, the beats counted */
 } drb DR_POOL;
+
+/* track 3 the core of character k, or back to Melodee's own sound when it has none */
+static void dr_core_load(uint32_t k)
+{
+    const engine_t *e;
+    const dr_core_t *c = 0;
+    track_t *t = &trk[2];
+    uint32_t i, p = 0;
+    for (i = 0; i < sizeof DR_CORES / sizeof DR_CORES[0]; i++)
+        if (DR_CORES[i].ch == k)
+            c = &DR_CORES[i];
+    if (!c && !dr_core)
+        return;
+    dr_core = 0;
+    undo_depth++;
+    if (!c) {
+        set_engine_of(t, TRK_DEF[2][0]);
+        apply_preset_to(t, TRK_DEF[2][1]);
+        t->p[P_MUTE] = (uint8_t)drb.on;                  /* (the beat rests track 3) */
+    } else {
+        set_engine_of(t, c->engine);
+        e = ENGINES[c->engine];
+        for (i = 0; i < e->npresets; i++) {              /* (by name; the DX banks pad theirs with spaces) */
+            const char *a = e->presets[preset_orig(e, i)].name, *b = c->preset;
+            while (*b && *a == *b)
+                a++, b++;
+            while (*a == ' ')
+                a++;
+            if (!*a && !*b)
+                p = i;
+        }
+        apply_preset_to(t, p);
+        track_defaults_steps(t);                         /* (no pattern of its own: the core only follows) */
+        t->p[P_TRANS] = c->trans;
+        t->p[P_LEVEL] = c->level;
+        t->p[P_MUTE] = 0;
+        dr_core = 1;
+    }
+    undo_depth--;
+}
 enum { DR_D_HEAD = 1, DR_D_LINE = 2, DR_D_SCENE = 4, DR_D_CARDS = 8, DR_D_NOTE = 16, DR_D_ALL = 31 };
 
 /* the scene's background at (x, y): the sky, a faint moonbow, the hill. The hill's edge is the horizon, and it
@@ -1704,7 +1758,7 @@ static void dr_beat_load(uint32_t n)
     drb.shift = (uint8_t)(sh + 5);
     bt->p[P_LEVEL] = b->blvl;
     t->p[P_MUTE] = bt->p[P_MUTE] = 0;
-    trk[2].p[P_MUTE] = 1;                                /* (track 3 rests) */
+    trk[2].p[P_MUTE] = !dr_core;                         /* (track 3 rests, but for a core) */
     song.g[G_BPM] = b->bpm;
 }
 
@@ -1866,6 +1920,7 @@ static void dr_leave(void)
 {
     track_t *t = &trk[0];
     drm.on = 0;
+    dr_core_load(DR_NCHAR);                              /* (no core: track 3 Melodee's own again) */
     dr_beat_leave();                                     /* (the beat stopped, tracks 2 to 4 and the tempo back) */
     dr_kmode_set(DRK_SOLO);                              /* (Melodee's keys as always; SCRY's and TRACE's notes ended) */
     song.octave = 0;
