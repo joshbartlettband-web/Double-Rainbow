@@ -8,10 +8,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Double Rainbow for the FM-1</title>
-<meta name="description" content="Free firmware for the M-VAVE FM-1: seven escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Keeper. Try it in your browser.">
+<meta name="description" content="Free firmware for the M-VAVE FM-1: 24 escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Keeper. Try it in your browser.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Double Rainbow for the FM-1">
-<meta property="og:description" content="Seven escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Keeper. Free firmware for the M-VAVE FM-1.">
+<meta property="og:description" content="24 escaped sounds, each a character on a real synth engine, an ear trainer, songs to learn and the story of the Keeper. Free firmware for the M-VAVE FM-1.">
 <meta property="og:image" content="@SITE@/card.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23100b22'/%3E%3Cpath d='M2 13a6 6 0 0 1 12 0' fill='none' stroke='%23e86068' stroke-width='1.6'/%3E%3Cpath d='M4 13a4 4 0 0 1 8 0' fill='none' stroke='%23f0d678' stroke-width='1.6'/%3E%3Cpath d='M6 13a2 2 0 0 1 4 0' fill='none' stroke='%237896ec' stroke-width='1.6'/%3E%3C/svg%3E">
@@ -44,6 +44,8 @@
   .btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
   .hero > div { margin-bottom: 28px; }
   .hero img { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; border-radius: 18px; image-rendering: pixelated; }
+  video { display: block; width: 100%; max-width: 440px; height: auto; aspect-ratio: 4 / 5; margin: 0 auto; border-radius: 18px;
+          background: var(--panel); }
   .story { background: var(--panel); border-radius: 18px; padding: 22px 22px 8px; }
   .story p { margin: 0 0 14px; color: var(--soft); }
   .story p:first-child { color: var(--ink); font-size: 1.1rem; }
@@ -81,6 +83,7 @@
     .cards { grid-template-columns: repeat(2, 1fr); }
     .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: center; }
     .hero > div { margin-bottom: 0; }
+    video { margin: 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
 </style>
@@ -137,14 +140,17 @@
   <section class="hero">
     <div>
       <h1>Double Rainbow<small>FOR THE M-VAVE FM-1</small></h1>
-      <p class="lede">Seven sounds escaped from the Keeper's shelf. Each one is a character with attitude, and each one is a real synthesizer engine you can learn by playing. Free firmware, for players from about ten up.</p>
+      <p class="lede">Twenty-four sounds have escaped from the Keeper's shelf. Each one is a character with attitude, and each one is a real synthesizer engine you can learn by playing. Free firmware, for players from about ten up.</p>
       <div class="buttons">
         <a class="btn" href="webapp/try/">Try it in your browser</a>
         <a class="btn alt" href="webapp/installer/">Put it on an FM-1</a>
       </div>
       <p class="lede" style="font-size:1rem;margin:0">No FM-1 needed to try it. Play the keys on the screen, or use your computer keyboard.</p>
+      <p class="lede" style="font-size:1rem;margin:.6rem 0 0"><a href="double-rainbow.mp4" download="double-rainbow.mp4">Download the video</a> (74 seconds) to share it.</p>
     </div>
-    <img src="screen-splash.png" width="480" height="480" alt="The startup screen: a double moonbow over dark hills, and the words DOUBLE RAINBOW, built on Melodee">
+    <video controls playsinline preload="none" poster="poster.png" aria-label="A 74 second tour of Double Rainbow: six of the 24 characters and their engines, a knob opening Bog's filter, EDIT's real settings, the Keeper's ledger, WEAVE and CAST chords, the SCRY ear trainer and TRACE, then a beat">
+      <source src="double-rainbow.mp4" type="video/mp4">
+    </video>
   </section>
 
   <h2>The story</h2>
@@ -156,7 +162,7 @@
 
   <h2>What's inside</h2>
   <ul class="facts">
-    <li><b>Seven characters, seven engines.</b> Vesper is a Prophet-5, Shard is FM, Squall is noise, Wick sings with formants, Tock is an 808 drum machine, Mote is an old game console and Murk is Casio-style phase distortion. Each sound was made for its character.</li>
+    <li><b>24 characters, eight engines.</b> Vesper is a Prophet-5, Shard is FM, Squall is noise, Wick sings with formants, Tock is an 808 drum machine, Mote is an old game console, Murk is Casio-style phase distortion and Bog squelches like a 303. Glint plays Casio's own CZ tones, Hermit lives in a brass horn, and there are more: a badger, a woodpecker, a choir of ants, a spinning top and a living logbook among them. Each sound was made for its character.</li>
     <li><b>Four knobs each, with honest labels.</b> Turn GLOW, BITE or HOWL to hear what they do. Hold EDIT and the cards show the real settings underneath, like CUTOFF or RESO, so the synth words come with the sounds.</li>
     <li><b>The codex.</b> Press SCL for three pages per character: the Keeper's ledger, the real history of the engine (who invented it, and how it works) and something to try.</li>
     <li><b>The horizon is the waveform.</b> The edge of the hill traces the sound as it plays, so a square wave looks square and a bell rings out.</li>

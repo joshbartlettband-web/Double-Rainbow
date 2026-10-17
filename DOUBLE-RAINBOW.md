@@ -457,6 +457,10 @@ for teachers, and links to the browser demo and the installer. The workflow copi
 the site's address; a tip card appears if a `DONATE_URL` repository variable or secret is set. Its pictures come from
 the firmware itself: `node tools/landing/shots.mjs build/emu/melodee.wasm DIR`, then
 `python3 tools/landing/make_landing.py DIR` (rerun both when the characters or screens change).
+The demo video (`landing/double-rainbow.mp4`, 74 seconds, and its `poster.png`) is recorded from the browser build
+too: `node tools/video/record_tour.mjs build/emu/melodee.wasm DIR`, then `python3 tools/video/compose_tour.py video
+double-rainbow.mp4` in DIR. The tour-video workflow does both on GitHub (run it by hand), and
+`tools/video/build_wasm_clang.sh` builds the browser version without Emscripten.
 
 ## Setup, in order
 
