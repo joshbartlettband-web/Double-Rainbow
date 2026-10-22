@@ -217,6 +217,7 @@ The FM-1 starts in Double Rainbow every time it powers on.
 | PLAY | SOLO, WEAVE, CAST: the character's beat, on and off (below). SCRY: hear the question again. TRACE: hear the song (PLAY or any key stops it). |
 | GLO held | PRESETS jumps five characters a detent (twenty is a long way round one at a time). |
 | SEQ | The next beat (it starts if it was off). Held, with SELECT: the tempo, 4 BPM a detent. |
+| REC | Tap the tempo: tap along and from the second tap the beat follows (the average of the last three gaps; a two second pause starts over). While a beat plays the header shows its tempo, with a dot that ticks on each beat (gold on the one), and REC blinks on the beat. |
 | EDIT held | The cards show what each knob really moves. |
 | SCL | The codex: the Keeper's ledger, the engine's story, then something to try (PRESETS turns the pages). SCL again closes it. |
 | OCT- / OCT+ | The keys an octave down or up (two each way). In SCRY: the drill. In TRACE: the song. |

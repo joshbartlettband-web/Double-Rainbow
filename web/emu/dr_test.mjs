@@ -389,6 +389,16 @@ function trace() {
   check(`SEQ: the next beat (${ex.web_bpm()} BPM)`, ex.web_playing() === 1 && ex.web_bpm() === BPM[(c + 1) % N]);
   ex.web_buttons(1 << B.SEQ); render(100); turn(EN.SELECT, 2); ex.web_buttons(0); render(200);
   check(`SEQ held, SELECT: the tempo, not the beat (${ex.web_bpm()} BPM)`, ex.web_bpm() === BPM[(c + 1) % N] + 8);
+  {                                                       // REC: the tap tempo
+    const tapAt = (gap, n) => { for (let i = 0; i < n; i++) { ex.web_buttons(1 << B.REC); render(60); ex.web_buttons(0); render(gap - 60); } };
+    const head = () => rows(screen(), 0, 22);
+    render(2500); const h0 = head(); tapAt(500, 4); render(100); const b1 = ex.web_bpm(), h1 = head();
+    check(`REC: four taps half a second apart, 120 BPM (${b1}), the header shows it`, Math.abs(b1 - 120) <= 3 && h1 !== h0 && ex.web_playing() === 1);
+    render(2500); tapAt(400, 4); render(100); const b2 = ex.web_bpm();
+    check(`REC: faster taps, 150 BPM (${b2}; the buttons are read once a frame, so a BPM or two either way)`, Math.abs(b2 - 150) <= 3);
+    render(2500); tapAt(120, 2); render(100);
+    check(`REC: a pause starts over, and a bounce is not a tap (still ${ex.web_bpm()})`, ex.web_bpm() === b2);
+  }
   turn(EN.ALGO, 2);                                       // CAST: G#4 picks G7, the bass moves to G
   ex.web_keys(1 << 15); render(300);
   const g = ex.web_step_note(1, 0); ex.web_keys(0); render(300);

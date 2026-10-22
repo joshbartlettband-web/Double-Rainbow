@@ -706,7 +706,10 @@ static struct {
     uint8_t beat, on, ready, shift;          /* shift: the bass's move from C, + 5 (0 .. 11) */
     uint8_t seq_turned;                      /* SELECT turned while SEQ is held: the tempo, not the next beat */
     int16_t bpm0;                            /* Melodee's tempo before the first beat (put back on leaving) */
-    uint32_t t0, q;                          /* the dance: when the beat began, the beats counted */
+    uint32_t q;                              /* the dance: the beat of the bar last seen (seq.c beat_n), + 1 */
+    uint32_t tap_t;                          /* REC, the tap tempo: the last tap (0 none), */
+    uint16_t tap_iv[3];                      /* .. the last three gaps between taps, newest first, */
+    uint8_t tap_n;                           /* .. and the taps counted (1 .. 4) */
 } drb DR_POOL;
 
 /* track 3 the core of character k, or back to Melodee's own sound when it has none */
@@ -1436,7 +1439,12 @@ static void dr_draw_head(void)
     cv_text_on(8, 2, &AF_M, c->name, DR_GOLD, DR_BG);
     cv_rrect(196 - w - 10, 3, w + 10, 16, 4, DR_SURF, DR_BG);
     cv_text_on(196 - w - 5, 4, &AF_S, c->tag, DR_TEAL, DR_SURF);
-    cv_text_on(205, 4, &AF_S, n, DR_DIM, DR_BG);
+    if (drb.on) {                                        /* a beat playing: its tempo, a dot that ticks on the beat */
+        fmt_int(n, song.g[G_BPM]);
+        cv_rrect(205, 9, 6, 6, 3, drb.q == 1u ? DR_GOLD : (drb.q & 1u) ? DR_PLUM : DR_DIM, DR_BG);
+        cv_text_on(214, 4, &AF_S, n, DR_GOLD, DR_BG);
+    } else
+        cv_text_on(205, 4, &AF_S, n, DR_DIM, DR_BG);
     cv_rect(0, DR_H_HEAD - 1, 240, 1, DR_PLUM);
     cv_blit(0, 0);
 }
@@ -1588,7 +1596,7 @@ static void dr_say(const char *s)
  * EDIT while held, OCT- / OCT+ while the keys are shifted */
 static void dr_leds(void)
 {
-    static const uint8_t USED[] = {B_SCL, B_EDIT, B_GLO, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ};
+    static const uint8_t USED[] = {B_SCL, B_EDIT, B_GLO, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ, B_REC};
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
     uint32_t k, c, guide = 0, blink = (fm1_ms / 160u) & 1u;
     if (dr_kmode == DRK_SCRY) {                           /* SCRY: the home note or the first note lit, the hint blinking */
@@ -1610,6 +1618,8 @@ static void dr_leds(void)
     for (k = 0; k < NELEM(USED); k++)
         led_put(nb, panel.btn[USED[k]], 1);
     led_put(nl, panel.btn[B_PLAY], (dr_kmode == DRK_TRACE && drt.demo) || drb.on);   /* (the beat, or TRACE's demo) */
+    led_put(nl, panel.btn[B_REC], drb.on ? beat_pos < seq_beat_samples() / 6u     /* REC: the beat, or the tap */
+                                         : drb.tap_t && fm1_ms - drb.tap_t < 120u);
     led_put(nl, panel.btn[B_SCL], drm.codex);
     led_put(nl, panel.btn[B_EDIT], drm.under);
     led_put(nl, panel.btn[B_OCTDN], song.octave < 0);
@@ -1767,10 +1777,11 @@ static void dr_beat_play(uint32_t on)
     if (on && !drb.on) {
         dr_beat_load(drb.beat);
         transport_req = 1;
-        drb.t0 = fm1_ms;
         drb.q = 0;
     } else if (!on && drb.on)
         transport_req = 2;
+    if (drb.on != on)
+        drm.dirty |= DR_D_HEAD;                          /* (the header: the tempo, or which character) */
     drb.on = (uint8_t)on;
 }
 
@@ -1788,12 +1799,49 @@ static void dr_beat_poll(void)
                 trk[1].step[i].note[0] = (uint8_t)(b->bass[i] + sh);   /* (one byte a step: safe under the ISR) */
         drb.shift = (uint8_t)(sh + 5);
     }
-    q = (uint32_t)((uint64_t)(fm1_ms - drb.t0) * (uint32_t)song.g[G_BPM] / 60000u);
+    q = beat_n + 1u;                                     /* (the sequencer's own beat: the bob lands on the drums) */
     if (q != drb.q) {
         drb.q = q;
+        drm.dirty |= DR_D_HEAD;                          /* (the tempo's dot ticks) */
         if (!drm.squash_t0)
             drm.squash_t0 = fm1_ms | 1u;
     }
+}
+
+/* the tempo, 60 .. 180 BPM, said on the line ("112 BPM") and shown in the header while a beat plays */
+static void dr_set_bpm(int32_t bpm)
+{
+    char m[12];
+    uint32_t v = (uint32_t)clamp(bpm, 60, 180);
+    song.g[G_BPM] = (int16_t)v;
+    fmt_int(m, (int32_t)v);
+    str_cpy(m + str_len(m), " BPM", 5);
+    dr_say(m);
+    drm.dirty |= DR_D_HEAD;
+}
+
+/* REC: the tap tempo. Tap along: from the second tap on, the tempo is the average of the last three gaps.
+ * A pause of two seconds starts over; a gap under 0.3 s is a bounce, not a tap. */
+static void dr_tap(void)
+{
+    uint32_t d = fm1_ms - drb.tap_t, i, n, sum = 0;
+    if (drb.tap_t && d < 300u)
+        return;
+    drb.tap_t = fm1_ms | 1u;
+    if (!drb.tap_n || d > 2000u) {
+        drb.tap_n = 1;
+        dr_say("TAP, TAP, TAP");
+        return;
+    }
+    drb.tap_iv[2] = drb.tap_iv[1];
+    drb.tap_iv[1] = drb.tap_iv[0];
+    drb.tap_iv[0] = (uint16_t)d;
+    if (drb.tap_n < 4u)
+        drb.tap_n++;
+    n = drb.tap_n - 1u;
+    for (i = 0; i < n; i++)
+        sum += drb.tap_iv[i];
+    dr_set_bpm((int32_t)((60000u * n + sum / 2u) / sum));
 }
 
 /* to Melodee: the band's tracks and the tempo as they were */
@@ -2059,6 +2107,8 @@ static int dr_frame(void)
             dr_say(drb.on ? DR_BEATS[drb.beat].name : "");
         }
     }
+    if (pressed & (1u << panel.btn[B_REC]))             /* REC: tap the tempo */
+        dr_tap();
     if (pressed & (1u << panel.btn[B_SEQ]))
         drb.seq_turned = 0;
     if ((released & (1u << panel.btn[B_SEQ])) && !drb.seq_turned && dr_kmode != DRK_SCRY && dr_kmode != DRK_TRACE) {
@@ -2068,18 +2118,8 @@ static int dr_frame(void)
         dr_say(DR_BEATS[drb.beat].name);
     }
     if (((fm1_in.buttons >> panel.btn[B_SEQ]) & 1u) && (s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0) {
-        char m[16];                                      /* SEQ held, SELECT: the tempo, 4 BPM a detent */
-        uint32_t v;
-        song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + (s > 0 ? 4 : -4), 60, 180);
+        dr_set_bpm(song.g[G_BPM] + (s > 0 ? 4 : -4));   /* SEQ held, SELECT: the tempo, 4 BPM a detent */
         drb.seq_turned = 1;
-        drb.t0 = fm1_ms;
-        drb.q = 0;
-        v = (uint32_t)song.g[G_BPM];
-        m[0] = (char)(v >= 100u ? '1' : ' ');
-        m[1] = (char)('0' + v / 10u % 10u);
-        m[2] = (char)('0' + v % 10u);
-        str_cpy(m + 3, " BPM", 5);
-        dr_say(m[0] == ' ' ? m + 1 : m);
         s = 0;
     } else if ((s = fm1_enc_take(panel.enc[EN_SELECT]) * panel.dir[EN_SELECT]) != 0 && dr_kmode == DRK_TRACE) {
         dr_trace_start(drt.song + (s > 0 ? 1u : DR_NSONGS - 1u));   /* SELECT in TRACE: the song */
