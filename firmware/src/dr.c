@@ -403,8 +403,83 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
 static struct {
     uint8_t ch;                              /* the character on track 1 */
     uint8_t mv[DR_NCHAR][4];                 /* each character's knobs, 0..100 (kept while switching) */
+    uint8_t av[DR_NCHAR][DRA_N];             /* .. and their arps (seq.c dr_arp.c: dra.p while they are out) */
     uint8_t ready;
 } dr DR_POOL;
+
+/* Each character's own arp, to suit their beat: SHAPE RATE RANGE GATE, STEPS HITS CHANCE BURST, SOURCE SPICE
+ * LOOP EVOLVE (dr_arp.c says what each does; RATE 0..4 is 1/8 1/8T 1/16 1/16T 1/32, LOOP 1..4 is 4 to 16 notes) */
+#define U DRA_UP
+#define D DRA_DOWN
+#define B DRA_BOUNCE
+#define W DRA_WALK
+#define J DRA_JUMP
+#define K DRA_KEYS
+#define A DRA_AUTO
+static const uint8_t DR_ARPS[DR_NCHAR][DRA_N] = {
+    {B, 1, 2, 80, 12, 9, 100, 0, K, 20, 0, 20},          /* Vesper: up and back in triplets, slow and long */
+    {U, 2, 2, 45, 16, 16, 100, 0, K, 0, 0, 20},          /* Shard: straight sixteenths, clean */
+    {J, 2, 2, 30, 16, 11, 85, 20, K, 40, 0, 20},         /* Squall: anywhere, gusts and stutters */
+    {W, 0, 1, 70, 8, 6, 95, 0, K, 30, 2, 15},            /* Wick: a nervous little tune that repeats */
+    {U, 2, 1, 35, 16, 7, 100, 15, K, 0, 4, 10},          /* Tock: drum fills, seven in sixteen */
+    {U, 4, 3, 50, 16, 16, 100, 0, K, 0, 0, 20},          /* Mote: the old game console's fast arpeggio */
+    {W, 1, 2, 95, 12, 7, 80, 0, A, 40, 4, 25},           /* Murk: drifts by herself */
+    {D, 0, 1, 90, 8, 5, 90, 10, K, 10, 0, 20},           /* Bog: down and squelchy */
+    {W, 1, 2, 60, 6, 4, 85, 0, K, 25, 2, 10},            /* Hush: a few soft notes, watching */
+    {B, 2, 2, 40, 16, 12, 90, 20, K, 10, 0, 20},         /* Tumbler: tumbling up and down */
+    {J, 2, 3, 35, 16, 9, 90, 15, K, 30, 3, 20},          /* Glint: snatches the bright ones */
+    {U, 0, 1, 85, 8, 3, 100, 0, K, 0, 0, 20},            /* Hermit: three slow brass notes in eight */
+    {U, 0, 1, 70, 16, 5, 100, 0, K, 0, 2, 5},            /* Burrow: a bass that digs in */
+    {B, 2, 2, 30, 16, 13, 100, 10, K, 10, 0, 20},        /* Pip: mallets, busy */
+    {W, 1, 2, 40, 12, 5, 80, 0, K, 20, 0, 20},           /* Echo: sparse, her repeats fill it in */
+    {U, 1, 2, 60, 12, 12, 100, 0, K, 0, 0, 20},          /* Fork: every triplet rings */
+    {W, 2, 1, 40, 16, 16, 75, 20, K, 20, 4, 30},         /* Ants: a busy line that keeps changing */
+    {B, 0, 2, 90, 8, 8, 100, 0, A, 20, 4, 15},           /* Rabbit: warm and by herself */
+    {U, 3, 3, 50, 12, 12, 100, 0, A, 10, 3, 20},         /* Top: spins up by itself, and never stops */
+    {J, 2, 2, 30, 16, 9, 80, 30, K, 20, 0, 20},          /* Cairn: stones falling */
+    {B, 2, 2, 55, 16, 11, 95, 5, K, 15, 4, 20},          /* Stray: a hero's riff */
+    {W, 0, 1, 85, 8, 5, 90, 0, K, 20, 2, 10},            /* Tuppence: a slow bowed line */
+    {D, 1, 2, 90, 12, 5, 85, 0, A, 30, 4, 20},           /* Gloam: bells from the tower, by themselves */
+    {U, 3, 2, 25, 16, 10, 90, 25, K, 10, 0, 20},         /* Tinker: clicks and snaps */
+};
+#undef U
+#undef D
+#undef B
+#undef W
+#undef J
+#undef K
+#undef A
+
+/* the arp's twelve settings on the knob cards, four at a time (ARP steps through the groups): name, range, step */
+static const struct { const char *name; uint8_t lo, hi, step; } DRA_K[DRA_N] = {
+    {"SHAPE", 0, 4, 1}, {"RATE", 0, 4, 1}, {"RANGE", 1, 4, 1}, {"GATE", 10, 100, 5},
+    {"STEPS", 2, 16, 1}, {"HITS", 1, 16, 1}, {"CHANCE", 0, 100, 5}, {"BURST", 0, 100, 5},
+    {"SOURCE", 0, 2, 1}, {"SPICE", 0, 100, 5}, {"LOOP", 0, 4, 1}, {"EVOLVE", 0, 100, 5},
+};
+static const char *const DRA_GROUP[3] = {"ARP: NOTES", "ARP: RHYTHM", "ARP: CHANGE"};
+
+/* setting k's value v as the card shows it */
+static void dra_text(uint32_t k, uint32_t v, char *s)
+{
+    static const char *const SHAPE[5] = {"UP", "DOWN", "BOUNCE", "WALK", "JUMP"};
+    static const char *const RATE[5] = {"1/8", "1/8T", "1/16", "1/16T", "1/32"};
+    static const char *const SRC[3] = {"KEYS", "HOLD", "AUTO"};
+    if (k == DRA_SHAPE)
+        str_cpy(s, SHAPE[v % 5u], 8);
+    else if (k == DRA_RATE)
+        str_cpy(s, RATE[v % 5u], 8);
+    else if (k == DRA_SOURCE)
+        str_cpy(s, SRC[v % 3u], 8);
+    else if (k == DRA_LOOP && !v)
+        str_cpy(s, "OFF", 8);
+    else {
+        fmt_int(s, (int32_t)(k == DRA_LOOP ? v * 4u : v));
+        if (k == DRA_RANGE)
+            str_cpy(s + str_len(s), " OCT", 5);
+        else if (k == DRA_GATE || k == DRA_CHANCE || k == DRA_RATCHET || k == DRA_SPICE || k == DRA_EVOLVE)
+            str_cpy(s + str_len(s), "%", 2);
+    }
+}
 
 /* one knob of the character on track 1: its routes, from its value */
 static void dr_macro_apply(track_t *t, uint32_t k, uint32_t m)
@@ -449,9 +524,11 @@ static void dr_load(uint32_t k)
         for (j = 0; j < DR_NCHAR; j++)
             for (m = 0; m < 4u; m++)
                 dr.mv[j][m] = DR_CAST[j].m[m].def;
+        memcpy(dr.av, DR_ARPS, sizeof dr.av);
         dr.ready = 1;
     }
     dr.ch = (uint8_t)(k % DR_NCHAR);
+    memcpy(dra.p, dr.av[dr.ch], DRA_N);                  /* (their arp: bytes, the ISR reads them as they land) */
     song.sel = 0;
     set_engine_of(t, c->engine);
     preset = c->preset;
@@ -700,6 +777,8 @@ static struct {
     char msg[40];
     uint8_t name_on, name_cur, name_lit;     /* YOUR NAME is open (HOME held, ALGORITHM); the place being changed; drawn lit */
     char name_ed[DR_NAME_MAX + 1];           /* .. the name as it is being written: 10 letters or spaces */
+    uint8_t agrp, astep;                     /* the arp's group on the cards (0: the character's knobs); its step drawn */
+    uint32_t arp_t0;                         /* ARP pressed (0 not): a long hold turns the arp off */
 } drm DR_POOL;
 /* the beat (below, after the LEDs: dr_beat_*) */
 static struct {
@@ -1268,6 +1347,9 @@ static void dr_kmode_set(uint32_t m)
     drt.demo = 0;
     dr_kmode = (uint8_t)m;
     if (m == DRK_SCRY || m == DRK_TRACE) {
+        dra_set(0);                                      /* (the arp too: these modes play their own notes) */
+        drm.agrp = 0;
+        drm.dirty |= DR_D_CARDS | DR_D_LINE;
         song.octave = 0;                                 /* (the keys at their own notes: OCT picks the drill or the song) */
         dr_beat_play(0);                                 /* (and quiet, for the ear) */
     }
@@ -1457,6 +1539,13 @@ static void dr_draw_line(void)
         cv_text_on(8, 1, &AF_S, drm.msg, DR_TEAL, DR_BG);
     else if (drm.codex)
         cv_text_on(8, 1, &AF_S, "CODEX", DR_TEAL, DR_BG);
+    else if (drm.agrp) {                                 /* the arp's group, and its steps: hits filled, now gold */
+        uint32_t k, n = dra.p[DRA_STEPS], h = dra.p[DRA_HITS], x0 = 232u - n * 7u;
+        cv_text_on(8, 1, &AF_S, DRA_GROUP[drm.agrp - 1u], DR_TEAL, DR_BG);
+        for (k = 0; k < n; k++)
+            cv_rrect((int32_t)(x0 + k * 7u), 5, 5, 5, 2,
+                     dra.on && drm.astep == k + 1u ? DR_GOLD : (k * (h < n ? h : n)) % n < h ? DR_TEXT : DR_PLUM, DR_BG);
+    }
     else if (dr_kmode == DRK_SCRY)
         cv_text_on(8, 1, &AF_S, DR_SCRY_LINE[drs.drill % 3u], DR_MID, DR_BG);
     else if (dr_kmode == DRK_TRACE)
@@ -1506,6 +1595,15 @@ static uint32_t dr_text_check(void)
             bad += text_w(&AF_S, b) > 51;
         }
     }
+    for (k = 0; k < DRA_N; k++) {                        /* the arp's cards: their names, every value */
+        bad += text_w(&AF_S, DRA_K[k].name) > 51;
+        for (i = DRA_K[k].lo; i <= DRA_K[k].hi; i++) {
+            dra_text(k, i, a);
+            bad += text_w(text_w(&AF_M, a) > 47 ? &AF_S : &AF_M, a) > 47;
+        }
+    }
+    for (k = 0; k < 3u; k++)
+        bad += text_w(&AF_S, DRA_GROUP[k]) > 100;
     for (k = 0; k < DR_NSONGS; k++)                      /* TRACE: the titles on the line, who wrote them */
         bad += text_w(&AF_S, DR_SONGS[k].title) > 224 || text_w(&AF_S, DR_SONGS[k].who) > 224;
     for (k = 0; k < 13u; k++)                            /* SCRY: its answers in the chip (left of "SCRY"), on the line */
@@ -1518,7 +1616,19 @@ static void dr_draw_cards(void)
     const dr_char_t *c = &DR_CAST[dr.ch];
     uint32_t i;
     cv_begin(240, 240 - DR_Y_CARDS, DR_BG);
-    for (i = 0; i < 4u; i++) {
+    for (i = 0; drm.agrp && i < 4u; i++) {               /* the arp's settings: four of its twelve, teal */
+        uint32_t k = (drm.agrp - 1u) * 4u + i, v = dra.p[k], lo = DRA_K[k].lo, hi = DRA_K[k].hi;
+        int32_t x = 3 + (int32_t)i * 59;
+        char s[12];
+        dra_text(k, v, s);
+        cv_rrect(x, 2, 55, 37, 5, DR_SURF, DR_BG);
+        cv_text_on(x + 5, 3, &AF_S, DRA_K[k].name, DR_TEAL, DR_SURF);
+        cv_text_on(x + 5, 15, text_w(&AF_M, s) > 47 ? &AF_S : &AF_M, s, DR_TEXT, DR_SURF);
+        cv_rect(x + 5, 33, 45, 2, DR_PLUM);
+        if (v > lo)
+            cv_rect(x + 5, 33, (int32_t)(45u * (v - lo) / (hi - lo)), 2, DR_TEAL);
+    }
+    for (i = 0; !drm.agrp && i < 4u; i++) {
         int32_t x = 3 + (int32_t)i * 59, v = dr.mv[dr.ch][i];
         cv_rrect(x, 2, 55, 37, 5, DR_SURF, DR_BG);
         cv_text_on(x + 5, 3, &AF_S, c->m[i].name, drm.under ? DR_MID : DR_GOLD, DR_SURF);
@@ -1596,7 +1706,7 @@ static void dr_say(const char *s)
  * EDIT while held, OCT- / OCT+ while the keys are shifted */
 static void dr_leds(void)
 {
-    static const uint8_t USED[] = {B_SCL, B_EDIT, B_GLO, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ, B_REC};
+    static const uint8_t USED[] = {B_SCL, B_EDIT, B_GLO, B_HOME, B_SAVE, B_OCTDN, B_OCTUP, B_PLAY, B_SEQ, B_REC, B_ARP};
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
     uint32_t k, c, guide = 0, blink = (fm1_ms / 160u) & 1u;
     if (dr_kmode == DRK_SCRY) {                           /* SCRY: the home note or the first note lit, the hint blinking */
@@ -1620,6 +1730,7 @@ static void dr_leds(void)
     led_put(nl, panel.btn[B_PLAY], (dr_kmode == DRK_TRACE && drt.demo) || drb.on);   /* (the beat, or TRACE's demo) */
     led_put(nl, panel.btn[B_REC], drb.on ? beat_pos < seq_beat_samples() / 6u     /* REC: the beat, or the tap */
                                          : drb.tap_t && fm1_ms - drb.tap_t < 120u);
+    led_put(nl, panel.btn[B_ARP], dra.on);
     led_put(nl, panel.btn[B_SCL], drm.codex);
     led_put(nl, panel.btn[B_EDIT], drm.under);
     led_put(nl, panel.btn[B_OCTDN], song.octave < 0);
@@ -1968,6 +2079,8 @@ static void dr_leave(void)
 {
     track_t *t = &trk[0];
     drm.on = 0;
+    dra_set(0);
+    drm.agrp = 0;
     dr_core_load(DR_NCHAR);                              /* (no core: track 3 Melodee's own again) */
     dr_beat_leave();                                     /* (the beat stopped, tracks 2 to 4 and the tempo back) */
     dr_kmode_set(DRK_SOLO);                              /* (Melodee's keys as always; SCRY's and TRACE's notes ended) */
@@ -2071,6 +2184,15 @@ static int dr_frame(void)
     for (i = 0; i < 4u; i++)                             /* the four knobs, 2 % a detent */
         if ((s = fm1_enc_take(panel.enc[EN_K1 + i]) * panel.dir[EN_K1 + i]) != 0) {
             const dr_route_t *pr = &DR_CAST[dr.ch].m[i].r[0];
+            if (drm.agrp) {                              /* the arp's setting, a step a detent */
+                uint32_t k = (drm.agrp - 1u) * 4u + i;
+                int32_t hi = k == DRA_HITS ? dra.p[DRA_STEPS] : DRA_K[k].hi;
+                dra.p[k] = dr.av[dr.ch][k] = (uint8_t)clamp((int32_t)dra.p[k] + s * DRA_K[k].step, DRA_K[k].lo, hi);
+                if (k == DRA_STEPS && dra.p[DRA_HITS] > dra.p[DRA_STEPS])
+                    dra.p[DRA_HITS] = dr.av[dr.ch][DRA_HITS] = dra.p[DRA_STEPS];
+                drm.dirty |= DR_D_CARDS | DR_D_LINE;
+                continue;
+            }
             if (pr->kind == DR_PRESET) {                 /* a tone a detent: the character again with it */
                 uint8_t v = (uint8_t)clamp(dr.mv[dr.ch][i] + s, pr->lo, pr->hi);
                 if (v != dr.mv[dr.ch][i]) {
@@ -2092,6 +2214,33 @@ static int dr_frame(void)
         if (m != dr_kmode)
             dr_kmode_set(m);
         dr_say(DR_KMODE_HELP[dr_kmode]);
+    }
+    if (pressed & (1u << panel.btn[B_ARP]))
+        drm.arp_t0 = fm1_ms | 1u;
+    if (drm.arp_t0 && ((fm1_in.buttons >> panel.btn[B_ARP]) & 1u) && (int32_t)(fm1_ms - drm.arp_t0) >= 700) {
+        drm.arp_t0 = 0;                                  /* ARP held: the arp off */
+        dra_set(0);
+        drm.agrp = 0;
+        dr_say("ARP OFF");
+        drm.dirty |= DR_D_CARDS;
+    } else if ((released & (1u << panel.btn[B_ARP])) && drm.arp_t0) {
+        drm.arp_t0 = 0;                                  /* ARP: on, then its settings four at a time, then the knobs */
+        if (dr_kmode >= DRK_SCRY)
+            dr_say("THE ARP: IN SOLO, WEAVE OR CAST");
+        else {
+            if (!dra.on) {
+                dra_set(1);
+                drm.agrp = 1;
+            } else
+                drm.agrp = (uint8_t)((drm.agrp + 1u) % 4u);
+            dr_say(drm.agrp ? "" : "ARP ON. HOLD ARP: OFF");
+            drm.dirty |= DR_D_CARDS | DR_D_LINE;
+        }
+    }
+    if (drm.agrp && dra.step != drm.astep) {             /* (the step just played lights on the line) */
+        drm.astep = dra.step;
+        if (!drm.msg[0])
+            drm.dirty |= DR_D_LINE;
     }
     if (pressed & (1u << panel.btn[B_PLAY])) {           /* PLAY: SCRY asks again, TRACE plays the song (or stops) */
         if (dr_kmode == DRK_SCRY && !drm.codex)
@@ -2143,7 +2292,7 @@ static int dr_frame(void)
         if (!drm.squash_t0)
             drm.squash_t0 = fm1_ms | 1u;
     }
-    if (notes && dr.ch == DR_ECHO && dr_kmode <= DRK_CAST && dr.mv[DR_ECHO][2]) {
+    if (notes && dr.ch == DR_ECHO && dr_kmode <= DRK_CAST && dr.mv[DR_ECHO][2] && !dra.on) {
         uint32_t v = dr.mv[DR_ECHO][2], reps = v <= 33u ? 1u : v <= 66u ? 2u : 3u, r, j;   /* ECHO: each new note */
         uint32_t gap = 30000u / (uint32_t)(song.g[G_BPM] >= 40 ? song.g[G_BPM] : 120);   /* comes back an eighth */
         for (i = 0; i < 27u; i++)                                                         /* later, softer, 1..3 times */

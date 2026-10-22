@@ -446,6 +446,47 @@ function trace() {
   turn(EN.PRESETS, -(down - c0 + N) % N === 0 ? 0 : (c0 - down + N) % N); render(500);
 }
 
+{ // ARP: the generative arp. On, its settings four at a time, the held keys' notes on the beat, AUTO, off
+  turn(EN.ALGO, -10); render(200);                         // (SOLO)
+  turn(EN.PRESETS, -ex.web_dr_char()); render(400);        // (Vesper: up and back in triplets, 9 hits in 12)
+  const cards = () => rows(screen(), 198, 240), line = () => rows(screen(), 22, 38);
+  const c0 = cards();
+  tap(B.ARP);
+  check(`ARP: on, its NOTES on the cards (SHAPE ${ex.web_dr_arp_p(0)}, RATE ${ex.web_dr_arp_p(1)})`,
+        ex.web_dr_arp() === (1 | 1 << 1) && cards() !== c0);
+  const n0 = ex.web_dr_arp_count(), seen = new Set();
+  ex.web_keys(1 << 7 | 1 << 11 | 1 << 14);                 // C E G held
+  for (let i = 0; i < 20; i++) { render(100); seen.add(ex.web_dr_arp_note() % 12); }
+  const n1 = ex.web_dr_arp_count(), per = (n1 - n0) / 2, want = 3 * ex.web_bpm() / 60 * 9 / 12;
+  check(`ARP: C E G held 2 s, ${n1 - n0} notes (${per.toFixed(1)} a second, about ${want.toFixed(1)} at ${ex.web_bpm()} BPM), C E G and (SPICE) a passing note in C now and then (${[...seen].join(" ")})`,
+        Math.abs(per - want) < 1.2 && [0, 4, 7].every((p) => seen.has(p)) && [...seen].every((p) => [0, 2, 4, 5, 7, 9, 11].includes(p)));
+  ex.web_keys(0); render(400); const n2 = ex.web_dr_arp_count(); render(1000);
+  check("ARP: keys let go (SOURCE KEYS), it rests", ex.web_dr_arp_count() === n2);
+  const l1 = line();
+  tap(B.ARP);
+  check("ARP again: RHYTHM on the cards and the line (its steps)", ex.web_dr_arp() === (1 | 2 << 1) && line() !== l1);
+  const st = ex.web_dr_arp_p(4); turn(EN.K1, -4);
+  check(`RHYTHM: STEPS a step a detent (${st} -> ${ex.web_dr_arp_p(4)}), HITS no more than STEPS`,
+        ex.web_dr_arp_p(4) === st - 4 && ex.web_dr_arp_p(5) <= ex.web_dr_arp_p(4));
+  turn(EN.K1, 4);
+  tap(B.ARP); tap(B.ARP);
+  check("ARP twice more: CHANGE, then the character's own knobs (the arp still on)", ex.web_dr_arp() === 1 && cards() === c0);
+  turn(EN.PRESETS, 6); render(500);                         // Murk: AUTO, she plays by herself
+  const a0 = ex.web_dr_arp_count(), keyset = new Set();
+  for (let i = 0; i < 30; i++) { render(100); keyset.add(ex.web_dr_arp_note() % 12); }
+  const C_MAJOR = [0, 2, 4, 5, 7, 9, 11];
+  check(`ARP, MURK (SOURCE AUTO): plays with no keys held (${ex.web_dr_arp_count() - a0} notes), in C major (${[...keyset].join(" ")})`,
+        ex.web_dr_arp_count() - a0 >= 4 && [...keyset].every((p) => C_MAJOR.includes(p)));
+  ex.web_buttons(1 << B.ARP); render(900); ex.web_buttons(0); render(300);
+  const a1 = ex.web_dr_arp_count(); render(800);
+  check("ARP held: off, it stops", ex.web_dr_arp() === 0 && ex.web_dr_arp_count() === a1);
+  const l = level(() => { ex.web_keys(1 << 7); render(500); ex.web_keys(0); render(200); });
+  check(`and the keys play as before (peak ${l.peak.toFixed(3)})`, l.peak > 0.02);
+  tap(B.ARP); turn(EN.ALGO, 3); render(300);
+  check("SCRY turns the arp off", ex.web_dr_arp() === 0);
+  turn(EN.ALGO, -10); turn(EN.PRESETS, -6); render(500);
+}
+
 tap(B.OCTUP);
 check("OCT+: the keys an octave up", ex.web_octave() === 1);
 tap(B.OCTDN);

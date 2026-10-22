@@ -325,6 +325,35 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Gloam | SKETCH | 90 | low and creaking |
 | Tinker | FOLD OUT | 116 | snaps and clicks, a tool at a time |
 
+## The arp (built)
+
+Every character has an arp of their own, set to suit their beat. It runs on the sequencer's clock, so it lands on
+the beat and follows the tempo, tapped or turned. The code is `firmware/src/dr_arp.c`; the defaults are `DR_ARPS`
+in `dr.c`.
+
+ARP turns it on, and the four knob cards become its settings. ARP again shows the next four, then the next, then the
+character's own knobs again (the arp keeps playing). Hold ARP for most of a second to turn it off. SCRY and TRACE
+turn it off, since they play their own notes. The line shows the group and the rhythm's steps: filled for a hit,
+dim for a rest, gold for the step playing.
+
+| Group | Knob | What it does |
+| --- | --- | --- |
+| NOTES | SHAPE | UP, DOWN, BOUNCE (up and back), WALK (mostly a step, sometimes two), JUMP (anywhere) |
+| | RATE | 1/8, 1/8T, 1/16, 1/16T, 1/32 |
+| | RANGE | 1 to 4 octaves |
+| | GATE | How long each note is held |
+| RHYTHM | STEPS, HITS | HITS spread as evenly as they go over STEPS (a Euclidean rhythm; 3 in 8 is the tresillo) |
+| | CHANCE | The chance a hit plays at all |
+| | BURST | The chance a hit plays as a fast double or triple (a ratchet) |
+| CHANGE | SOURCE | KEYS: the keys held. HOLD: the last keys held, kept after you let go. AUTO: it plays the key's scale by itself, and the keys held steer it when there are some. |
+| | SPICE | Lets passing notes in: with AUTO, the scale's other notes among the chord's; with keys, a step off a held note, in the key |
+| | LOOP | Repeats the last 4, 8, 12 or 16 notes chosen (OFF: always new) |
+| | EVOLVE | With LOOP on, the chance one of its notes is chosen again each time round. 0 locks the loop. |
+
+Murk, the Rabbit, Top and Gloam start on AUTO, so they play by themselves once the arp is on. The rest wait for
+keys. Humanize (small random timing and loudness) was left out to keep the room, as Josh asked. The arp plays
+through Cairn's core too.
+
 ## Cores: a second sound on track 3 (built)
 
 Some characters need a pitched heart under them. Cairn's stones are noise through a filter, so on their own the

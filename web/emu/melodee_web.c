@@ -433,6 +433,10 @@ EXPORT uint32_t web_test_user_preset(uint32_t i) { return (uint32_t)up_used(i); 
 EXPORT uint32_t web_dr_on(void) { return drm.on; }
 EXPORT uint32_t web_dr_char(void) { return dr.ch; }
 EXPORT uint32_t web_dr_knob(uint32_t m) { return dr.mv[dr.ch % DR_NCHAR][m & 3u]; }
+EXPORT uint32_t web_dr_arp(void) { return dra.on | (uint32_t)drm.agrp << 1; }          /* on, and the group shown */
+EXPORT uint32_t web_dr_arp_count(void) { return dra.count; }                          /* notes the arp played */
+EXPORT uint32_t web_dr_arp_note(void) { return dra.rnote; }                           /* .. the last of them */
+EXPORT uint32_t web_dr_arp_p(uint32_t k) { return dra.p[k % DRA_N]; }
 EXPORT uint32_t web_dr_view(void) { return drm.codex | drm.page << 1 | drm.under << 3; }   /* codex, page (2 bits), EDIT */
 EXPORT uint32_t web_dr_text_check(void) { return dr_text_check(); }
 EXPORT int32_t web_octave(void) { return song.octave; }

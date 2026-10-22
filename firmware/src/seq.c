@@ -384,6 +384,8 @@ static void arp_step(track_t *t, uint32_t n, uint32_t gate_n)
 
 static void arp_tick(track_t *t, uint32_t n) { arp_step(t, n, n); }
 
+#include "dr_arp.c"                                 /* Double Rainbow's generative arp (track 1, dr.c) */
+
 /* -------------------------------------------------------- note input --- */
 /* the length of step idx in samples: SWING (the track's + the global, at most 100) makes the even steps longer
  * and the odd ones shorter, so every odd step starts late */
@@ -588,6 +590,10 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
 {
     last_note = (uint8_t)note;
     live_note_on(t, note);
+    if (dra.on && t == &trk[0]) {                   /* Double Rainbow's arp: the note joins what it plays */
+        dra_add(note);
+        return;
+    }
     if (rec_on(t) && !t->p[P_AMODE])               /* (ARP on: arp_tick records its notes) */
         rec_note(t, note, vel);
     if (t->p[P_AMODE])
@@ -603,6 +609,10 @@ static void input_off(track_t *t, uint32_t note)
     if (midi_note_held(t, note))
         return;
     live_held[trk_index(t)][note >> 5] &= ~(1u << (note & 31u));
+    if (dra.on && t == &trk[0]) {
+        dra_remove(note);
+        return;
+    }
     rec_release(t, note);
     arp_remove(t, note);                            /* both: the note may have started in the */
     if (!recording_owns(t, note)) trk_note_off(t, note); /* other mode (ARP switched while held) */
@@ -952,6 +962,7 @@ static void seq_advance(uint32_t n)
         beat_pos -= beat;
         beat_n = (beat_n + 1u) & 3u;
     }
+    dra_tick(n);
 }
 
 /* everything that happens between two rendered blocks */
