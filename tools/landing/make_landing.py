@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """The landing page's pictures (landing/), from the emulator's screenshots (tools/landing/shots.mjs) and the sprites:
   screen-*.png  the FM-1's screen at 2x (480 x 480), pixels kept sharp
-  cast.png      the seven characters with their engines and lines (the "meet the cast" poster)
+  cast.png      every character with its engine and line (the "meet the cast" poster), read from firmware/src/dr.c
   card.png      the link preview (1200 x 630)
-  make_landing.py RAW_DIR
+  make_landing.py RAW_DIR      everything
+  make_landing.py --cast       the poster only (after a new character)
 """
+import re
 import struct
 import sys
 from pathlib import Path
@@ -14,13 +16,9 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "landing"
 FONT = str(ROOT / "assets" / "fonts" / "InterTight[wght].ttf")
 BG, PANEL, TEXT, GOLD, TEAL, DIM = (16, 11, 34), (38, 26, 62), (246, 234, 210), (255, 205, 96), (63, 224, 197), (176, 162, 196)
-CAST = [("vesper", "VESPER", "PROPHET", "Every note is her final scene."),
-        ("shard", "SHARD", "FM6", "Sharp, clear, honest to a fault."),
-        ("squall", "SQUALL", "NOISE", "Escaped from a jar. Still mad."),
-        ("wick", "WICK", "VOICE", "Sings when nervous. So, always."),
-        ("tock", "TOCK", "DRUM", "Keeps time. Keeps grudges."),
-        ("mote", "MOTE", "LOFI", "Small. Loud. Probably your fault."),
-        ("murk", "MURK", "PHASE", "Bends the light. Bends the rules.")]
+# the cast as the firmware has it: {"NAME", "ENGINE", "line", ...} in dr.c's character table, in PRESETS order
+CAST = [(n.lower(), n, e, l) for n, e, l in
+        re.findall(r'^\s*\{"([A-Z]+)", "([A-Z0-9 -]+)", "([^"]+)"', (ROOT / "firmware/src/dr.c").read_text(), re.M)]
 SHOTS = ["splash", "char-0", "char-1", "char-2", "char-3", "char-4", "char-5", "char-6", "edit", "codex", "cast",
          "scry", "trace"]
 
@@ -43,24 +41,38 @@ def sprite(name, z):
     return im.resize((im.width * z, im.height * z), Image.NEAREST)
 
 
+def wrap(d, text, f, width):
+    """One line if it fits, else two of about the same length (no lone word left on the second)."""
+    if d.textlength(text, font=f) <= width:
+        return [text]
+    w = text.split()
+    cuts = [(" ".join(w[:k]), " ".join(w[k:])) for k in range(1, len(w))]
+    longer = lambda ab: max(d.textlength(ab[0], font=f), d.textlength(ab[1], font=f))
+    whole = [ab for ab in cuts if ab[0].endswith(".") and longer(ab) <= width]     # between sentences, when both fit
+    return list(min(whole or cuts, key=longer))
+
+
 def cast_poster():
-    W, cols, cw, ch = 1080, 3, 340, 470
+    W, cols, gap, cw, ch = 1080, 4, 16, 252, 372
     rows = (len(CAST) + cols - 1) // cols
-    im = Image.new("RGB", (W, 150 + rows * (ch + 20) + 20), BG)
+    im = Image.new("RGB", (W, 160 + rows * (ch + gap) + 24), BG)
     d = ImageDraw.Draw(im)
     d.text((W // 2, 64), "DOUBLE RAINBOW", font=font(60, 800), fill=GOLD, anchor="mm")
-    d.text((W // 2, 116), "The cast: each one a sound the Keeper caught in a jar", font=font(28, 400), fill=DIM, anchor="mm")
+    d.text((W // 2, 116), f"The cast: {len(CAST)} sounds the Keeper caught in jars", font=font(28, 400), fill=DIM,
+           anchor="mm")
+    fn, fe, fl = font(32, 700), font(19, 600), font(17, 400)
     for i, (key, name, eng, line) in enumerate(CAST):
         r, c = divmod(i, cols)
         n_row = min(cols, len(CAST) - r * cols)
-        x0 = (W - n_row * cw - (n_row - 1) * 20) // 2 + c * (cw + 20)
-        y0 = 150 + r * (ch + 20)
-        d.rounded_rectangle((x0, y0, x0 + cw, y0 + ch), 22, fill=PANEL)
-        sp = sprite(key, 3)
-        im.paste(sp, (x0 + (cw - sp.width) // 2, y0 + 330 - sp.height), sp)
-        d.text((x0 + cw // 2, y0 + 370), name, font=font(40, 700), fill=GOLD, anchor="mm")
-        d.text((x0 + cw // 2, y0 + 410), eng, font=font(24, 600), fill=TEAL, anchor="mm")
-        d.text((x0 + cw // 2, y0 + 444), line, font=font(21, 400), fill=TEXT, anchor="mm")
+        x0 = (W - n_row * cw - (n_row - 1) * gap) // 2 + c * (cw + gap)
+        y0 = 160 + r * (ch + gap)
+        d.rounded_rectangle((x0, y0, x0 + cw, y0 + ch), 20, fill=PANEL)
+        sp = sprite(key, 2)
+        im.paste(sp, (x0 + (cw - sp.width) // 2, y0 + 246 - sp.height), sp)
+        d.text((x0 + cw // 2, y0 + 274), name, font=fn, fill=GOLD, anchor="mm")
+        d.text((x0 + cw // 2, y0 + 304), eng, font=fe, fill=TEAL, anchor="mm")
+        for k, ln in enumerate(wrap(d, line, fl, cw - 24)):
+            d.text((x0 + cw // 2, y0 + 332 + k * 21), ln, font=fl, fill=TEXT, anchor="mm")
     im.save(OUT / "cast.png", optimize=True)
 
 
@@ -87,6 +99,10 @@ def card():
 
 
 def main():
+    if sys.argv[1:] == ["--cast"]:
+        cast_poster()
+        print(f"landing: cast.png, {len(CAST)} characters")
+        return
     raw = Path(sys.argv[1])
     OUT.mkdir(exist_ok=True)
     for s in SHOTS:
