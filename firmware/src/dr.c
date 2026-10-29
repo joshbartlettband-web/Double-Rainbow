@@ -584,188 +584,44 @@ static void dr_load(uint32_t k)
 
 static void project_boot(void);              /* project.c (included after this file) */
 
-/* the codex, three pages: the Keeper's ledger (the lore, in the Keeper's own voice: DOUBLE-RAINBOW.md, The
- * world), the engine's story, something to try */
-typedef struct { const char *entry, *when, *lore[6], *title, *sub, *body[6], *tip[4]; } dr_codex_t;
-static const dr_codex_t DR_CODEX[DR_NCHAR] = {
-    {"The moth", "Never caught. Not yet.",
-     {"She came the night jar twelve", "broke and the Line leapt. A", "moth will follow any light",
-      "that moves, and the Line glows", "when it moves. She makes it", "move. I keep watch."},
-     "PROPHET-5", "Sequential, 1978",
-     {"The first synth that could", "remember its sounds. Two", "oscillators feed one filter",
-      "that trims the brightness", "away, and that is where", "the warmth comes from."},
-     {"Hold a chord and turn GLOW", "up slowly. Then turn BLOOM", "all the way up and play", "slow notes."}},
-    {"Jar twelve, the glass", "It did not stay broken.",
-     {"The storm got out. The jar", "did not stay in pieces: the", "glass pulled itself together",
-      "around the moonlight. Now it", "splits the Line into colors.", "It will not lie to me. Pity."},
-     "FM SYNTHESIS", "Chowning 1967, Yamaha DX7 1983",
-     {"John Chowning found it by", "speeding up a vibrato until", "it stopped wobbling and",
-      "became a new tone. One wave", "bends another, and that is", "the glassy shine."},
-     {"Turn METAL slowly: each step", "is a new ratio between the", "waves. Low SHINE is a soft", "piano, high is a bell."}},
-    {"Jar twelve, a storm", "Caught at the cliffs, 3 a.m.",
-     {"Small, but it held a whole", "night of weather. It broke", "the jar from the inside, and",
-      "the Line has not lain flat", "since. It took the second arc", "with it. I want it all back."},
-     "NOISE", "Every pitch at once",
-     {"White noise hisses, pink is", "softer, like rain, and brown", "rumbles like thunder. Repeat",
-      "a scrap of noise fast enough", "and it turns into a note:", "that is Squall's voice."},
-     {"Turn HOWL up slowly: the hiss", "gets shorter and buzzier until", "it howls. Then turn GUST up",
-      "and hold a long note."}},
-    {"The night-light", "Never once let go out.",
-     {"The only light I allow in the", "room. She was set to watch", "the Line, not to sing to it.",
-      "She saw who broke jar twelve.", "She will not say. She hums", "one steady note instead."},
-     "VOICE", "How vowels are made",
-     {"Your throat buzzes and your", "mouth shapes the buzz. Each", "vowel is a shape: a few loud",
-      "bands of pitch, the formants.", "Move them and AH turns into", "OO. That is all a vowel is."},
-     {"Hold a note and turn VOWEL", "slowly from AH to OO. Then", "turn TALK up: she moves", "between two vowels by herself."}},
-    {"The clock", "Wound every night at nine.",
-     {"He counts the Line: every", "rise and every fall of it,", "every night since jar one,",
-      "and he has never once lost", "the beat. He knows how long", "the jars have been here."},
-     "DRUM MACHINE", "Roland TR-808, 1980",
-     {"No recordings inside: every", "drum is a little circuit. The", "kick is a ringing filter left",
-      "to fade, the hats are metal", "made of six square waves", "beating against each other."},
-     {"From the first C up: C is the", "kick, D the snare, F# the", "closed hat, A# the open one.",
-      "BOOM up: a long, deep kick."}},
-    {"The dust", "On no shelf. Yet.",
-     {"Not a sound I caught. He is", "the dust in the Line, the", "crackle between the notes. He",
-      "takes the stoppers off my", "jars: that is why some hum at", "night. I count the stoppers."},
-     "CHIPTUNE", "Game consoles, 1980s",
-     {"Old game machines had a few", "plain voices: square waves,", "a triangle, a hiss. Composers",
-      "made them sing with fast", "arpeggios and pitch sweeps.", "Fewer bits, more crunch."},
-     {"Turn CHIRP up and hold a key:", "the note becomes a fast", "arpeggio, like an old game.", "SHAPE: pulse, triangle, saw."}},
-    {"Jar one", "Let go. On purpose.",
-     {"The oldest jar, and the only", "one I ever opened myself. She", "bends the Line the way water",
-      "bends light. Some nights she", "drifts back to the shelf. She", "knows what is in jar thirteen."},
-     "PHASE", "Phase distortion: Casio CZ, 1984",
-     {"Casio's trick: read a sine", "wave at an uneven speed and", "it bends into a saw, a square",
-      "or a ringing tone. The more", "it bends, the brighter it", "sounds. No filter needed."},
-     {"Turn TIDE slowly: eight waves,", "the last three ring like", "water in a glass. Then turn",
-      "BEND from soft to sharp."}},
-    {"Jar four, the reed jar", "Filled in the marsh below.",
-     {"I dipped it in the marsh one", "summer and he was in it,", "singing four notes. The Line",
-      "takes the same four shapes", "every night. He will not stop.", "I have stopped asking him to."},
-     "ACID", "Roland TB-303, 1981",
-     {"A little bass machine that", "failed, until Chicago found", "it. One saw wave, a filter",
-      "that rings, and an envelope", "that sweeps it shut on every", "note: the squelch."},
-     {"Play a fast low line and turn", "SQUISH up and down while it", "plays. Then turn GOO up until",
-      "the filter sings by itself."}},
-    {"My owl", "She reads the Line.",
-     {"She reads the Line the way", "you read a page: one look and", "she can name the sound that",
-      "drew it. She has read the", "pages I tore out. She has", "never said a word of them."},
-     "STRINGS", "String machines: Solina, Elka, 1970s",
-     {"Not real strings: a pulse", "wave whose width keeps", "moving, a second one tuned",
-      "slightly off, and a chorus.", "Bands in the 70s used them", "for a whole string section."},
-     {"Hold a big chord and turn", "FLUTTER up: the strings", "drift apart. WINGS up makes", "her arrive slowly."}},
-    {"The key", "Not where I left it.",
-     {"The key to this room. It tunes", "the jars to hold their sounds.", "Someone let it out, or it let",
-      "itself out. Since then the", "jars ring loose, and the Line", "keeps getting through."},
-     "FM PIANO", "Yamaha DX7, 1983",
-     {"The DX7's electric piano was", "on a thousand 80s ballads.", "Two waves, one bending the",
-      "other: hit a key hard and", "the bend gets brighter, the", "bark of a real tine."},
-     {"Play slow chords with SHEEN", "up, like an 80s ballad. Then", "turn BARK up and hit the",
-      "keys harder."}},
-    {"The magpie", "Another collector.",
-     {"I am not the only one in", "these hills who keeps sounds.", "She snips the brightest bits",
-      "off the Line and keeps them.", "She has sixty-four now. I", "would like to see them."},
-     "CZ-1", "Casio, 1986",
-     {"Casio's own sixty-four tones,", "played from the real data. A", "factory tone is a starting",
-      "point: the CZ came with", "brass, strings, bells and", "basses already made."},
-     {"Turn TONE slowly: each step", "is a new Casio tone, its name", "on the line. Find a favorite,",
-      "then add SPACE."}},
-    {"Jar nine", "Moved in. Will not move out.",
-     {"Jar nine held an old brass", "horn. Something moved into", "it, the way crabs do. When it",
-      "answers me, the Line jumps", "all the way to the tops of", "the hills. Loudly."},
-     "PROPHET-5", "Sequential, 1978",
-     {"This is one of Sequential's", "own programs, Iconic Brass.", "Two saw waves, and a filter",
-      "envelope that opens like a", "breath: that swell is what", "synth brass is."},
-     {"Play a chord and let go.", "Turn SWELL up: the brass", "breathes in. BITE down makes", "it softer and rounder."}},
-    {"The badger", "Lives under the hills.",
-     {"The low notes sink. They go", "under the Line, into the", "hills, and he digs after them.",
-      "He brings them back up in his", "lantern, one at a time. He", "has never dropped one. Yet."},
-     "SUB BASS", "The note under the note",
-     {"The bass is the lowest part:", "you feel it as much as you", "hear it. A triangle wave is",
-      "nearly pure, one pitch and a", "little shine. Under a song it", "holds everything up."},
-     {"Play low notes and turn DEEP", "up: you feel more than hear.", "Hold one key, add another:",
-      "DIG up slides between them."}},
-    {"The woodpecker", "Taps on every jar.",
-     {"He taps each jar on the shelf", "and listens. A full jar rings", "one way, an empty one another,",
-      "and he can tell from the Line", "which is which. He tapped jar", "thirteen once. He went quiet."},
-     "FM MARIMBA", "Frequency modulation, struck",
-     {"A marimba bar is struck once", "and rings out. The tap is", "bright and noisy, then only",
-      "the bar's own tone is left.", "FM makes that tap by bending", "the wave hard for an instant."},
-     {"Play quick notes and turn", "KNOCK up: harder mallets.", "WOOD changes the bar. RING",
-      "lets each note ring longer."}},
-    {"Jar thirteen", "Sealed. Not by me.",
-     {"I never filled jar thirteen.", "It was full when I found it,", "and sealed. Its Line is a copy",
-      "of another sound's, a beat", "behind. I do not know whose.", "I think I am about to."},
-     "VOICE ECHO", "A voice, and the hill's reply",
-     {"A breathy voice with no words:", "a buzz shaped into a vowel,", "with air around it. An echo",
-      "is the same sound coming back", "a moment later, softer, the", "way a shout comes off a hill."},
-     {"Play a slow tune and turn", "ECHO up: each note answers", "itself. WHISPER turns her",
-      "voice into breath."}},
-    {"The reference", "Struck once. Still sounding.",
-     {"The Line needs a zero, or it", "could not be measured. He is", "the zero: one note, held.",
-      "I wound him to ring and he", "has not run down. When he", "drifts, I hear the Line sag."},
-     "TUNING FORK", "John Shore, 1711",
-     {"A tuning fork is two steel", "prongs that ring one pure", "pitch: no harmonics, just the",
-      "note. Two forks a little apart", "make a slow wobble, beats.", "That is how tuners listen."},
-     {"Play a long note, then bring", "DRIFT up and listen: the", "tone starts to beat. PURITY", "down adds harmonics."}},
-    {"The colony", "Thirty thousand. Counted three.",
-     {"They came in through the wall", "and carry crumbs of sound", "along the Line, one each. They",
-      "are very polite about it.", "I count three. I am told", "that is the front row."},
-     "STRINGS", "Many voices, nearly in tune",
-     {"A string section is many", "players who are almost, not", "quite, together. That",
-      "difference is what you hear", "as warmth. A chorus pedal", "fakes it with a copy."},
-     {"Hold a chord and turn COLONY", "up: it fills the room. SWARM", "up makes the voices stray", "apart. HUM sets the shine."}},
-    {"The rabbit", "Rises with the moon.",
-     {"She waits where the moonbow", "meets the Line. Her fur is", "soft; the thin metal on it is",
-      "not. She will not say who put", "it there. She is warm to", "hold, and she is not mine."},
-     "GLASS PAD", "A pad and a bell, one note",
-     {"A pad is a slow, soft tone", "that fills a room. Add a", "thin metal bell on top, same",
-      "pitch, and it shimmers. FM", "makes that bell by bending", "a wave at a simple ratio."},
-     {"Play a slow chord and turn", "SHEEN up for the metal. WARM", "up for a plainer bell. BLOOM", "makes it arrive slowly."}},
-    {"The first thing spun", "Still going. Don't touch it.",
-     {"I spun it once, to see how", "long the Line would stay", "alive. It has not stopped. It",
-      "wobbles, and the Line wobbles", "with it. I cannot sleep", "for the whirring."},
-     "ORGAN", "A tone with no decay",
-     {"An organ tone never fades: it", "holds at full until the key", "lifts. A slow wobble in the",
-      "pitch, a vibrato, is what makes", "a held note feel alive. A", "top does it with its lean."},
-     {"Hold one note and turn LEAN,", "then SPIN. WHIRR changes how", "bright it sounds. REV up", "and it takes a moment to start."}},
-    {"The cairn", "Piled over jar seven.",
-     {"I buried jar seven under", "these stones. They did not", "stay stones: they stand up",
-      "and keep watch over it. They", "click when they walk. If you", "hear it stop, hold still."},
-     "DUST", "Noise, one grain at a time",
-     {"Noise is every pitch at once.", "Dust is the same, thinned to", "single clicks, grains. Run it",
-      "through a filter that rings and", "each grain gets a pitch: a", "stone struck, a note."},
-     {"Play single notes and turn", "CLACK up and down. SCATTER", "adds more stones. ROLL sets", "how long each one rings."}},
-    {"The stray", "Not from my shelves.",
-     {"He is not mine. Nothing of", "his is in this room, and no", "jar holds his sound. He walked",
-      "in along the Line, looking for", "where he was left. He keeps", "to the middle of the floor."},
-     "LEAD SYNTH", "The voice that carries the tune",
-     {"A lead is the one voice that", "plays the melody: bright and", "loud enough to hear over the",
-      "rest. FM makes it by bending", "one wave with another, and", "the bend is the edge."},
-     {"Play a tune and turn HEROIC", "up: a brighter edge. Then turn", "SEARCH up: each note slides", "up into place."}},
-    {"The mouse", "Lives in the dollhouse.",
-     {"There is a dollhouse behind", "the shelves, and it is a model", "of this room, jar for jar.",
-      "She lives in it. She plays a", "cello made for a doll. She has", "seen everything, at her size."},
-     "BOWED STRING", "A sawtooth, softened",
-     {"A bow drags across a string,", "lets go, and drags again: a", "sawtooth wave. A filter that",
-      "closes a little takes the buzz", "away and leaves the wood: a", "cello, or as near as a mouse."},
-     {"Play slow notes and turn BOW", "up: they take time to speak.", "BODY down is a woodier tone.", "SWAY adds a gentle waver."}},
-    {"My log", "Every jar, in my own hand.",
-     {"Each night I wrote down every", "jar and what it held. Then a", "castle grew up out of the",
-      "pages in the Line's own ink,", "and its bells ring when I", "write. So I stopped writing."},
-     "FM BELLS", "A bell is not in tune with itself",
-     {"A real bell rings several", "pitches at once, and not in a", "tidy ratio. That is why it",
-      "sounds like metal. FM makes the", "same: one wave bending", "another at an odd ratio."},
-     {"Play low, slow notes and turn", "TOLL up: struck harder, a", "brighter clang. CREAK is a", "slow waver. MIST: the hall."}},
-    {"The tool", "Cut the seals. Remembers all.",
-     {"Every jar had a seal, and he", "cut them. I know the sound of", "each cut. He folds his tools",
-      "away when I look at him, and", "shows me his handle, which", "is red. I have asked nothing."},
-     "CLAVINET", "Hammer on string, Hohner 1960s",
-     {"A clavinet is a keyboard that", "strikes a string with a hammer", "and stops it on the way up:",
-      "a click, then a ring. FM makes", "the click by a quick burst of", "bend at the very start."},
-     {"Play short, fast notes and turn", "CLICK up for a sharper snap.", "TOOLS changes the tone, a new", "tool for every setting."}},
-};
+/* the codex, three pages: the Keeper's ledger, the engine's story, something to try (firmware/src/dr_codex.inc,
+ * packed by tools/gen_dr_text.py: dr_tx reads a line). Lines: */
+enum { DRX_ENTRY, DRX_WHEN, DRX_LORE, DRX_TITLE = 8, DRX_SUB, DRX_BODY, DRX_TIP = 16 };
+#include "dr_codex.h"
+_Static_assert(DR_TXT_NCHAR == DR_NCHAR, "the codex has a page for every character");
+
+/* line j (DRX_*) of character k's codex, unpacked (two at a time may be in use: the second call's buffer is the
+ * other one) */
+static const char *dr_tx(uint32_t k, uint32_t j)
+{
+    static char buf[2][40];
+    static uint32_t which;
+    char *o = buf[which++ & 1u];
+    uint32_t pos = DR_TXT_AT[k % DR_NCHAR], n = 0;
+    for (;;) {
+        uint32_t code = 0, first = 0, idx = 0, len, b;
+        for (len = 0; len < 15u; len++) {
+            code |= (DR_TXT[pos >> 3] >> (7u - (pos & 7u))) & 1u;
+            pos++;
+            if (code - first < DR_TXT_HUFF[len])
+                break;
+            idx += DR_TXT_HUFF[len];
+            first = (first + DR_TXT_HUFF[len]) << 1;
+            code <<= 1;
+        }
+        b = DR_TXT_HUFF[15u + idx + code - first];
+        if (!b) {
+            if (!j--)
+                break;
+            continue;
+        }
+        if (!j && n < sizeof buf[0] - 1u)
+            o[n++] = (char)b;
+    }
+    o[n] = 0;
+    return o;
+}
+
 
 static struct {
     uint8_t on, codex, page, under, dirty;   /* dirty: DR_D_* */
@@ -1576,21 +1432,20 @@ static uint32_t dr_text_check(void)
     char a[16], b[16];
     for (k = 0; k < DR_NCHAR; k++) {
         const dr_char_t *c = &DR_CAST[k];
-        const dr_codex_t *x = &DR_CODEX[k];
         bad += text_w(&AF_M, c->name) > 150;
         bad += k < 5u && text_w(&AF_S, DR_KMODE_HELP[k]) > 224;
         bad += text_w(&AF_S, c->line) > 224;
         bad += k < 3u && text_w(&AF_S, DR_SCRY_LINE[k]) > 224;
-        bad += text_w(&AF_L, x->title) > 224;
-        bad += text_w(&AF_M, x->entry) > 224;
-        bad += text_w(&AF_S, x->when) > 224;
+        bad += text_w(&AF_L, dr_tx(k, DRX_TITLE)) > 224;
+        bad += text_w(&AF_M, dr_tx(k, DRX_ENTRY)) > 224;
+        bad += text_w(&AF_S, dr_tx(k, DRX_WHEN)) > 224;
         for (i = 0; i < 6u; i++)
-            bad += text_w(&AF_S, x->lore[i]) > 224;
-        bad += text_w(&AF_S, x->sub) > 224;
+            bad += text_w(&AF_S, dr_tx(k, DRX_LORE + i)) > 224;
+        bad += text_w(&AF_S, dr_tx(k, DRX_SUB)) > 224;
         for (i = 0; i < 6u; i++)
-            bad += text_w(&AF_S, x->body[i]) > 224;
+            bad += text_w(&AF_S, dr_tx(k, DRX_BODY + i)) > 224;
         for (i = 0; i < 4u; i++)
-            bad += text_w(&AF_S, x->tip[i]) > 216;
+            bad += text_w(&AF_S, dr_tx(k, DRX_TIP + i)) > 216;
         for (i = 0; i < 4u; i++) {
             bad += text_w(&AF_S, c->m[i].name) > 51;
             dr_under_lines(c->m[i].under, a, b);
@@ -1666,31 +1521,31 @@ static void dr_draw_cards(void)
 /* the codex: page 0 the ledger, 1 the engine's story, 2 something to try; the whole area under the line */
 static void dr_draw_codex(void)
 {
-    const dr_codex_t *x = &DR_CODEX[dr.ch];
+    uint32_t k = dr.ch;
     uint32_t i;
     char pg[24] = "PRESETS: page 1/3";
     cv_begin(240, 100, DR_BG);
     if (drm.page == 0) {
         cv_text_on(8, 0, &AF_S, "THE KEEPER'S LEDGER", DR_TEAL, DR_BG);
-        cv_text_on(8, 17, &AF_M, x->entry, DR_GOLD, DR_BG);
-        cv_text_on(8, 37, &AF_S, x->when, DR_MID, DR_BG);
+        cv_text_on(8, 17, &AF_M, dr_tx(k, DRX_ENTRY), DR_GOLD, DR_BG);
+        cv_text_on(8, 37, &AF_S, dr_tx(k, DRX_WHEN), DR_MID, DR_BG);
         for (i = 0; i < 3u; i++)
-            cv_text_on(8, 55 + (int32_t)i * 15, &AF_S, x->lore[i], DR_TEXT, DR_BG);   /* (the third ends at row 100) */
+            cv_text_on(8, 55 + (int32_t)i * 15, &AF_S, dr_tx(k, DRX_LORE + i), DR_TEXT, DR_BG);   /* (the third ends at row 100) */
     } else if (drm.page == 1) {
-        cv_text_on(8, 0, &AF_L, x->title, DR_GOLD, DR_BG);
-        cv_text_on(8, 33, &AF_S, x->sub, DR_MID, DR_BG);
+        cv_text_on(8, 0, &AF_L, dr_tx(k, DRX_TITLE), DR_GOLD, DR_BG);
+        cv_text_on(8, 33, &AF_S, dr_tx(k, DRX_SUB), DR_MID, DR_BG);
         for (i = 0; i < 3u; i++)
-            cv_text_on(8, 54 + (int32_t)i * 15, &AF_S, x->body[i], DR_TEXT, DR_BG);
+            cv_text_on(8, 54 + (int32_t)i * 15, &AF_S, dr_tx(k, DRX_BODY + i), DR_TEXT, DR_BG);
     } else {
         cv_rrect(4, 2, 232, 96, 6, DR_SURF, DR_BG);
         cv_text_on(12, 6, &AF_S, "TRY THIS", DR_TEAL, DR_SURF);
         for (i = 0; i < 4u; i++)
-            cv_text_on(12, 26 + (int32_t)i * 16, &AF_S, x->tip[i], DR_TEXT, DR_SURF);
+            cv_text_on(12, 26 + (int32_t)i * 16, &AF_S, dr_tx(k, DRX_TIP + i), DR_TEXT, DR_SURF);
     }
     cv_blit(0, DR_Y_SCENE);
     cv_begin(240, 102, DR_BG);
     for (i = 3; drm.page < 2u && i < 6u; i++)
-        cv_text_on(8, (int32_t)(i - 3u) * 15, &AF_S, drm.page ? x->body[i] : x->lore[i], DR_TEXT,
+        cv_text_on(8, (int32_t)(i - 3u) * 15, &AF_S, dr_tx(k, (drm.page ? DRX_BODY : DRX_LORE) + i), DR_TEXT,
                    DR_BG);
     pg[14] = (char)('1' + drm.page);
     cv_text_on(8, 84, &AF_S, pg, DR_DIM, DR_BG);
