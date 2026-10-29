@@ -408,7 +408,8 @@ static struct {
 } dr DR_POOL;
 
 /* Each character's own arp, to suit their beat: SHAPE RATE RANGE GATE, STEPS HITS CHANCE BURST, SOURCE SPICE
- * LOOP EVOLVE (dr_arp.c says what each does; RATE 0..4 is 1/8 1/8T 1/16 1/16T 1/32, LOOP 1..4 is 4 to 16 notes) */
+ * LOOP EVOLVE, SWING HUMAN ACCENT LEAP (dr_arp.c says what each does; RATE 0..4 is 1/8 1/8T 1/16 1/16T 1/32, LOOP
+ * 1..4 is 4 to 16 notes) */
 #define U DRA_UP
 #define D DRA_DOWN
 #define B DRA_BOUNCE
@@ -417,30 +418,30 @@ static struct {
 #define K DRA_KEYS
 #define A DRA_AUTO
 static const uint8_t DR_ARPS[DR_NCHAR][DRA_N] = {
-    {B, 1, 2, 80, 12, 9, 100, 0, K, 20, 0, 20},          /* Vesper: up and back in triplets, slow and long */
-    {U, 2, 2, 45, 16, 16, 100, 0, K, 0, 0, 20},          /* Shard: straight sixteenths, clean */
-    {J, 2, 2, 30, 16, 11, 85, 20, K, 40, 0, 20},         /* Squall: anywhere, gusts and stutters */
-    {W, 0, 1, 70, 8, 6, 95, 0, K, 30, 2, 15},            /* Wick: a nervous little tune that repeats */
-    {U, 2, 1, 35, 16, 7, 100, 15, K, 0, 4, 10},          /* Tock: drum fills, seven in sixteen */
-    {U, 4, 3, 50, 16, 16, 100, 0, K, 0, 0, 20},          /* Mote: the old game console's fast arpeggio */
-    {W, 1, 2, 95, 12, 7, 80, 0, A, 40, 4, 25},           /* Murk: drifts by herself */
-    {D, 0, 1, 90, 8, 5, 90, 10, K, 10, 0, 20},           /* Bog: down and squelchy */
-    {W, 1, 2, 60, 6, 4, 85, 0, K, 25, 2, 10},            /* Hush: a few soft notes, watching */
-    {B, 2, 2, 40, 16, 12, 90, 20, K, 10, 0, 20},         /* Tumbler: tumbling up and down */
-    {J, 2, 3, 35, 16, 9, 90, 15, K, 30, 3, 20},          /* Glint: snatches the bright ones */
-    {U, 0, 1, 85, 8, 3, 100, 0, K, 0, 0, 20},            /* Hermit: three slow brass notes in eight */
-    {U, 0, 1, 70, 16, 5, 100, 0, K, 0, 2, 5},            /* Burrow: a bass that digs in */
-    {B, 2, 2, 30, 16, 13, 100, 10, K, 10, 0, 20},        /* Pip: mallets, busy */
-    {W, 1, 2, 40, 12, 5, 80, 0, K, 20, 0, 20},           /* Echo: sparse, her repeats fill it in */
-    {U, 1, 2, 60, 12, 12, 100, 0, K, 0, 0, 20},          /* Fork: every triplet rings */
-    {W, 2, 1, 40, 16, 16, 75, 20, K, 20, 4, 30},         /* Ants: a busy line that keeps changing */
-    {B, 0, 2, 90, 8, 8, 100, 0, A, 20, 4, 15},           /* Rabbit: warm and by herself */
-    {U, 3, 3, 50, 12, 12, 100, 0, A, 10, 3, 20},         /* Top: spins up by itself, and never stops */
-    {J, 2, 2, 30, 16, 9, 80, 30, K, 20, 0, 20},          /* Cairn: stones falling */
-    {B, 2, 2, 55, 16, 11, 95, 5, K, 15, 4, 20},          /* Stray: a hero's riff */
-    {W, 0, 1, 85, 8, 5, 90, 0, K, 20, 2, 10},            /* Tuppence: a slow bowed line */
-    {D, 1, 2, 90, 12, 5, 85, 0, A, 30, 4, 20},           /* Gloam: bells from the tower, by themselves */
-    {U, 3, 2, 25, 16, 10, 90, 25, K, 10, 0, 20},         /* Tinker: clicks and snaps */
+    {B, 1, 2, 80, 12, 9, 100, 0, K, 20, 0, 20, 0, 30, 30, 10},  /* Vesper: up and back in triplets, slow and long */
+    {U, 2, 2, 45, 16, 16, 100, 0, K, 0, 0, 20, 0, 0, 50, 0},  /* Shard: straight sixteenths, clean */
+    {J, 2, 2, 30, 16, 11, 85, 20, K, 40, 0, 20, 0, 30, 40, 30},  /* Squall: anywhere, gusts and stutters */
+    {W, 0, 1, 70, 8, 6, 95, 0, K, 30, 2, 15, 0, 50, 30, 0},  /* Wick: a nervous little tune that repeats */
+    {U, 2, 1, 35, 16, 7, 100, 15, K, 0, 4, 10, 0, 0, 70, 0},  /* Tock: drum fills, seven in sixteen */
+    {U, 4, 3, 50, 16, 16, 100, 0, K, 0, 0, 20, 0, 0, 40, 0},  /* Mote: the old game console's fast arpeggio */
+    {W, 1, 2, 95, 12, 7, 80, 0, A, 40, 4, 25, 0, 40, 20, 10},  /* Murk: drifts by herself */
+    {D, 0, 1, 90, 8, 5, 90, 10, K, 10, 0, 20, 40, 20, 40, 0},  /* Bog: down and squelchy */
+    {W, 1, 2, 60, 6, 4, 85, 0, K, 25, 2, 10, 0, 30, 20, 0},  /* Hush: a few soft notes, watching */
+    {B, 2, 2, 40, 16, 12, 90, 20, K, 10, 0, 20, 20, 30, 50, 10},  /* Tumbler: tumbling up and down */
+    {J, 2, 3, 35, 16, 9, 90, 15, K, 30, 3, 20, 0, 20, 40, 20},  /* Glint: snatches the bright ones */
+    {U, 0, 1, 85, 8, 3, 100, 0, K, 0, 0, 20, 0, 10, 60, 0},  /* Hermit: three slow brass notes in eight */
+    {U, 0, 1, 70, 16, 5, 100, 0, K, 0, 2, 5, 0, 10, 60, 0},  /* Burrow: a bass that digs in */
+    {B, 2, 2, 30, 16, 13, 100, 10, K, 10, 0, 20, 0, 20, 40, 0},  /* Pip: mallets, busy */
+    {W, 1, 2, 40, 12, 5, 80, 0, K, 20, 0, 20, 0, 30, 30, 0},  /* Echo: sparse, her repeats fill it in */
+    {U, 1, 2, 60, 12, 12, 100, 0, K, 0, 0, 20, 0, 0, 30, 0},  /* Fork: every triplet rings */
+    {W, 2, 1, 40, 16, 16, 75, 20, K, 20, 4, 30, 0, 40, 30, 10},  /* Ants: a busy line that keeps changing */
+    {B, 0, 2, 90, 8, 8, 100, 0, A, 20, 4, 15, 20, 30, 30, 0},  /* Rabbit: warm and by herself */
+    {U, 3, 3, 50, 12, 12, 100, 0, A, 10, 3, 20, 0, 0, 20, 10},  /* Top: spins up by itself, and never stops */
+    {J, 2, 2, 30, 16, 9, 80, 30, K, 20, 0, 20, 0, 40, 30, 20},  /* Cairn: stones falling */
+    {B, 2, 2, 55, 16, 11, 95, 5, K, 15, 4, 20, 30, 20, 50, 0},  /* Stray: a hero's riff */
+    {W, 0, 1, 85, 8, 5, 90, 0, K, 20, 2, 10, 0, 40, 30, 0},  /* Tuppence: a slow bowed line */
+    {D, 1, 2, 90, 12, 5, 85, 0, A, 30, 4, 20, 0, 20, 40, 0},  /* Gloam: bells from the tower, by themselves */
+    {U, 3, 2, 25, 16, 10, 90, 25, K, 10, 0, 20, 0, 10, 50, 10},  /* Tinker: clicks and snaps */
 };
 #undef U
 #undef D
@@ -455,8 +456,10 @@ static const struct { const char *name; uint8_t lo, hi, step; } DRA_K[DRA_N] = {
     {"SHAPE", 0, 4, 1}, {"RATE", 0, 4, 1}, {"RANGE", 1, 4, 1}, {"GATE", 10, 100, 5},
     {"STEPS", 2, 16, 1}, {"HITS", 1, 16, 1}, {"CHANCE", 0, 100, 5}, {"BURST", 0, 100, 5},
     {"SOURCE", 0, 2, 1}, {"SPICE", 0, 100, 5}, {"LOOP", 0, 4, 1}, {"EVOLVE", 0, 100, 5},
+    {"SWING", 0, 100, 5}, {"HUMAN", 0, 100, 5}, {"ACCENT", 0, 100, 5}, {"LEAP", 0, 100, 5},
 };
-static const char *const DRA_GROUP[3] = {"ARP: NOTES", "ARP: RHYTHM", "ARP: CHANGE"};
+#define DRA_NGRP (DRA_N / 4u)
+static const char *const DRA_GROUP[DRA_NGRP] = {"ARP: NOTES", "ARP: RHYTHM", "ARP: CHANGE", "ARP: FEEL"};
 
 /* setting k's value v as the card shows it */
 static void dra_text(uint32_t k, uint32_t v, char *s)
@@ -476,7 +479,7 @@ static void dra_text(uint32_t k, uint32_t v, char *s)
         fmt_int(s, (int32_t)(k == DRA_LOOP ? v * 4u : v));
         if (k == DRA_RANGE)
             str_cpy(s + str_len(s), " OCT", 5);
-        else if (k == DRA_GATE || k == DRA_CHANCE || k == DRA_RATCHET || k == DRA_SPICE || k == DRA_EVOLVE)
+        else if (k != DRA_STEPS && k != DRA_HITS && k != DRA_LOOP)
             str_cpy(s + str_len(s), "%", 2);
     }
 }
@@ -1602,7 +1605,7 @@ static uint32_t dr_text_check(void)
             bad += text_w(text_w(&AF_M, a) > 47 ? &AF_S : &AF_M, a) > 47;
         }
     }
-    for (k = 0; k < 3u; k++)
+    for (k = 0; k < DRA_NGRP; k++)
         bad += text_w(&AF_S, DRA_GROUP[k]) > 100;
     for (k = 0; k < DR_NSONGS; k++)                      /* TRACE: the titles on the line, who wrote them */
         bad += text_w(&AF_S, DR_SONGS[k].title) > 224 || text_w(&AF_S, DR_SONGS[k].who) > 224;
@@ -2232,7 +2235,7 @@ static int dr_frame(void)
                 dra_set(1);
                 drm.agrp = 1;
             } else
-                drm.agrp = (uint8_t)((drm.agrp + 1u) % 4u);
+                drm.agrp = (uint8_t)((drm.agrp + 1u) % (DRA_NGRP + 1u));
             dr_say(drm.agrp ? "" : "ARP ON. HOLD ARP: OFF");
             drm.dirty |= DR_D_CARDS | DR_D_LINE;
         }

@@ -470,7 +470,23 @@ function trace() {
         ex.web_dr_arp_p(4) === st - 4 && ex.web_dr_arp_p(5) <= ex.web_dr_arp_p(4));
   turn(EN.K1, 4);
   tap(B.ARP); tap(B.ARP);
-  check("ARP twice more: CHANGE, then the character's own knobs (the arp still on)", ex.web_dr_arp() === 1 && cards() === c0);
+  check(`ARP twice more: FEEL (SWING ${ex.web_dr_arp_p(12)}, HUMAN ${ex.web_dr_arp_p(13)}, ACCENT ${ex.web_dr_arp_p(14)}, LEAP ${ex.web_dr_arp_p(15)})`,
+        ex.web_dr_arp() === (1 | 4 << 1) && ex.web_dr_arp_p(13) === 30);
+  { // HUMAN: the notes land a little late, at random; with it at 0 they land on the grid
+    const spread = (h) => {
+      turn(EN.K2, -60); turn(EN.K2, h / 5);
+      const step = 60000 / ex.web_bpm() / 3, offs = [];                   // (Vesper's RATE: eighth triplets)
+      ex.web_keys(1 << 7 | 1 << 11 | 1 << 14); render(300);
+      for (let ms = 0; ms < 3000; ms += 2) { const c = ex.web_dr_arp_count(); render(2); if (ex.web_dr_arp_count() !== c) offs.push(ms % step); }
+      ex.web_keys(0); render(400);
+      const lo = Math.min(...offs); return Math.max(...offs.map((o) => (o - lo + step) % step)); };   // (round the step)
+    const tight = spread(0), loose = spread(100);
+    turn(EN.K2, -60); turn(EN.K2, 6);
+    check(`FEEL: HUMAN spreads when the notes start (${tight.toFixed(0)} ms on the grid at 0, ${loose.toFixed(0)} ms at 100)`,
+          tight < 8 && loose > 15);
+  }
+  tap(B.ARP);
+  check("ARP again: the character's own knobs (the arp still on)", ex.web_dr_arp() === 1 && cards() === c0);
   turn(EN.PRESETS, 6); render(500);                         // Murk: AUTO, she plays by herself
   const a0 = ex.web_dr_arp_count(), keyset = new Set();
   for (let i = 0; i < 30; i++) { render(100); keyset.add(ex.web_dr_arp_note() % 12); }

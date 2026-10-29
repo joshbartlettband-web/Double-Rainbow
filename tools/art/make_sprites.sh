@@ -29,7 +29,7 @@ python3 tools/art/procchar.py art/gemini/top_a.jpg top 104 80 90 4
 python3 tools/art/procchar.py art/gemini/cairn_a.jpg cairn 100 90 90 4
 python3 tools/art/procchar.py art/gemini/stray_a.jpg stray 104 70 90 4
 python3 tools/art/procchar.py art/gemini/tuppence_a.jpg tuppence 100 100 90 4
-python3 tools/art/procchar.py art/gemini/gloam_g.jpg gloam 100 96 90 4 --keep=250,206,112 --keep=176,124,240   # the Keeper's logbook
+python3 tools/art/procchar.py art/gemini/gloam_i.jpg gloam 92 116 90 4 --keep=250,206,112 --keep=176,124,240   # the Keeper's logbook
 python3 tools/art/clear_fringe.py gloam
 python3 tools/art/procchar.py art/gemini/tinker_a.jpg tinker 104 90 90 4
 python3 tools/art/clear_fringe.py stray tuppence                              # the last of the magenta, in the gaps

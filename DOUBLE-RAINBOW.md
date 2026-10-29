@@ -192,7 +192,7 @@ close to Wick), and the pocket knife became a multi-tool with no blade out.
 | --- | --- | --- | --- | --- |
 | STRAY, a lost action figure | FM6: SYNC LEAD, a bright lead | Looking for where he goes. | HEROIC (mod level), PLASTIC (mod ratio), CAPE (vibrato), SEARCH (a slide up into each note) | Not from the shelves: he walked in along the Line. |
 | TUPPENCE, a mouse with a dollhouse cello | ANALOG: SAW LEAD with a slow, soft start: a bowed string | Plays what she can reach. | BOW (attack), SCRAPE (resonance), SWAY (vibrato), BODY (cutoff) | The dollhouse is a model of the Keeper's room, jar for jar. |
-| GLOAM, the Keeper's living logbook | FM6: BELLS, a tower's bells | The Keeper's log. It writes back. | CREAK (a slow wobble), TOLL (mod level), TOWER (detune), MIST (reverb) | The Keeper logged every jar in it, until a castle grew out of the pages in the Line's ink and rang its bells at every word. Repainted after the pale drawing (`gloam_a.jpg`) looked washed out on the dark screen; the options are `docs/mockups/gloam_options.png`, the one used is `gloam_g.jpg`. |
+| GLOAM, the Keeper's living logbook | FM6: BELLS, a tower's bells | The Keeper's log. It writes back. | CREAK (a slow wobble), TOLL (mod level), TOWER (detune), MIST (reverb) | The Keeper logged every jar in it, until a castle grew out of the pages in the Line's ink and rang its bells at every word. Repainted after the pale drawing (`gloam_a.jpg`) looked washed out on the dark screen; the options are `docs/mockups/gloam_options.png`, then `gloam_g.jpg` (its pages fanned out of the middle oddly), and now `gloam_i.jpg`: the book open flat, the castle rising from the spine. |
 | TINKER, a multi-tool | FM6: CLAVINET, a click then a ring | Always a tool for it. | CLICK (mod level), TOOLS (mod ratio), SNAP (mod decay), SPRING (release) | He cut the seals off the jars, and remembers every one. |
 
 Gloam is on BELLS because the organ patches have no audible modulator, so a TOLL knob did nothing on them (Fork,
@@ -331,8 +331,8 @@ Every character has an arp of their own, set to suit their beat. It runs on the 
 the beat and follows the tempo, tapped or turned. The code is `firmware/src/dr_arp.c`; the defaults are `DR_ARPS`
 in `dr.c`.
 
-ARP turns it on, and the four knob cards become its settings. ARP again shows the next four, then the next, then the
-character's own knobs again (the arp keeps playing). Hold ARP for most of a second to turn it off. SCRY and TRACE
+ARP turns it on, and the four knob cards become its settings. ARP again shows the next four, and so on through four groups, then
+the character's own knobs again (the arp keeps playing). Hold ARP for most of a second to turn it off. SCRY and TRACE
 turn it off, since they play their own notes. The line shows the group and the rhythm's steps: filled for a hit,
 dim for a rest, gold for the step playing.
 
@@ -349,9 +349,13 @@ dim for a rest, gold for the step playing.
 | | SPICE | Lets passing notes in: with AUTO, the scale's other notes among the chord's; with keys, a step off a held note, in the key |
 | | LOOP | Repeats the last 4, 8, 12 or 16 notes chosen (OFF: always new) |
 | | EVOLVE | With LOOP on, the chance one of its notes is chosen again each time round. 0 locks the loop. |
+| FEEL | SWING | Pushes every other step late; all the way up is a shuffle |
+| | HUMAN | Humanize: each note a little late and a little louder or softer, at random, as hands play |
+| | ACCENT | Leans on the bar's first step and softens the rest |
+| | LEAP | The chance a note jumps an octave up or down |
 
 Murk, the Rabbit, Top and Gloam start on AUTO, so they play by themselves once the arp is on. The rest wait for
-keys. Humanize (small random timing and loudness) was left out to keep the room, as Josh asked. The arp plays
+keys. Humanize was left out at first to save room, then put back as HUMAN in a fourth group, FEEL. The arp plays
 through Cairn's core too.
 
 ## Cores: a second sound on track 3 (built)

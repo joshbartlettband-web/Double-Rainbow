@@ -12,9 +12,12 @@
  * Change: SPICE lets passing notes in (AUTO: the scale's other notes among the chord's; KEYS: a step off the note
  * held, in the key), LOOP repeats the last 4 to 16 notes chosen, and EVOLVE is the chance that one of them is
  * chosen again each time round (0: the loop is locked).
+ * Feel: SWING pushes every other step late (all the way: a shuffle), HUMAN nudges each note a little late and a little
+ * louder or softer at random, as hands do, ACCENT leans on the bar's first step and softens the rest, and LEAP is the
+ * chance a note jumps an octave up or down.
  * Runs in the audio ISR (seq_advance); dr.c writes p[] (bytes) from the main loop. */
 enum { DRA_SHAPE, DRA_RATE, DRA_RANGE, DRA_GATE, DRA_STEPS, DRA_HITS, DRA_CHANCE, DRA_RATCHET,
-       DRA_SOURCE, DRA_SPICE, DRA_LOOP, DRA_EVOLVE, DRA_N };
+       DRA_SOURCE, DRA_SPICE, DRA_LOOP, DRA_EVOLVE, DRA_SWING, DRA_HUMAN, DRA_ACCENT, DRA_LEAP, DRA_N };
 enum { DRA_UP, DRA_DOWN, DRA_BOUNCE, DRA_WALK, DRA_JUMP };
 enum { DRA_KEYS, DRA_HOLD, DRA_AUTO };
 static const uint8_t DRA_SPB[5] = {2, 3, 4, 6, 8};      /* RATE: steps a beat */
@@ -28,7 +31,8 @@ static struct {
     uint8_t lp[16], lpos;                    /* LOOP: the places chosen, and where it is */
     uint16_t lfull;                          /* .. which of them are chosen yet */
     volatile uint8_t step;                   /* the step just played (dr.c lights it), + 1; 0 none yet */
-    uint32_t last, off, rat_len, rat_at, gate;
+    uint8_t pend, pvel;                      /* a note waiting to start (0 none: SWING, HUMAN), and how loud */
+    uint32_t last, off, rat_len, rat_at, gate, pend_at;
     volatile uint32_t count;                 /* notes played (the tests count them) */
 } dra;
 
@@ -135,7 +139,7 @@ static int32_t dra_next(int32_t i, int32_t n)
 static void dra_fire(uint32_t len, uint32_t first)
 {
     uint8_t pool[48], chord[48];
-    uint32_t steps = dra.p[DRA_STEPS], hits = dra.p[DRA_HITS], cyc = dra.cyc, n, loop = 4u * dra.p[DRA_LOOP], vel;
+    uint32_t steps = dra.p[DRA_STEPS], hits = dra.p[DRA_HITS], cyc = dra.cyc, n, loop = 4u * dra.p[DRA_LOOP], vel, d;
     int32_t i;
     dra.cyc = (uint8_t)((cyc + 1u) % steps);
     dra.step = (uint8_t)(cyc + 1u);
@@ -155,10 +159,16 @@ static void dra_fire(uint32_t len, uint32_t first)
     dra.i = (int16_t)i;
     if (loop)
         dra.lpos = (uint8_t)((dra.lpos + 1u) % loop);
-    vel = first ? 112u : 92u;                            /* (the bar's first step a little louder) */
+    vel = first ? 96u + dra.p[DRA_ACCENT] * 3u / 10u : 96u - dra.p[DRA_ACCENT] / 5u;   /* ACCENT: the one leans */
+    if (dra.p[DRA_HUMAN]) {                              /* HUMAN: louder or softer, a little */
+        int32_t w = (int32_t)dra.p[DRA_HUMAN] * 3 / 10;
+        vel = (uint32_t)clamp((int32_t)vel + (int32_t)(rng() % (uint32_t)(2 * w + 1)) - w, 20, 127);
+    }
     n = pool[i];
     if (dra.nheld && dra.p[DRA_SPICE] && rng() % 200u < dra.p[DRA_SPICE])   /* KEYS: a step off, in the key */
         n = (uint32_t)dr_in_key((int32_t)n + (rng() & 1u ? 2 : 1));
+    if (rng() % 100u < dra.p[DRA_LEAP])                  /* LEAP: an octave up or down */
+        n = n + 12u <= 108u && (rng() & 1u || n < 36u) ? n + 12u : n - 12u;
     dra.gate = len * dra.p[DRA_GATE] / 100u;
     dra.rat = 0;
     if (rng() % 100u < dra.p[DRA_RATCHET]) {             /* RATCHET: two or three, inside the step */
@@ -168,7 +178,17 @@ static void dra_fire(uint32_t len, uint32_t first)
         dra.gate = dra.rat_len * 6u / 10u;
     }
     dra.rnote = (uint8_t)n;
-    dra_note_on(n, vel, dra.gate);
+    d = (cyc & 1u) ? len * dra.p[DRA_SWING] / 300u : 0u;   /* SWING: the off steps late, a third at most */
+    if (dra.p[DRA_HUMAN])                                /* HUMAN: up to a quarter step late */
+        d += rng() % (len * dra.p[DRA_HUMAN] / 400u + 1u);
+    dra.rat_at += d;
+    if (!d)
+        dra_note_on(n, vel, dra.gate);
+    else {
+        dra.pend = (uint8_t)n;
+        dra.pvel = (uint8_t)vel;
+        dra.pend_at = d;
+    }
 }
 
 /* from seq_advance, every block of n samples (after the beat moved): a step when the grid crosses one */
@@ -183,7 +203,14 @@ static void dra_tick(uint32_t n)
     }
     if (!dra.on)
         return;
-    if (dra.rat) {
+    if (dra.pend) {                                      /* (a late note: now) */
+        if (dra.pend_at <= n) {
+            dra_note_on(dra.pend, dra.pvel, dra.gate);
+            dra.pend = 0;
+        } else
+            dra.pend_at -= n;
+    }
+    if (dra.rat && !dra.pend) {
         if (dra.rat_at <= n) {
             dra.rat--;
             dra.rat_at = dra.rat_len;
@@ -209,7 +236,7 @@ static void dra_set(uint32_t on)
     dra.on = 0;
     dra.nheld = dra.phys = 0;
     dra.lfull = 0;
-    dra.lpos = dra.cyc = dra.rat = 0;
+    dra.lpos = dra.cyc = dra.rat = dra.pend = 0;
     dra.last = 0xFFFFFFFFu;
     panic_req |= 1u;                                     /* (every note on track 1 ends, in the ISR) */
     dra.on = (uint8_t)on;
