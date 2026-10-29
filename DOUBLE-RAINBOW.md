@@ -522,7 +522,8 @@ The site's front page is `landing/` (after Rainbow mode's): the story, what is i
 for teachers, and links to the browser demo and the installer. The workflow copies it to the site's root and fills in
 the site's address; a tip card appears if a `DONATE_URL` repository variable or secret is set. Its pictures come from
 the firmware itself: `node tools/landing/shots.mjs build/emu/melodee.wasm DIR`, then
-`python3 tools/landing/make_landing.py DIR` (rerun both when the characters or screens change).
+`python3 tools/landing/make_landing.py DIR` (rerun both when the characters or screens change). `landing/readme/` is every
+control on one page (`/readme/` on the site), a short version of the tables above: when a control changes, change it there too.
 
 ## Setup, in order
 
