@@ -8,9 +8,10 @@ const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, AR
 const EN = { SELECT: 0, ALGO: 1, PRESETS: 2, K1: 3, K2: 4, K3: 5, K4: 6 };
 const K = { F3: 0, G3: 2, A3: 4, B3: 6, C: 7, D: 9, E: 11, F: 12, G: 14, A: 16, B: 18, C2: 19, D2: 21, E2: 23, F2: 24, G2: 26 };
 const BK = { IV: 1, V: 3, vi: 5, I: 8, ii: 10, IVmaj7: 13, V7: 15, vi7: 17, Imaj7: 20, ii7: 22, iv: 25 };   // the black keys' chords
-const NC = 24;
+const NC = 30;
 const CH = { VESPER: 0, SHARD: 1, SQUALL: 2, WICK: 3, TOCK: 4, MOTE: 5, MURK: 6, BOG: 7, HUSH: 8, GLINT: 10, HERMIT: 11,
-             ECHO: 14, CAIRN: 19, GLOAM: 22, TUPPENCE: 21 };
+             ECHO: 14, CAIRN: 19, GLOAM: 22, TUPPENCE: 21, KITE: 25, BRAMBLE: 26, HOLLOW: 27, FLITTER: 28, DOZE: 24,
+             MOSSBACK: 29 };
 const { instance } = await WebAssembly.instantiate(fs.readFileSync(wasmPath), {});
 const ex = instance.exports, mem = ex.memory;
 ex._initialize(); ex.web_nor_erase(); ex.web_master(1023); ex.web_boot();
@@ -54,8 +55,11 @@ const CAST = [[CH.SHARD, "SHARD, a glass fox: FM, like the DX7", (s) => tune(s, 
               [CH.MURK, "MURK, a jellyfish: phase distortion", (s) => hold(s, [K.C, K.E, K.A], 1200)],
               [CH.GLINT, "GLINT, a magpie: Casio's CZ-1, its own 64 tones", (s) => tune(s, [K.A, K.E, K.C, K.E], 280)],
               [CH.CAIRN, "CAIRN, stacked pebbles: struck stones and a kalimba", (s) => tune(s, [K.C, K.D, K.E, K.G], 260)],
-              [CH.GLOAM, "GLOAM, the Keeper's logbook: tower bells", (s) => { note(s, K.C, 500); note(s + 550, K.G3, 650); }]];
-CAST.forEach(([c, sub, play], i) => { go(t, c); C(t, "1. Meet 24 escaped sounds", sub); play(t + 350); t += 1800; });
+              [CH.GLOAM, "GLOAM, the Keeper's logbook: tower bells", (s) => { note(s, K.C, 500); note(s + 550, K.G3, 650); }],
+              [CH.FLITTER, "FLITTER, a bat with a squeezebox: the CZ-1's accordion", (s) => tune(s, [K.C, K.E, K.G, K.E, K.C], 220)],
+              [CH.DOZE, "DOZE, a snail in a gramophone horn: lo-fi", (s) => tune(s, [K.E, K.D, K.C], 480)],
+              [CH.BRAMBLE, "BRAMBLE, a hedgehog: bottle caps on an 808", (s) => tune(s, [K.F3, K.A3, K.G3, K.A3, K.F3, K.F3, K.G3, K.A3], 150)]];
+CAST.forEach(([c, sub, play], i) => { go(t, c); C(t, "1. Meet 30 escaped sounds", sub); play(t + 350); t += 1800; });
 // 2. knobs, EDIT, the codex
 go(t, CH.BOG);
 C(t, "2. Four knobs, real settings", "BOG, a swamp toad: the TB-303 squelch. SQUISH and GOO");
@@ -81,43 +85,62 @@ tune(t + 800, [K.C, K.E, K.G, K.E, K.A, K.G, K.E, K.D], 200);
 go(t + 2700, CH.HERMIT);
 C(t + 2700, "4. A beat for everyone", "HERMIT, a crab in a horn: PARADE, and Sequential's Iconic Brass");
 hold(t + 3300, [K.C, K.E, K.G], 700); hold(t + 4100, [K.D, K.F, K.A], 700); hold(t + 4900, [K.E, K.G, K.B], 900);
-tap(t + 6000, B.PLAY);
-t += 6300;
+C(t + 6000, "4. A beat for everyone", "tap REC to set the tempo. It shows at the top while it plays");
+for (let i = 0; i < 5; i++) tap(t + 6100 + i * 430, B.REC);
+hold(t + 8400, [K.C, K.E, K.G], 600); hold(t + 9300, [K.D, K.F, K.A], 600);
+tap(t + 10400, B.PLAY);
+t += 10700;
+// 5. the arp
+go(t, CH.KITE);
+tap(t + 300, B.PLAY);
+tap(t + 600, B.ARP);
+C(t, "5. An arp for everyone", "ARP: each character's own, on the beat. Hold a chord");
+hold(t + 900, [K.C, K.E, K.G, K.B], 3200);
+at(t + 4300, () => {}); tap(t + 4400, B.ARP); tap(t + 4700, B.ARP); tap(t + 5000, B.ARP);
+C(t + 4400, "5. An arp for everyone", "16 settings, four at a time. FEEL: SWING, and HUMAN, as hands play");
+turn(t + 5400, EN.K2, 14, 50);
+hold(t + 5500, [K.A3, K.C, K.E, K.G], 2600);
+go(t + 8400, CH.HOLLOW);
+C(t + 8400, "5. An arp for everyone", "some play by themselves. Hollow, the empty jar, hums along");
+tap(t + 8700, B.ARP);
+at(t + 12300, () => ex.web_buttons(1 << B.ARP)); at(t + 13200, () => ex.web_buttons(0));
+tap(t + 13400, B.PLAY);
+t += 13800;
 // 5. the spellbook: WEAVE and CAST
 go(t, CH.SHARD);
 turn(t + 300, EN.ALGO, 1);
-C(t, "5. The spellbook: WEAVE", "a black key picks a chord, the white keys strum it");
+C(t, "6. The spellbook: WEAVE", "a black key picks a chord, the white keys strum it");
 const strum = (s, bk, step = 60) => { at(s, () => setKeys(1 << bk)); [0, 2, 4, 6, 7, 9, 11, 12, 14].forEach((w, i) => at(s + 150 + i * step, () => setKeys(1 << bk | 1 << w))); at(s + 150 + 9 * step + 200, () => setKeys(0)); };
 strum(t + 700, BK.I); strum(t + 1700, BK.vi); strum(t + 2700, BK.IV); strum(t + 3700, BK.V);
 t += 4800;
 go(t, CH.HUSH);
 turn(t + 200, EN.ALGO, 1);
-C(t, "5. The spellbook: CAST", "chords under a tune, with their names and numerals");
+C(t, "6. The spellbook: CAST", "chords under a tune, with their names and numerals");
 const cast = (s, bk, tn, len) => { at(s, () => setKeys(1 << bk)); tn.forEach((k, i) => { at(s + 200 + i * len, () => setKeys(1 << bk | 1 << k)); at(s + 200 + i * len + len - 60, () => setKeys(1 << bk)); }); at(s + 200 + tn.length * len, () => setKeys(0)); };
 cast(t + 600, BK.Imaj7, [K.E2, K.D2], 380); cast(t + 1500, BK.vi7, [K.C2, K.B], 380); cast(t + 2400, BK.ii7, [K.A, K.C2], 380); cast(t + 3300, BK.V7, [K.B, K.G], 450);
 turn(t + 4500, EN.SELECT, 1);
-C(t + 4500, "5. The spellbook: CAST", "SELECT: a new key, round the circle of fifths");
+C(t + 4500, "6. The spellbook: CAST", "SELECT: a new key, round the circle of fifths");
 cast(t + 4900, BK.Imaj7, [K.D2, K.B], 380); cast(t + 5800, BK.V7, [K.A, K.F], 450);
 turn(t + 7000, EN.SELECT, -1);
 t += 7200;
 // 6. SCRY
 turn(t, EN.ALGO, 1);
-C(t, "6. SCRY: train your ear", "hear a note, then find it. Three right, and a new one joins");
+C(t, "7. SCRY: train your ear", "hear a note, then find it. Three right, and a new one joins");
 scry(t + 600, 4);
 t += 9000;
 // 7. TRACE
 turn(t, EN.ALGO, 1);
-C(t, "7. TRACE: songs to learn", "the next key lights up. Korobeiniki, at your own pace");
+C(t, "8. TRACE: songs to learn", "the next key lights up. Korobeiniki, at your own pace");
 trace(t + 800, 16, 300);
-C(t + 5800, "7. TRACE: songs to learn", "14 tunes: Hall of the Mountain King, Für Elise, Dies Irae");
+C(t + 5800, "8. TRACE: songs to learn", "14 tunes: Hall of the Mountain King, Für Elise, Dies Irae");
 t += 7000;
 // the summary, over a beat
 turn(t, EN.ALGO, -4, 80);
 go(t + 300, CH.TUPPENCE);
 tap(t + 1000, B.PLAY);
 C(t, "What's inside", "__LIST__");
-const items = 7, gap = 1450;
-tune(t + 1400, [K.A3, null, K.C, null, K.E, null, K.D, null, K.C, null, K.B3, null, K.C, null, K.E, null, K.A3], 420);
+const items = 9, gap = 1450;
+tune(t + 1400, [K.A3, null, K.C, null, K.E, null, K.D, null, K.C, null, K.B3, null, K.C, null, K.E, null, K.A3, null, K.C, null, K.E], 420);
 t += 1000 + items * gap + 1800;
 C(t, "Which jar should open next?", "__END__");
 tune(t + 300, [K.E, K.A, K.C2, null, K.B, K.E2], 330);

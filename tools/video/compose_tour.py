@@ -14,10 +14,11 @@ BOW = [(160, 112, 230), (100, 150, 236), (120, 206, 140), (240, 214, 120), (240,
 LETTER = {0: "C", 2: "D", 4: "E", 5: "F", 7: "G", 9: "A", 11: "B"}
 T1, T2, T3, TL, TK = font(64, b"ExtraBold"), font(34, b"Medium"), font(26, b"SemiBold"), font(40, b"Bold"), font(22, b"Bold")
 meta = json.load(open("captions.json")); caps = meta["captions"]; fps = meta["fps"]; n = meta["frames"]; KEYS = meta["keys"]
-ITEMS = ["24 characters, each a real synth engine", "Prophet-5, DX7 FM, CZ-1, the 808 and more",
+ITEMS = ["30 characters, each a real synth engine", "Prophet-5, DX7 FM, CZ-1, the 808 and more",
          "Four knobs each; EDIT shows what they move", "The Keeper's ledger, a page per character",
-         "A beat for every character", "WEAVE and CAST: chords and their numerals",
-         "SCRY trains your ear, TRACE teaches songs"]
+         "A beat for every character; tap the tempo", "An arp for every character, with HUMAN",
+         "WEAVE and CAST: chords and their numerals", "SCRY trains your ear, TRACE teaches songs",
+         "Free, and it runs in your browser too"]
 SX, SY, SS = 108, 196, 864                    # the FM-1's screen: 240 px at 3.6x
 KX0, KX1, KY0, KY1 = 40, 1040, 1106, 1270     # the keyboard: F3 .. G5, 16 white keys
 
@@ -81,7 +82,7 @@ def frames(start=0, stop=None):
                     ai = max(0.0, min(1.0, (t - cur[0] - 900 - i * meta["list_gap"]) / 300))
                     if ai <= 0:
                         continue
-                    y = SY + 80 + i * 112
+                    y = SY + 64 + i * 96
                     d.ellipse([SX + 48, y - 14, SX + 76, y + 14], fill=fade(BOW[i % 6], ai, PANEL))
                     d.text((SX + 100 + int((1 - ai) * 30), y), item, font=TL, fill=fade(INK, ai, PANEL), anchor="lm")
             else:
