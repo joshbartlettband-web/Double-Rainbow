@@ -18,8 +18,9 @@ const bytes = fs.readFileSync(process.argv[2] || "build/emu/melodee.wasm");
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, OCTDN: 12, OCTUP: 13 };
 const EN = { SELECT: 0, ALGO: 1, PRESETS: 2, K1: 3, K2: 4, K3: 5, K4: 6 };
 const NAMES = ["VESPER", "SHARD", "SQUALL", "WICK", "TOCK", "MOTE", "MURK", "BOG", "HUSH", "TUMBLER", "GLINT", "HERMIT",
-               "BURROW", "PIP", "ECHO", "FORK", "ANTS", "RABBIT", "TOP", "CAIRN", "STRAY", "TUPPENCE", "GLOAM", "TINKER"];
-const ENGINE = [19, 12, 11, 5, 10, 3, 2, 0, 0, 12, 15, 19, 0, 12, 5, 12, 0, 12, 2, 11, 12, 0, 12, 12];   // PROPHET FM6 NOISE VOICE DRUM LOFI PHASE ANALOG x2 FM6 CZ-1 PROPHET ANALOG FM6 VOICE
+               "BURROW", "PIP", "ECHO", "FORK", "ANTS", "RABBIT", "TOP", "CAIRN", "STRAY", "TUPPENCE", "GLOAM", "TINKER",
+               "DOZE", "KITE", "BRAMBLE", "HOLLOW", "FLITTER", "MOSSBACK"];
+const ENGINE = [19, 12, 11, 5, 10, 3, 2, 0, 0, 12, 15, 19, 0, 12, 5, 12, 0, 12, 2, 11, 12, 0, 12, 12, 3, 5, 10, 19, 15, 2];   // PROPHET FM6 NOISE VOICE DRUM LOFI PHASE ANALOG x2 FM6 CZ-1 PROPHET ANALOG FM6 VOICE
 const N = NAMES.length, TOCK = 4, GLINT = 10, PIP = 13, ECHO = 14;
 const P5_CUTOFF = 17;                              // (prophet_patch.c)
 let fails = 0;
@@ -68,7 +69,7 @@ check("the LEDs: every key glows, a held key lit, SCL EDIT OCT HOME SAVE glow", 
 ex.web_keys(0); render(1500);
 
 const loud = [];
-const P_E0 = ex.web_p_e0();                        // the new four: a knob each, its setting and its sound
+const P_E0 = ex.web_p_e0(), P_REV = ex.web_p_rev();                        // the new four: a knob each, its setting and its sound
 const E = (e) => () => ex.web_param(0, P_E0 + e), F = (f) => () => ex.web_p5_field(f);
 const KNOB = {                                     // [knob, the setting under it, what it does, the check]
   3: [0, E(0), "VOWEL (AH to OO): darker", (lo, hi) => hi.bright - lo.bright < -3],
@@ -91,6 +92,12 @@ const KNOB = {                                     // [knob, the setting under i
   21: [3, E(4), "BODY (cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
   22: [1, E(2), "TOLL (modulator level): brighter", (lo, hi) => hi.bright - lo.bright > 3],
   23: [0, E(2), "CLICK (modulator level): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  24: [2, E(7), "TONE: brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  25: [2, E(0), "VOWEL (AH to OO): darker", (lo, hi) => hi.bright - lo.bright < -3],
+  26: [2, E(4), "SPIKE (snap and tone): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  27: [2, F(P5_CUTOFF), "TONE (the cutoff): brighter", (lo, hi) => hi.bright - lo.bright > 3],
+  28: [3, () => ex.web_param(0, P_REV), "CAVE (reverb): a longer room (the tail after a note)", (lo, hi) => hi.tail - lo.tail > 3],
+  29: [0, E(2), "MOSS (DCW): brighter", (lo, hi) => hi.bright - lo.bright > 3],
 };
 for (let c = 0; c < N; c++) {
   if (c) turn(EN.PRESETS, 1);
@@ -126,18 +133,21 @@ for (let c = 0; c < N; c++) {
     check(`STRAY: no core, track 3 Melodee's own again (engine ${ex.web_engine(2)})`, ex.web_engine(2) === 3);
   if (KNOB[c]) {
     const [m, get, what, ok] = KNOB[c], v0 = ex.web_dr_knob(m);
-    turn(EN.K1 + m, -60); const p0 = get(); const lo = level(phrase);
-    turn(EN.K1 + m, 60); const p1 = get(); const hi = level(phrase);
+    const tail = () => level(() => { ex.web_keys(1 << 12); render(300); ex.web_keys(0); render(100); }) &&
+                       level(() => render(800)).db;   // (the 800 ms after the note)
+    turn(EN.K1 + m, -60); const p0 = get(); const lo = level(phrase); lo.tail = tail();
+    turn(EN.K1 + m, 60); const p1 = get(); const hi = level(phrase); hi.tail = tail();
     turn(EN.K1 + m, -60); turn(EN.K1 + m, v0 / 2);
     check(`${NAMES[c]}: ${what} (${p0} -> ${p1}; ${lo.db.toFixed(1)} -> ${hi.db.toFixed(1)} dB, bright ${lo.bright.toFixed(1)} -> ${hi.bright.toFixed(1)})`,
           p1 !== p0 && ok(lo, hi) && ex.web_dr_knob(m) === v0);
   }
 }
-const CAIRN = 19, TINKER = 23;
-const tonal = loud.filter((_, i) => i !== TOCK && i !== PIP && i !== CAIRN && i !== TINKER), spread = Math.max(...tonal) - Math.min(...tonal);
+const CAIRN = 19, TINKER = 23, BRAMBLE = 26;
+const tonal = loud.filter((_, i) => i !== TOCK && i !== PIP && i !== CAIRN && i !== TINKER && i !== BRAMBLE), spread = Math.max(...tonal) - Math.min(...tonal);
 const mean = tonal.reduce((p, x) => p + x, 0) / tonal.length;   // (struck sounds die away: by their own measure)
 check(`the cast are about as loud as each other (RMS ${loud.map((x) => x.toFixed(1)).join(" ")} dB: ${spread.toFixed(1)} dB apart; the drums, mallets and stones within 6)`,
-      spread < 3 && Math.abs(loud[TOCK] - mean) < 6 && Math.abs(loud[PIP] - mean) < 6 && Math.abs(loud[CAIRN] - mean) < 6 && Math.abs(loud[TINKER] - mean) < 6);
+      spread < 3 && Math.abs(loud[TOCK] - mean) < 6 && Math.abs(loud[PIP] - mean) < 6 && Math.abs(loud[CAIRN] - mean) < 6 && Math.abs(loud[TINKER] - mean) < 6 &&
+      Math.abs(loud[BRAMBLE] - mean) < 6);
 { // ECHO: a short note comes back, softer, an eighth later (twice at her knob's start); ECHO down, it does not
   const tail = () => level(() => { ex.web_keys(1 << 12); render(120); ex.web_keys(0); render(160); }) &&
                      level(() => render(700)).db;   // (the 700 ms after the note itself is over)
@@ -380,7 +390,7 @@ function trace() {
 }
 
 { // the beats: PLAY, SEQ, SEQ + SELECT, the bass after CAST's chord, quiet in SCRY
-  const BPM = [84, 122, 128, 138, 108, 150, 76, 124, 82, 104, 118, 100, 86, 112, 92, 100, 108, 76, 132, 94, 104, 84, 90, 116], c = ex.web_dr_char();
+  const BPM = [84, 122, 128, 138, 108, 150, 76, 124, 82, 104, 118, 100, 86, 112, 92, 100, 108, 76, 132, 94, 104, 84, 90, 116, 72, 112, 94, 80, 120, 70], c = ex.web_dr_char();
   tap(B.PLAY);
   const beat = level(() => render(3000));
   check(`PLAY: ${NAMES[c]}'s own beat (${ex.web_bpm()} BPM, ${beat.db.toFixed(1)} dB)`,

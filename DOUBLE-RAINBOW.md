@@ -200,6 +200,25 @@ Pip, Rabbit and Stray do have one). Stray has no blink: his face is too small at
 Tock, Pip and Cairn as leveled by his own measure. **Josh to listen:** Stray's lead against the others, Tuppence's
 bow (BOW up, slow notes), Gloam's bells in a low register, Tinker's clicks.
 
+**Built: six more, for thirty** (concepts `art/gemini/doze_a.jpg`, `kite_a.jpg`, `bramble_a.jpg`, `hollow_a.jpg`,
+`flitter_a.jpg`, `mossback_a.jpg`; screens `docs/mockups/six_for_thirty.png`). Each one is on an engine the cast used
+least, so the thirty spread wider: LOFI, VOICE, DRUM, PROPHET, CZ-1 and PHASE each gained one.
+
+| Character | Engine | Line | Knobs (what they move) | Ledger hook |
+| --- | --- | --- | --- | --- |
+| DOZE, a sleepy snail whose shell is a gramophone horn | LOFI: WAVE LEAD, slow to start and slow to go | Slow. Gets there anyway. | WOW (a slow pitch sway), DUST (crush), TONE, SLEEPY (attack and release) | He sleeps in the horn, and it plays what he dreams. He was here first. |
+| KITE, a paper kite that snapped its string | VOICE: VOX LEAD, an airy oo | Goes where the wind says. | GUST (tremolo), BREEZE (breath), VOWEL (AH to OO), TAIL (release) | It hung at the Keeper's window to show the wind. Now it follows the Line. |
+| BRAMBLE, a hedgehog with a bottle-cap drum kit | DRUM: the 808 kit tuned up and cut short | Every spike a drumstick. | TINK (tune), RATTLE (decay), SPIKE (snap and tone), CRUNCH (drive) | His kit is made of what the Keeper threw out, a jar lid included. |
+| HOLLOW, the one jar that walked off empty | PROPHET: the factory FLUTES program, air in a bottle | Empty. For now. | BREATH (noise), RING (resonance), TONE (cutoff), SWELL (attack) | It has looked for a sound to keep ever since. The Keeper set a lid out for it. |
+| FLITTER, a bat with a tiny squeezebox | CZ-1: Casio's own ACCORDION | Upside down. Still in tune. | PUMP (tremolo: the bellows), REEDS (chorus), WIGGLE (vibrato), CAVE (reverb) | He woke in the rafters when the jars began to ring. |
+| MOSSBACK, an old tortoise with a garden on his shell | PHASE: BRASS, slow to open | Older than the hills. Ask him. | MOSS (DCW), GROW (DCW envelope), AGE (detune), DEEP (sub) | He remembers the Line when it was still, and does not miss it. |
+
+Bramble is leveled like Tock (a kit, by its own measure). Hollow's SWELL also holds the breath at full while a key
+is down: the flute program is soft, and it needed that to sit with the others. Flitter's CZ tone has nothing to
+turn, so its knobs are the bellows and the room, as Glint's are. Hollow joins Murk, the Rabbit, Top and Gloam on an
+AUTO arp. **Josh to listen:** Doze's WOW and DUST, Kite's vowels, Bramble's kit against Tock's, Hollow's breath,
+Flitter's PUMP (is it a squeezebox?), Mossback's horn low down.
+
 Watch for accidental look-alikes of known characters (a lesson from Rainbow mode). Change colors and features until each
 one reads as its own thing.
 
@@ -324,6 +343,12 @@ tracks 2 to 4 and the tempo back. Each beat sits about 4 dB under its character 
 | Tuppence | NIBBLE | 84 | small, soft, a little hurried |
 | Gloam | SKETCH | 90 | low and creaking |
 | Tinker | FOLD OUT | 116 | snaps and clicks, a tool at a time |
+| Doze | SUNDAY | 72 | lazy, a long way between steps |
+| Kite | UPDRAFT | 112 | light and lifting |
+| Bramble | BOTTLECAP | 94 | boom bap on bottle caps |
+| Hollow | ECHOING | 80 | sparse, room to ring |
+| Flitter | OOM-PAH | 120 | a polka for the rafters |
+| Mossback | SLOWPOKE | 70 | slow and heavy, in no hurry |
 
 ## The arp (built)
 
@@ -354,7 +379,7 @@ dim for a rest, gold for the step playing.
 | | ACCENT | Leans on the bar's first step and softens the rest |
 | | LEAP | The chance a note jumps an octave up or down |
 
-Murk, the Rabbit, Top and Gloam start on AUTO, so they play by themselves once the arp is on. The rest wait for
+Murk, the Rabbit, Top, Gloam and Hollow start on AUTO, so they play by themselves once the arp is on. The rest wait for
 keys. Humanize was left out at first to save room, then put back as HUMAN in a fourth group, FEEL. The arp plays
 through Cairn's core too.
 
@@ -450,7 +475,14 @@ knob cards for how much of each crystal.
 - Each character gets its own program, tuned to it and to its macro knobs.
 - Level every character by measured loudness, not by peak (Rainbow mode's lesson; spread under 4 dB).
 
-## Memory (measured at twelve characters)
+## Memory (measured at twelve characters; the thirty below)
+
+At thirty characters (October 2026): the app is 525,452 B of 540,604, 15,152 B free, about 4.9 KB above the 10 KB
+the build keeps. The thirty sprites are 56.6 KB. The codex (15 KB of text for thirty) is packed with a Huffman code
+into 9 KB (`firmware/src/dr_codex.inc`, `tools/gen_dr_text.py`); that gave back 5.9 KB before the six were added.
+More characters would need more room: the Prophet's factory bank (27.6 KB, Melodee's own program library) is the
+biggest single thing in flash, and it is Josh's call whether Double Rainbow keeps all of it.
+
 
 - **Flash** (the app slot: code, pictures, text): 476 KB of 540 KB used, 65 KB free (the build keeps 10 KB).
   The twenty-four sprites are about 46 KB of it (twelve were 34 KB before the Huffman code): their runs are Huffman-coded with one shared code, decoded a

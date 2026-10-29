@@ -26,6 +26,12 @@ EYES = {
     "tuppence": [(22, 25, 27, 31)],
     "gloam": [(36, 34, 37, 38), (58, 34, 59, 38)],
     "tinker": [(45, 34, 50, 40), (55, 34, 60, 40)],
+    "doze": [(5, 21, 9, 25), (19, 20, 23, 24)],
+    "kite": [(32, 23, 36, 30), (49, 28, 53, 34)],
+    "bramble": [(33, 24, 38, 30), (47, 24, 51, 29)],
+    "hollow": [(28, 48, 32, 54), (43, 48, 47, 54)],
+    "flitter": [],                                      # (his eyes are shut already: he is grinning)
+    "mossback": [(13, 35, 17, 39), (24, 35, 27, 39)],
 }
 OUTLINE = (34, 18, 12)
 LID = {"hermit": (231, 89, 58)}          # by hand where the colour round the eye is not the lid (Hermit: his horn)

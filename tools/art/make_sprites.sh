@@ -33,3 +33,11 @@ python3 tools/art/procchar.py art/gemini/gloam_i.jpg gloam 92 116 90 4 --keep=25
 python3 tools/art/clear_fringe.py gloam
 python3 tools/art/procchar.py art/gemini/tinker_a.jpg tinker 104 90 90 4
 python3 tools/art/clear_fringe.py stray tuppence                              # the last of the magenta, in the gaps
+python3 tools/art/procchar.py art/gemini/doze_a.jpg doze 80 96 90 4             # the six for thirty
+python3 tools/art/procchar.py art/gemini/kite_a.jpg kite 100 84 90 4
+python3 tools/art/procchar.py art/gemini/bramble_a.jpg bramble 84 92 90 4
+python3 tools/art/procchar.py art/gemini/hollow_a.jpg hollow 92 76 90 4
+python3 tools/art/fix_hollow.py
+python3 tools/art/procchar.py art/gemini/flitter_a.jpg flitter 84 92 90 4
+python3 tools/art/procchar.py art/gemini/mossback_a.jpg mossback 72 100 90 4
+for n in doze kite bramble hollow flitter mossback; do python3 tools/art/clear_fringe.py $n; done

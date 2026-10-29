@@ -465,5 +465,6 @@ EXPORT int32_t web_bpm(void) { return song.g[G_BPM]; }
 EXPORT uint32_t web_dr_name_on(void) { return drm.name_on; }
 EXPORT uint32_t web_dr_name(uint32_t i) { char n[DR_NAME_MAX + 1]; return dr_name_load(n) > i ? (uint32_t)n[i] : 0u; }
 EXPORT uint32_t web_step_note(uint32_t t, uint32_t i) { return trk[t % NTRK].step[i % NSTEP].note[0]; }
-EXPORT uint32_t web_p_e0(void) { return P_E0; }                      /* (core.h: the engine's eight) */
+EXPORT uint32_t web_p_e0(void) { return P_E0; }
+EXPORT uint32_t web_p_rev(void) { return P_REV; }                      /* (core.h: the engine's eight) */
 EXPORT uint32_t web_sample_rate(void) { return FS; }

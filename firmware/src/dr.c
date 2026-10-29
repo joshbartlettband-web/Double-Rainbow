@@ -149,7 +149,7 @@ typedef struct {
     uint8_t glow[3];                         /* the horizon's colour while it sounds (0, 0, 0: the moonbow's bands) */
 } dr_char_t;
 #define DR_E_KEEP {-128, -128, -128, -128, -128, -128, -128, -128}
-#define DR_NCHAR 24u
+#define DR_NCHAR 30u
 #define DR_ECHO 14u                          /* (her ECHO knob is code: dr_frame schedules the repeats) */
 
 /* VESPER: our own Prophet program, a warm pad that opens slowly. Saw A and saw + pulse B a little apart, the SSI
@@ -347,7 +347,7 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
     }, {219, 221, 236}},                                        /* her charm */
     /* TOP: PHASE's ORGAN, a tone with no decay at all (full sustain, a long release): it never stops. SPIN is the
      * wobble's speed, LEAN how far it leans each way, WHIRR how bright it spins, REV how slowly it gets going. */
-    {"TOP", "PHASE", "Cannot stop. Tried.", ENGI_PHASE, 1, DR_E_KEEP, {0, 127, 127, 100}, 82, 40, 50, {
+    {"TOP", "PHASE", "Cannot stop. Tried.", ENGI_PHASE, 1, DR_E_KEEP, {0, 127, 127, 100}, 80, 40, 50, {
         {"SPIN", "LFO|SPEED", 40, {{DR_TP, P_LRATE, 20, 100}}},
         {"LEAN", "LFO|PITCH", 25, {{DR_TP, P_LD_PIT, 0, 3}}},
         {"WHIRR", "DCW", 40, {{DR_TP, P_E0 + 2, 10, 110}}},
@@ -398,6 +398,59 @@ static const dr_char_t DR_CAST[DR_NCHAR] = {
         {"SNAP", "MOD|DECAY", 50, {{DR_TP, P_E0 + 4, -40, 30}}},
         {"SPRING", "RELEASE", 40, {{DR_TP, P_REL, 10, 90}}},
     }, {0, 0, 0}},
+    /* DOZE: LOFI's WAVE LEAD, slow to start and slow to go: an old record, half asleep. WOW sways the pitch slowly,
+     * DUST crushes the wave (fewer steps: the dust), TONE is how bright, SLEEPY how slowly each note yawns in and
+     * fades. {CHIP WAVE DUTY CRSH | SWP VIB ARP TONE} */
+    {"DOZE", "LOFI", "Slow. Gets there anyway.", ENGI_LOFI, 3, DR_E_KEEP, {50, 90, 110, 90}, 111, 20, 50, {
+        {"WOW", "LFO|PITCH", 40, {{DR_TP, P_LD_PIT, 0, 2}, {DR_TP, P_LRATE, 20, 40}}},
+        {"DUST", "CRUSH", 30, {{DR_TP, P_E0 + 3, 0, 90}}},
+        {"TONE", "TONE", 40, {{DR_TP, P_E0 + 7, 20, 110}}},
+        {"SLEEPY", "ATTACK|RELEASE", 40, {{DR_TP, P_ATK, 10, 90}, {DR_TP, P_REL, 40, 120}}},
+    }, {211, 169, 92}},                                         /* his horn */
+    /* KITE: VOICE's VOX LEAD, an airy oo, the wind through a paper kite. GUST makes it come and go (tremolo),
+     * BREEZE adds breath, VOWEL walks AH .. OO, TAIL is the release. {VOWL VOWL2 TALK SHIFT | BUZZ BRTH Q RAND} */
+    {"KITE", "VOICE", "Goes where the wind says.", ENGI_VOICE, 1, DR_E_KEEP, {10, 90, 110, 60}, 105, 30, 50, {
+        {"GUST", "LFO|TO LEVEL", 30, {{DR_TP, P_LD_AMP, 0, 60}, {DR_TP, P_LRATE, 40, 80}}},
+        {"BREEZE", "BREATH", 40, {{DR_TP, P_E0 + 5, 10, 110}}},
+        {"VOWEL", "AH|TO OO", 60, {{DR_TP, P_E0, 0, 127}}},
+        {"TAIL", "RELEASE", 40, {{DR_TP, P_REL, 20, 110}}},
+    }, {0, 0, 0}},
+    /* BRAMBLE: the DRUM engine's 808 kit tuned up and cut short: bottle caps, a thimble, a tin can. TINK tunes it
+     * (up: smaller), RATTLE is the decay, SPIKE the snap and the tone, CRUNCH the drive. {KIT TUNE TONE DECY | SNAP
+     * ACC KICK DRV} */
+    {"BRAMBLE", "DRUM", "Every spike a drumstick.", ENGI_DRUM, 0, DR_E_KEEP, {0, 0, 0, 0}, 108, 0, 20, {
+        {"TINK", "TUNE", 70, {{DR_TP, P_E0 + 1, 30, 120}}},
+        {"RATTLE", "DECAY", 30, {{DR_TP, P_E0 + 3, 10, 100}}},
+        {"SPIKE", "SNAP|TONE", 60, {{DR_TP, P_E0 + 4, 20, 120}, {DR_TP, P_E0 + 2, 40, 110}}},
+        {"CRUNCH", "DRIVE", 30, {{DR_TP, P_E0 + 7, 0, 100}}},
+    }, {0, 0, 0}},
+    /* HOLLOW: the Prophet-5's factory FLUTES (program 163): a soft wave and a breath of noise through the filter, as
+     * air rings in a bottle. BREATH is the noise, RING the resonance (the jar singing back), TONE the cutoff, SWELL
+     * the attack. */
+    {"HOLLOW", "PROPHET", "Empty. For now.", ENGI_PROPHET, 163, DR_E_KEEP, {0, 0, 0, 0}, 127, 20, 60, {
+        {"BREATH", "NOISE", 30, {{DR_P5, P5_NOISE, 0, 90}}},
+        {"RING", "RESO", 30, {{DR_P5, P5_RESONANCE, 0, 100}}},
+        {"TONE", "CUTOFF", 50, {{DR_P5, P5_CUTOFF, 20, 100}}},
+        {"SWELL", "ATTACK", 10, {{DR_P5, P5_ATTACK_AMP, 0, 90}, {DR_P5, P5_ATTACK_FILTER, 0, 90},
+                                 {DR_P5, P5_SUSTAIN_AMP, 127, 100}}},   /* (held: full, as a breath is) */
+    }, {250, 200, 104}},                                        /* its eyes */
+    /* FLITTER: the CZ-1's own ACCORDION (tone 37, D-5), Casio's data as it was. The engine has nothing to turn, so the
+     * knobs are the bellows and the room: PUMP works the bellows (tremolo), REEDS spreads them (chorus), WIGGLE a
+     * vibrato, CAVE the reverb (the rafters). */
+    {"FLITTER", "CZ-1", "Upside down. Still in tune.", ENGI_CZ, 37, DR_E_KEEP, {0, 0, 0, 0}, 111, 50, 40, {
+        {"PUMP", "LFO|TO LEVEL", 30, {{DR_TP, P_LD_AMP, 0, 50}, {DR_TP, P_LRATE, 50, 80}}},
+        {"REEDS", "CHORUS", 50, {{DR_TP, P_CHOR, 0, 120}}},
+        {"WIGGLE", "VIBRATO", 20, {{DR_TP, P_LD_PIT, 0, 2}}},
+        {"CAVE", "REVERB", 40, {{DR_TP, P_REV, 0, 110}}},
+    }, {0, 0, 0}},
+    /* MOSSBACK: PHASE's BRASS, slow to open: an old horn in the hills. MOSS is the bend (DCW: brighter), GROW how much
+     * each note's bend opens as it plays, AGE the detune, DEEP the sub below. {WAVE WAVE2 DCW ENV | DTN LINE SUB EG} */
+    {"MOSSBACK", "PHASE", "Older than the hills. Ask him.", ENGI_PHASE, 0, DR_E_KEEP, {60, 100, 110, 80}, 93, 30, 50, {
+        {"MOSS", "DCW", 40, {{DR_TP, P_E0 + 2, 16, 110}}},
+        {"GROW", "DCW|ENV", 40, {{DR_TP, P_E0 + 3, 0, 127}}},
+        {"AGE", "DETUNE", 20, {{DR_TP, P_E0 + 4, 0, 90}}},
+        {"DEEP", "SUB", 30, {{DR_TP, P_E0 + 6, 0, 110}}},
+    }, {0, 0, 0}},
 };
 
 static struct {
@@ -442,6 +495,12 @@ static const uint8_t DR_ARPS[DR_NCHAR][DRA_N] = {
     {W, 0, 1, 85, 8, 5, 90, 0, K, 20, 2, 10, 0, 40, 30, 0},  /* Tuppence: a slow bowed line */
     {D, 1, 2, 90, 12, 5, 85, 0, A, 30, 4, 20, 0, 20, 40, 0},  /* Gloam: bells from the tower, by themselves */
     {U, 3, 2, 25, 16, 10, 90, 25, K, 10, 0, 20, 0, 10, 50, 10},  /* Tinker: clicks and snaps */
+    {W, 0, 1, 95, 8, 4, 90, 0, K, 20, 2, 10, 30, 30, 30, 0},  /* Doze: a lazy, swung few notes */
+    {B, 2, 2, 50, 16, 12, 90, 10, K, 20, 0, 20, 0, 30, 40, 20},  /* Kite: up and down on the wind */
+    {U, 2, 1, 30, 16, 9, 100, 30, K, 0, 4, 15, 20, 20, 70, 0},  /* Bramble: fills, with rolls */
+    {W, 1, 2, 90, 12, 5, 80, 0, A, 30, 4, 20, 0, 30, 20, 10},  /* Hollow: hums to itself */
+    {B, 2, 2, 50, 12, 12, 100, 0, K, 10, 0, 20, 0, 20, 60, 0},  /* Flitter: a squeezebox run */
+    {D, 0, 1, 95, 8, 3, 100, 0, K, 10, 0, 20, 0, 20, 40, 0},  /* Mossback: three slow notes, down */
 };
 #undef U
 #undef D
@@ -1687,6 +1746,24 @@ static const dr_beat_t DR_BEATS[DR_NCHAR] = {   /* the cast's order */
     {"FOLD OUT", 116, 90, 98,                    /* Tinker: snaps, clicks, a tool at a time */
      {"x..x..x...x..x..", 0, "....x.......x...", "x.xxx.xxx.xxx.x.", 0, 0, "..x...x...x...x.", "x...x...x...x..."},
      {36, 0, 0, 36, 0, 0, 43, 0, 0, 36, 0, 48, 0, 0, 43, 0}},
+    {"SUNDAY", 72, 88, 100,                      /* Doze: lazy, a long way between steps */
+     {"x.......x..x....", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, 0, 0},
+     {36, 1, 1, 1, 0, 0, 0, 0, 43, 1, 1, 0, 31, 1, 0, 0}},
+    {"UPDRAFT", 112, 90, 98,                     /* Kite: light, lifting */
+     {"x.....x...x.....", "....x.......x...", 0, "..x...x...x...x.", "x.......x.......", 0, 0, 0},
+     {36, 0, 0, 48, 0, 0, 36, 0, 43, 0, 0, 43, 0, 0, 48, 0}},
+    {"BOTTLECAP", 94, 96, 100,                   /* Bramble: boom bap on bottle caps */
+     {"x.....x.x.......", "....x.......x...", 0, "x.xxx.x.x.xxx.x.", 0, 0, "...x......x....x", 0},
+     {36, 0, 0, 0, 0, 0, 36, 0, 36, 0, 0, 0, 0, 0, 43, 0}},
+    {"ECHOING", 80, 86, 98,                      /* Hollow: sparse, room to ring */
+     {"x...........x...", "........x.......", 0, 0, "....x.......x...", 0, "..x.......x.....", 0},
+     {36, 1, 1, 1, 1, 1, 0, 0, 43, 1, 1, 1, 0, 0, 0, 0}},
+    {"OOM-PAH", 120, 92, 102,                    /* Flitter: a polka for the rafters */
+     {"x...x...x...x...", "..x...x...x...x.", 0, 0, 0, 0, 0, 0},
+     {36, 0, 0, 0, 43, 0, 0, 0, 36, 0, 0, 0, 31, 0, 0, 0}},
+    {"SLOWPOKE", 70, 88, 104,                    /* Mossback: slow and heavy, in no hurry */
+     {"x.........x.....", "........x.......", 0, "x...x...x...x...", 0, ".............x..", 0, 0},
+     {36, 1, 1, 1, 1, 1, 1, 1, 31, 1, 1, 1, 1, 1, 1, 1}},
 };
 
 static int32_t dr_beat_shift(void)           /* the bass's move from C: the chord's root (WEAVE, CAST) or the key */
