@@ -524,6 +524,13 @@ the site's address; a tip card appears if a `DONATE_URL` repository variable or 
 the firmware itself: `node tools/landing/shots.mjs build/emu/melodee.wasm DIR`, then
 `python3 tools/landing/make_landing.py DIR` (rerun both when the characters or screens change).
 
+The installer (`web/index_pkg.html`, `web/fm1ota.js`) took four things from Album 01's (fm1-base, Charles Vestal): a
+check before installing (don't unplug, back up first), a clear message when the FM-1 runs M-VAVE's Open firmware (it
+takes only M-VAVE's own firmware, so the official firmware has to go back on first), a list to find an FM-1 that the
+computer shows under another port name, and m-bootloader after the firmware (`web/m-bootloader/`). The m-bootloader
+option stays hidden until it has been tried on an FM-1 running Double Rainbow: add `?mboot` to the installer's address
+to see it. Once it has worked, drop that condition in `index_pkg.html`. Rainbow mode's installer has the same.
+
 ## Setup, in order
 
 1. **This plan.** (done)
