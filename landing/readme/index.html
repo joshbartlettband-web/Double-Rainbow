@@ -1,0 +1,144 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Double Rainbow's readme: every control on one page. The workflow copies landing/ to the site, so this is at
+     /readme/, and fills in @REPO@ (owner/name). The full story of each control, and how it is built, is
+     DOUBLE-RAINBOW.md; when a control changes there, change it here too. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Double Rainbow controls</title>
+<meta name="description" content="Every button, knob and key in Double Rainbow for the M-VAVE FM-1, on one page.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23100b22'/%3E%3Cpath d='M2 13a6 6 0 0 1 12 0' fill='none' stroke='%23e86068' stroke-width='1.6'/%3E%3Cpath d='M4 13a4 4 0 0 1 8 0' fill='none' stroke='%23f0d678' stroke-width='1.6'/%3E%3Cpath d='M6 13a2 2 0 0 1 4 0' fill='none' stroke='%237896ec' stroke-width='1.6'/%3E%3C/svg%3E">
+<style>
+  /* the landing page's palette: the FM-1's MOON colors, a night sky with a moonbow in it */
+  :root {
+    --bg: #100b22; --panel: #261a3e; --panel-2: #3a2856; --ink: #f6ead2; --soft: #d2c4e2; --dim: #9c8cb8;
+    --gold: #ffcd60; --teal: #3fe0c5;
+    --violet: #a070e6; --blue: #6496ec; --green: #78ce8c; --yellow: #f0d678; --orange: #f0a060; --red: #e86068;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--font); }
+  a { color: var(--teal); }
+  a:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+  .bow { height: 8px; background: linear-gradient(90deg, var(--violet) 0 16.66%, var(--blue) 0 33.33%, var(--green) 0 50%,
+         var(--yellow) 0 66.66%, var(--orange) 0 83.33%, var(--red) 0); }
+  .bow.faint { opacity: .45; height: 4px; transform: scaleX(-1); }
+  main, footer { width: 100%; max-width: 860px; margin: 0 auto; padding-inline: 16px; }
+  .back { display: inline-block; margin: 18px 0 0; font-weight: 700; text-decoration: none; }
+  h1 { font-size: clamp(2.1rem, 7vw, 3.2rem); line-height: 1.05; margin: 18px 0 10px; letter-spacing: -.02em; color: var(--gold); }
+  h2 { font-size: 1.45rem; line-height: 1.2; margin: 44px 0 12px; color: var(--gold); scroll-margin-top: 16px; }
+  p { margin: 0 0 14px; color: var(--soft); max-width: 40em; }
+  .lede { font-size: 1.15rem; }
+  nav ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+  nav a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; text-decoration: none;
+          color: var(--ink); background: var(--panel); font-size: .95rem; font-weight: 600; }
+  nav a:hover { background: var(--panel-2); }
+  table { width: 100%; border-collapse: collapse; font-size: .97rem; margin: 0 0 8px; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--panel-2); vertical-align: top; }
+  th { color: var(--teal); font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  td { color: var(--soft); }
+  td:first-child { width: 32%; color: var(--gold); font-weight: 700; }
+  .tight td:first-child { width: 24%; }
+  footer { margin-top: 56px; padding-block: 24px 40px; color: var(--dim); font-size: .95rem; border-top: 1px solid var(--panel-2); }
+  footer p { color: var(--dim); }
+  @media (min-width: 640px) { body { font-size: 18px; } td:first-child { width: 26%; } .tight td:first-child { width: 18%; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="bow"></div>
+<div class="bow faint"></div>
+<main>
+  <a class="back" href="../">&larr; Double Rainbow</a>
+  <h1>Every control</h1>
+  <p class="lede">Every button, knob and key in Double Rainbow, on one page. The FM-1 starts in Double Rainbow each time it's switched on.</p>
+  <nav aria-label="On this page">
+    <ul>
+      <li><a href="#panel">The panel</a></li>
+      <li><a href="#modes">How the keys play</a></li>
+      <li><a href="#chords">The black keys' chords</a></li>
+      <li><a href="#scry">SCRY</a></li>
+      <li><a href="#arp">The arp</a></li>
+    </ul>
+  </nav>
+
+  <h2 id="panel">The panel</h2>
+  <table>
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Keys</td><td>Play the character. The horizon draws the sound's wave as it plays.</td></tr>
+      <tr><td>PRESETS</td><td>The next or previous character, of 30. In the codex, its pages.</td></tr>
+      <tr><td>GLO held, then PRESETS</td><td>Jumps five characters at a time.</td></tr>
+      <tr><td>KNOB 1 to 4</td><td>The character's own four knobs.</td></tr>
+      <tr><td>EDIT held</td><td>The knob cards show what each knob really moves.</td></tr>
+      <tr><td>ALGORITHM</td><td>How the keys play: SOLO, WEAVE, CAST, SCRY, TRACE (<a href="#modes">below</a>).</td></tr>
+      <tr><td>SELECT</td><td>The key, a fifth at a time (WEAVE, CAST and SCRY). In TRACE, the song.</td></tr>
+      <tr><td>OCT- / OCT+</td><td>The keys an octave down or up, two each way. In SCRY, the drill. In TRACE, the song.</td></tr>
+      <tr><td>PLAY</td><td>The character's beat, on and off. In SCRY, hear the question again. In TRACE, hear the song.</td></tr>
+      <tr><td>SEQ</td><td>The next beat (it starts if it was off).</td></tr>
+      <tr><td>SEQ held, then SELECT</td><td>The tempo, 4 BPM a click, from 60 to 180.</td></tr>
+      <tr><td>REC</td><td>Tap the tempo. From the second tap the beat follows you.</td></tr>
+      <tr><td>ARP</td><td>The arp on, then its settings four at a time. Held most of a second, the arp off (<a href="#arp">below</a>).</td></tr>
+      <tr><td>SCL</td><td>The codex: the Keeper's ledger, the engine's story, then something to try. PRESETS turns the pages, SCL again closes it.</td></tr>
+      <tr><td>HOME held, then ALGORITHM</td><td>YOUR NAME, for the hello. PRESETS picks the letter, ALGORITHM moves to the next place, SAVE keeps it, HOME leaves it as it was.</td></tr>
+      <tr><td>HOME + SAVE held 3 s</td><td>The full Melodee synth, as it would have started. Nothing is saved, and Double Rainbow comes back at the next power-on.</td></tr>
+      <tr><td>MASTER</td><td>Volume.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="modes">ALGORITHM: how the keys play</h2>
+  <table>
+    <thead><tr><th>Mode</th><th>What the keys do</th></tr></thead>
+    <tbody>
+      <tr><td>SOLO</td><td>Each key plays its note.</td></tr>
+      <tr><td>WEAVE</td><td>Strum, like an Omnichord. A black key picks a chord and plays its root low; the white keys strum it upward from C3.</td></tr>
+      <tr><td>CAST</td><td>A black key holds its chord while the white keys play a tune. The white keys follow the key SELECT picked, so the tune stays with the chords.</td></tr>
+      <tr><td>SCRY</td><td>Ear training: hear it, then find it on the keys (<a href="#scry">below</a>).</td></tr>
+      <tr><td>TRACE</td><td>Learn a song. The next key lights up and you play at your own pace; a wrong key changes nothing. SELECT or OCT picks the song, of 14.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="chords">The black keys' chords</h2>
+  <p>In WEAVE and CAST, each black key plays the chord of the white key just below it. These are in C; SELECT moves them all to another key.</p>
+  <table class="tight">
+    <thead><tr><th>Keys</th><th>Chords</th></tr></thead>
+    <tbody>
+      <tr><td>F#3 to D#4</td><td>F, G, Am, C, Dm</td></tr>
+      <tr><td>F#4 to D#5</td><td>Fmaj7, G7, Am7, Cmaj7, Dm7</td></tr>
+      <tr><td>F#5</td><td>Fm, borrowed from C minor (the bittersweet one)</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="scry">SCRY</h2>
+  <p>OCT- and OCT+ pick the drill, and SELECT moves NOTES and CHORDS to a new key. Three right in a row adds something new to tell apart. After two misses the right key blinks.</p>
+  <table>
+    <thead><tr><th>Drill</th><th>What to find</th></tr></thead>
+    <tbody>
+      <tr><td>NOTES</td><td>The key's home note plays (lit), then a mystery note. Play it, in any octave.</td></tr>
+      <tr><td>INTERVALS</td><td>Two notes, the first lit. Play the second.</td></tr>
+      <tr><td>CHORDS</td><td>A chord of the key. Find the black key that holds it.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="arp">The arp</h2>
+  <p>Every character has an arp of their own, on the beat. Press ARP to turn it on: the four knob cards become its settings. Each press of ARP shows the next four, then the character's knobs again (the arp keeps playing). Hold ARP for most of a second to turn it off.</p>
+  <table>
+    <thead><tr><th>Group</th><th>Knobs</th></tr></thead>
+    <tbody>
+      <tr><td>NOTES</td><td>SHAPE (up, down, bounce, walk, jump), RATE, RANGE (1 to 4 octaves), GATE</td></tr>
+      <tr><td>RHYTHM</td><td>STEPS and HITS (spread as evenly as they go), CHANCE, BURST (a fast double or triple)</td></tr>
+      <tr><td>CHANGE</td><td>SOURCE (KEYS, HOLD or AUTO, which plays by itself), SPICE, LOOP, EVOLVE</td></tr>
+      <tr><td>FEEL</td><td>SWING, HUMAN, ACCENT, LEAP (an octave jump now and then)</td></tr>
+    </tbody>
+  </table>
+</main>
+<footer>
+  <p>Every control in more detail, and how it's built: <a href="https://github.com/@REPO@/blob/main/DOUBLE-RAINBOW.md">DOUBLE-RAINBOW.md</a>.</p>
+  <p><a href="../">Back to Double Rainbow</a></p>
+</footer>
+</body>
+</html>
