@@ -37,6 +37,12 @@
   <p class="small"><span data-t="brick"></span>
     <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener" style="color:inherit">FM-1-transporter</a></p>
   <p><button id="go" disabled data-t="install"></button></p>
+  <p class="small"><label><input id="first" type="checkbox"> <span data-t="first"></span></label></p>
+  <div id="firstopt" hidden>
+    <p class="small" data-t="firstWhy"></p>
+    <p class="small"><a href="https://www.m-vave.com/download" target="_blank" rel="noopener" style="color:inherit">M-VAVE Downloads</a></p>
+    <p class="small"><label><span data-t="stockFile"></span><br><input id="first-file" type="file" accept=".fwsc"></label></p>
+  </div>
   <div id="mbootopt" hidden>
     <p class="small"><label><input id="mboot" type="checkbox"> <span data-t="mboot"></span></label></p>
     <p class="small"><span data-t="mbootwhy"></span>
@@ -202,24 +208,42 @@ Object.assign(TEXT.en, {
   picknone: "No FM-1 answered on {port}.",
   pickok: "Found {id} on {port}. This browser remembers it. Press Install again.",
 });
+/* the official V15 first: going from one custom firmware straight to another can go wrong, so with the box ticked
+ * the official FM-1.fwsc (the person's own copy, checked as Return to official V15 checks it) goes on, then APP */
+Object.assign(TEXT.ja, {
+  first: "先に公式V15を書き込む（ほかのカスタムファームウェアから乗り換えるとき）",
+  firstWhy: "カスタムファームウェアから別のカスタムファームウェアへ直接切り替えると、うまく動かないことがあります。いったん公式ファームウェアに戻すと防げます。このページには M-VAVE のファームウェアを入れられないので、M-VAVE から FM-1 V15 を取得し、FM-1.fwsc を選んでください。ファイルはこのブラウザ内で確認し、サーバーへは送りません。時間は約2倍かかり、FM-1 は2回再起動します。",
+  firstNeedFile: "先に公式 FM-1.fwsc を選んでください（チェックボックスの下）。使わない場合はチェックを外してください。",
+  firstPhase: "公式V15: ",
+  confirmFirst: "先に公式V15を書き込み、その後 " + APP + " を書き込みます。FM-1 は2回再起動します。「完了」と出るまで USB を抜かないでください。",
+});
+Object.assign(TEXT.en, {
+  first: "Put the official V15 on first (when switching from another custom firmware)",
+  firstWhy: "Going from one custom firmware straight to another sometimes goes wrong. A stop at the official firmware in between avoids it. This page can't include M-VAVE's firmware, so get FM-1 V15 from M-VAVE and pick FM-1.fwsc here. It is checked in this browser and not sent anywhere. It takes about twice as long, and the FM-1 restarts twice.",
+  firstNeedFile: "Pick the official FM-1.fwsc first (under the checkbox), or untick the box.",
+  firstPhase: "Official V15: ",
+  confirmFirst: "The official V15 goes on first, then " + APP + ". The FM-1 restarts twice; leave it plugged in until this page says Done.",
+});
 const fillT = (k, v) => t(k).replace(/\{(\w+)\}/g, (_, n) => v[n] ?? "");
 /* a port the person picked once (the picker below): asked by itself from then on */
 const PORT_KEY = "fm1-port";
 const allowPorts = () => { try { const p = localStorage.getItem(PORT_KEY); return p ? [p] : []; } catch (_) { return []; } };
 let lang = (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : "en";
 const t = (k) => TEXT[lang][k];
-let lastKey = null, lastArg = "";
+let lastKey = null, lastArg = "", phase = null;   // phase: "firstPhase" while the official V15 goes on first
+const shown = () => (phase ? t(phase) : "") + t(lastKey) + lastArg;
 function applyLang() {
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
   $("lang").textContent = t("other");
   $("stock-go").textContent = t($("stock-skip-backup").checked ? "stockGoNoBackup" : "stockGo");
-  if (lastKey) $("status").textContent = t(lastKey) + lastArg;
+  if (lastKey) $("status").textContent = shown();
 }
 $("lang").addEventListener("click", () => { lang = lang === "ja" ? "en" : "ja"; applyLang(); });
 applyLang();
 $("stock-skip-backup").addEventListener("change", applyLang);
-const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = t(k) + arg; };
+$("first").addEventListener("change", () => { $("firstopt").hidden = !$("first").checked; });
+const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = shown(); };
 const say = (txt) => { lastKey = null; $("status").textContent = txt; };
 const log = (t) => { $("log").textContent += t + "\n"; };
 let image = null;
@@ -239,7 +263,7 @@ let boot = null;
 })();
 
 let writing = false, stock = null, stockFileEpoch = 0;
-const lockInstaller = (on) => { writing = on; $("go").disabled = on || !image; $("stock-go").disabled = on || !stock; $("stock-file").disabled = on; $("stock-recovery").disabled = on; $("stock-skip-backup").disabled = on; };
+const lockInstaller = (on) => { writing = on; $("go").disabled = on || !image; $("stock-go").disabled = on || !stock; $("stock-file").disabled = on; $("stock-recovery").disabled = on; $("stock-skip-backup").disabled = on; $("first").disabled = on; $("first-file").disabled = on; };
 window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault(); e.returnValue = t("leave"); } });
 
 (async () => {
@@ -257,8 +281,11 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
 
 $("go").addEventListener("click", async () => {
   if (writing) return;
+  phase = null;
   const withBoot = !!boot && $("mboot").checked;
-  if (!confirm(t("confirmInstall") + (withBoot ? "\n\n" + t("confirmboot") : ""))) return;
+  const first = $("first").checked ? stock : null;          // the official V15 to put on first, or none
+  if ($("first").checked && !first) { sayK("firstNeedFile"); return; }
+  if (!confirm(t("confirmInstall") + (first ? "\n\n" + t("confirmFirst") : "") + (withBoot ? "\n\n" + t("confirmboot") : ""))) return;
   lockInstaller(true);
   let midi;
   try { midi = await navigator.requestMIDIAccess({ sysex: true }); }
@@ -266,12 +293,14 @@ $("go").addEventListener("click", async () => {
   try {
     const up = new Updater(midi, log, allowPorts());
     const total = 74 + 1167;
+    const from = first ? 50 : 0;                             // the bar: the official V15 fills its first half
+    const bar = (n) => { $("bar").value = from + Math.min(1, n / total) * (100 - from); };
     const step = (k, a) => {
       log(`${k} ${a ?? ""}`);
       if (k === "start") sayK("start");
-      if (k === "verify") { sayK("verify"); $("bar").value = (a / total) * 100; }
+      if (k === "verify") { sayK("verify"); bar(a); }
       if (k === "loader") sayK("loader");
-      if (k === "write") { sayK("write"); $("bar").value = ((74 + a) / total) * 100; }
+      if (k === "write") { sayK("write"); bar(74 + a); }
       if (k === "reboot") sayK("reboot");
       if (k === "done" && !withBoot) { $("bar").value = 100; sayK("done"); if (nameTyped()) setTimeout(() => sendName(6), 1500); }
       if (k === "bootstart" || k === "bootwrite") sayK(k);
@@ -282,8 +311,24 @@ $("go").addEventListener("click", async () => {
       try { await up.installBoot(boot, meta.product, step); }
       catch (e) { log(String(e && e.stack || e)); sayK(e && e.code === "bootrefused" ? "bootrefused" : (e && e.code) || "error", e && e.code ? "" : e && e.message); }
     };
+    const firstStep = (k, a) => {
+      log(`V15 ${k} ${a ?? ""}`);
+      if (["start", "verify", "loader", "write", "reboot"].includes(k)) sayK(k);
+      if (k === "verify") $("bar").value = Math.min(1, a / total) * 50;
+      if (k === "write") $("bar").value = Math.min(1, (74 + a) / total) * 50;
+    };
     const ota = await up.find((id) => /^ota-/i.test(id.model));
-    if (ota) {
+    if (first) {
+      // an FM-1 left in update mode (a stop partway through) finishes the official V15 first, as it would have
+      phase = "firstPhase";
+      if (ota) {
+        ota.link.close();
+        if (!await up.resume(first.image, firstStep, first.product)) { sayK("stopped"); lockInstaller(false); return; }
+      } else await up.install(first.image, first.product, firstStep);
+      phase = null;
+      await up.install(image, meta.product, step);
+      await thenBoot();
+    } else if (ota) {
       ota.link.close();
       const done = await up.resume(image, step, meta.product);
       if (!done) sayK("stopped"); else if (withBoot) await thenBoot(); else sayK("done");
@@ -329,8 +374,9 @@ $("pick").addEventListener("toggle", async () => {
   }
 });
 
-$("stock-file").addEventListener("change", async () => {
-  const epoch = ++stockFileEpoch, file = $("stock-file").files[0]; stock = null; lockInstaller(false);
+// the official FM-1.fwsc, from either picker: Return to official V15's, or the one under "Put the official V15 on first"
+const pickStock = async (picker) => {
+  const epoch = ++stockFileEpoch, file = picker.files[0]; stock = null; lockInstaller(false);
   if (!file) return;
   try {
     if (file.size !== STOCK_V15_SIZE) throw new Error("FM-1 V15 / FM-1.fwsc");
@@ -338,7 +384,9 @@ $("stock-file").addEventListener("change", async () => {
     if (epoch !== stockFileEpoch) return;
     stock = verified; sayK("stockValid"); lockInstaller(false);
   } catch (e) { if (epoch === stockFileEpoch) sayK("stockError", e.message); }
-});
+};
+$("stock-file").addEventListener("change", () => pickStock($("stock-file")));
+$("first-file").addEventListener("change", () => pickStock($("first-file")));
 function saveArchive(archive) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(archive)], {type:"application/json"}));
   const a = document.createElement("a"); a.href = url; a.download = `Melodee-backup-${new Date().toISOString().slice(0,10)}.json`;

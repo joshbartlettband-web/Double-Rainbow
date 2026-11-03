@@ -1488,7 +1488,60 @@ async function stockRestore() {
   ok(r.calls.includes("resume") && r.calls.some(c => c.includes("Has the complete backup")),
     "stock: saved-backup recovery retains its existing confirmation");
 }
+/* "Put the official V15 on first": the official V15, then the firmware; nothing without the file */
+async function stockFirst() {
+  const installer = readFileSync(join(HERE, "index_pkg.html"), "utf8");
+  const script = installer.match(/<script type="module">([\s\S]*?)<\/script>/)[1]
+    .replace("/*META*/", JSON.stringify({version:"0.10",product:"FM-1_9010",pkg:"test.fwsc"}));
+  async function run({first = true, file = true, loader = false, resumed = true, confirm = true} = {}) {
+    const calls = [], elements = new Map();
+    const element = (id) => {
+      if (!elements.has(id)) elements.set(id, {checked:false, disabled:false, hidden:true, textContent:"", value:"", listeners:{},
+        addEventListener(k, fn) { this.listeners[k] = fn; }});
+      return elements.get(id);
+    };
+    const context = vm.createContext({
+      navigator:{language:"en", requestMIDIAccess:async () => ({})},
+      document:{documentElement:{}, querySelectorAll:() => [], getElementById:element},
+      window:{addEventListener() {}}, URLSearchParams, location:{search:""},
+      fetch:async () => ({ok:true, arrayBuffer:async () => new ArrayBuffer(0)}),
+      productOf:() => "FM-1_9010", logicalImage:() => new Uint8Array(), setTimeout:() => 0,
+      confirm:(message) => { calls.push("confirm:" + message); return confirm; },
+      Updater:class {
+        async find(filter) { return filter({model:loader ? "ota-FM-1" : "FM-1"}) ? {link:{close() {}}} : null; }
+        async install(image, product) { calls.push("install " + product); }
+        async resume(image, step, product) { calls.push("resume " + product); return resumed; }
+      },
+    });
+    vm.runInContext(script, context);
+    await new Promise(resolve => setImmediate(resolve));
+    if (file) vm.runInContext('stock = {image:new Uint8Array(),product:"FM-1_015"};', context);
+    element("first").checked = first;
+    element("first").listeners.change();
+    await element("go").listeners.click();
+    return {calls, status:element("status").textContent, shown:!element("firstopt").hidden, unlocked:!element("go").disabled};
+  }
+  let r = await run({first:false});
+  ok(r.calls.filter(c => c.startsWith("install")).join() === "install FM-1_9010" && !r.shown,
+    "stock first: unticked, only the firmware goes on");
+  r = await run();
+  ok(r.calls.filter(c => !c.startsWith("confirm")).join() === "install FM-1_015,install FM-1_9010" && r.shown
+    && r.calls[0].includes("official V15 goes on first") && r.unlocked,
+    "stock first: ticked, the official V15 and then the firmware, after one confirmation");
+  r = await run({file:false});
+  ok(!r.calls.length && r.status.includes("Pick the official FM-1.fwsc"),
+    "stock first: ticked without the official file, nothing is asked or written");
+  r = await run({confirm:false});
+  ok(!r.calls.some(c => c.startsWith("install")) && r.unlocked, "stock first: cancelled, nothing is written");
+  r = await run({loader:true});
+  ok(r.calls.filter(c => !c.startsWith("confirm")).join() === "resume FM-1_015,install FM-1_9010",
+    "stock first: an FM-1 left in update mode finishes the official V15, then the firmware");
+  r = await run({loader:true, resumed:false});
+  ok(!r.calls.some(c => c.startsWith("install")) && r.status.startsWith("Official V15: Stopped") && r.unlocked,
+    "stock first: a stop during the official V15 never goes on to the firmware");
+}
 await stockRestore();
+await stockFirst();
 await patternProtocol();
 await editorMock();
 await editorSamplePresets();
