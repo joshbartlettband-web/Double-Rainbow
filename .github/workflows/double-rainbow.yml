@@ -153,6 +153,12 @@ jobs:
       - name: Generated headers (fonts, icons, tables, factory banks), as build.py makes them
         run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
 
+      - name: The FM-1's flash chips (the 2026 units' UC25HQ80 too, or they cannot save or be updated)
+        run: |
+          mkdir -p build/host
+          cc -o build/host/flash_id_test tests/flash_id_test.c
+          build/host/flash_id_test
+
       - name: Melodee's UI tests (every screen in every palette; Double Rainbow changes Melodee's screens too)
         run: |
           set -o pipefail                 # (a failing test fails the step, through tail)

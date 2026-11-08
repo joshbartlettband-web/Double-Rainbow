@@ -29,6 +29,7 @@ static int st_erase(uint32_t off) { if (erase_error) return -8; memset(nor + off
 static int st_prog(uint32_t off, const void *src, uint32_t n) { memcpy(nor + off, src, n); return 0; }
 static uint32_t irq_save(void) { return 0; }
 static void irq_restore(uint32_t f) { (void)f; }
+#include "../firmware/hal/fm1_flash_id.h"                     /* FL_JEDEC_OK (project.c persist_boot) */
 static uint32_t fl_jedec_ram(void) { return 0; }
 static void fl_plain_window_init(void) {}
 #define FL_FAR(fn) (fn)

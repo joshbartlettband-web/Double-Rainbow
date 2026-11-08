@@ -202,6 +202,8 @@ if [ -f build/gen/melodee_tables.h ]; then
     run "audio: overload protection, bounded fades and DMA diagnostics" "$OUT/audio_test"
     $CC -w -DMELODEE_BENCH_SILENT=1 -Ibuild/gen -Ifirmware/src -o "$OUT/audio_silent_test" tests/audio_test.c -lm
     run "audio: silent bench keeps synthesis running and silences physical output" "$OUT/audio_silent_test"
+    $CC -o "$OUT/flash_id_test" tests/flash_id_test.c
+    run "FM-1 flash chips: P25Q80 and the 2026 units' UC25HQ80 accepted, anything else RAM-only" "$OUT/flash_id_test"
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/persistence_test" tests/persistence_test.c -lm
     run "persistence: deferred settings, retry and failed-save rollback" "$OUT/persistence_test"
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/backup_test" tests/backup_test.c -lm
